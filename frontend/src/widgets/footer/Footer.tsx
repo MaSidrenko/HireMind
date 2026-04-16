@@ -1,6 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import "./Footer.css";
-import {Contacts, AboutUs } from "@/pages";
 
 export default function Footer() {
 	return (
