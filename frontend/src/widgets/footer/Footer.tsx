@@ -7,7 +7,7 @@ export default function Footer() {
 			<div className="footer-container">
 				<div className="footer-top-row">
 					<div className="footer-logo-container">
-						<span className="footer-project-name">Hire Mind</span>
+						<span className="footer-project-name">HireMind</span>
 					</div>
 					<span className="footer-info">
 						The project was created for educational and research
