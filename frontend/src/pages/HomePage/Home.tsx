@@ -79,7 +79,7 @@ export default function Home() {
 					<div className="cta-content">
 						<h2>Готовы начать?</h2>
 						<p>
-							Присоединяйтесь к thousands фрилансеров и заказчиков
+							Присоединяйтесь к фрилансерам и заказчикам нашего сайта
 							уже сегодня
 						</p>
 						<button

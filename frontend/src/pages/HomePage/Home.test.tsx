@@ -37,7 +37,6 @@ describe("Home", () => {
 		expect(
 			screen.getByRole("button", { name: /Зарегистрироваться/i }),
 		).toBeInTheDocument();
-		// expect(screen.getByText(/Популярные категории/i)).toBeInTheDocument();
 	});
 
 	it("renders category cards", () => {
