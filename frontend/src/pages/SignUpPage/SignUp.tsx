@@ -1,6 +1,23 @@
 import ContextStripMenu from "@/widgets/contextStripMenu/contextStripMenu";
 import "./SignUp.css";
 import { useEffect, useRef, useState } from "react";
+import SkillsAutoComplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
+
+const skills = [
+	"вебинар",
+	"Вебмастер",
+	"вебдизайн",
+	"React",
+	"TypeScript",
+	"JavaScript",
+	"Node.js",
+	"HTML",
+	"CSS",
+	"Redux",
+	"Next.js",
+	"Vue",
+	"Angular",
+];
 
 export default function SignUp() {
 	const [selectedRole, setSelectedRole] = useState("Выберите роль");
@@ -67,16 +84,12 @@ export default function SignUp() {
 						onSelect={(item) => setSelectedRole(item)}
 					/>
 				</label>
-				{selectedRole == "Фрилансер" && (
+				{/* {selectedRole == "Фрилансер" && (
 					<label htmlFor="Skills">
 						Навыки
-						<input
-							type="text"
-							placeholder="Введите ваши навыки через запятую"
-							id="Skills"
-						/>
+						<SkillsAutoComplete options={skills}></SkillsAutoComplete>
 					</label>
-				)}
+				)} */}
 
 				{selectedRole == "Заказчик" && (
 					<label htmlFor="Company">
@@ -97,7 +110,7 @@ export default function SignUp() {
 					/>
 					<input type="text" placeholder="+7 999 123 45 67" />
 				</label>
-				<input type="submit" value="Submit" className="input-sign-up" />
+				<input type="submit" value="Зарегистрироваться" className="input-sign-up" />
 			</form>
 		</div>
 	);
