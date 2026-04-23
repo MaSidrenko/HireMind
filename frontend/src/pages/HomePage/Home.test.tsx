@@ -1,7 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/features/Auth/AuthContext", () => ({
+	useAuth: () => ({
+		user: null,
+		isAuthenticated: false,
+		loading: false,
+		logout: vi.fn(),
+	}),
+}));
+
 import Home from "./Home";
 import { Projects } from "../ProjectsPage";
 import { SignUp } from "../SignUpPage";
@@ -14,7 +24,7 @@ function renderHome() {
 				<Route path="/" element={<Home />} />
 				<Route path="/sign-in" element={<SignIn />} />
 				<Route path="/sign-up" element={<SignUp />} />
-				<Route path="/projects" element={<Projects/>} />
+				<Route path="/projects" element={<Projects />} />
 			</Routes>
 		</MemoryRouter>,
 	);
@@ -25,8 +35,8 @@ describe("Home", () => {
 		renderHome();
 
 		expect(screen.getByText(/HireMind:/i)).toBeInTheDocument();
-		expect(screen.getByText(/ИИ формирует ТЗ./i)).toBeInTheDocument();
-		expect(screen.getByText(/Вы занимаетесь делом./i)).toBeInTheDocument();
+		expect(screen.getByText(/ИИ формирует ТЗ/i)).toBeInTheDocument();
+		expect(screen.getByText(/Вы занимаетесь делом/i)).toBeInTheDocument();
 
 		expect(
 			screen.getByRole("button", { name: /Заказать услугу/i }),
@@ -72,7 +82,9 @@ describe("Home", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: /Sign in - Page in development/i }),
+			screen.getByRole("heading", {
+				name: /Sign in - Page in development/i,
+			}),
 		).toBeInTheDocument();
 	});
 
@@ -83,7 +95,9 @@ describe("Home", () => {
 		await user.click(screen.getByRole("button", { name: /Найти работу/i }));
 
 		expect(
-			screen.getByRole("heading", { name: /Sign in - Page in development/i }),
+			screen.getByRole("heading", {
+				name: /Sign in - Page in development/i,
+			}),
 		).toBeInTheDocument();
 	});
 
@@ -96,7 +110,15 @@ describe("Home", () => {
 		);
 
 		expect(
-			screen.getByRole("heading", { name: /Sign up - Page in development/i }),
+			screen.getByRole("heading", { name: /Регистрация/i }),
+		).toBeInTheDocument();
+
+		expect(
+			screen.getByPlaceholderText(/Введите ваш email/i),
+		).toBeInTheDocument();
+
+		expect(
+			screen.getByRole("button", { name: /Зарегистрироваться/i }),
 		).toBeInTheDocument();
 	});
 
@@ -107,7 +129,9 @@ describe("Home", () => {
 		await user.click(screen.getByRole("link", { name: /Веб-разработка/i }));
 
 		expect(
-			screen.getByRole("heading", { name: /Project - Page in development/i }),
+			screen.getByRole("heading", {
+				name: /Project - Page in development/i,
+			}),
 		).toBeInTheDocument();
 	});
 });
