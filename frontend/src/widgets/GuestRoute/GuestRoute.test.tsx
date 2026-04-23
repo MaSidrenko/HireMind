@@ -45,7 +45,7 @@ describe("GuestRoute", () => {
 		expect(screen.queryByText("Guest page")).not.toBeInTheDocument();
 	});
 
-	it("redirect on children, if user not auth", () => {
+	it("render on children, if user not auth", () => {
 		mockedUseAuth.mockReturnValue({
 			isAuthenticated: false,
 			loading: false,
