@@ -1,7 +1,10 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import "./Home.css";
+import { useAuth } from "@/features/Auth/AuthContext";
 
 export default function Home() {
+	const { user, isAuthenticated, loading, logout } = useAuth();
+
 	const categories = [
 		{ name: "Веб-разработка", icon: "💻", count: 1250 },
 		{ name: "Дизайн", icon: "🎨", count: 980 },
@@ -12,6 +15,10 @@ export default function Home() {
 
 	const navigate = useNavigate();
 
+	if (loading) {
+		return <div>Загрузка...</div>;
+	}
+
 	return (
 		<div>
 			<div className="hero">
@@ -20,7 +27,7 @@ export default function Home() {
 					<div className="hero-circle hero-circle-2"></div>
 					<div className="hero-circle hero-circle-3"></div>
 				</div>
-				<div className="border-slogan-home-page">
+				<section className="border-slogan-home-page">
 					<h1 className="slogan-home-page">
 						<span className="highligh-home-page">HireMind:</span> ИИ
 						формирует ТЗ. <br />{" "}
@@ -32,7 +39,9 @@ export default function Home() {
 						<button
 							className="btn-main-page"
 							onClick={() => {
-								navigate("/sign-in");
+								isAuthenticated
+									? navigate("/profile")
+									: navigate("/sign-in");
 							}}
 						>
 							Заказать услугу
@@ -40,15 +49,22 @@ export default function Home() {
 						<button
 							className="btn-main-page"
 							onClick={() => {
-								navigate("/sign-in");
+								isAuthenticated
+									? navigate("/profile")
+									: navigate("/sign-in");
 							}}
 						>
 							Найти работу
 						</button>
 					</div>
-				</div>
+				</section>
 			</div>
-			<div>
+			<div className="hero">
+				<div className="hero-bg">
+					<div className="hero-circle hero-circle-1"></div>
+					<div className="hero-circle hero-circle-2"></div>
+					<div className="hero-circle hero-circle-3"></div>
+				</div>
 				<section className="categories">
 					<h3 className="cat-text">Популярные категории</h3>
 					<div className="container">
@@ -74,25 +90,43 @@ export default function Home() {
 					</div>
 				</section>
 			</div>
-			<section className="cta">
-				<div className="container">
-					<div className="cta-content">
-						<h2>Готовы начать?</h2>
-						<p>
-							Присоединяйтесь к фрилансерам и заказчикам нашего сайта
-							уже сегодня
-						</p>
-						<button
-							className="btn-main-page"
-							onClick={() => {
-								navigate("/sign-up");
-							}}
-						>
-							Зарегистрироваться
-						</button>
-					</div>
+			<div className="hero">
+				<div className="hero-bg">
+					<div className="hero-circle hero-circle-1"></div>
+					<div className="hero-circle hero-circle-2"></div>
+					<div className="hero-circle hero-circle-3"></div>
 				</div>
-			</section>
+				<section className="cta">
+					<div className="container">
+						<div className="cta-content">
+							<h2>Готовы начать?</h2>
+							<p>
+								Присоединяйтесь к фрилансерам и заказчикам
+								нашего сайта уже сегодня
+							</p>
+							{isAuthenticated ? (
+								<button
+									className="btn-main-page"
+									onClick={() => {
+										navigate("/profile");
+									}}
+								>
+									Профиль
+								</button>
+							) : (
+								<button
+									className="btn-main-page"
+									onClick={() => {
+										navigate("/sign-up");
+									}}
+								>
+									Зарегистрироваться
+								</button>
+							)}
+						</div>
+					</div>
+				</section>
+			</div>
 		</div>
 	);
 }
