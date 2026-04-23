@@ -1,22 +1,32 @@
 import type { AppPage } from "@/shared";
-import { HomePage, SignUp, SignIn } from "@/pages/index";
+import { HomePage, SignUp, SignIn, Profile } from "@/pages/index";
 export const PageRoutes: AppPage[] = [
 	{
 		path: "/",
-		label: "Home",
+		label: "Главная",
 		component: HomePage,
-		showInNavbar: true
+		showInNavbar: true,
+		access: "public"
 	},
 	{
 		path: "/sign-up",
-		label: "Sign Up",
+		label: "Регистрация",
 		component: SignUp,
-		showInNavbar: true
+		showInNavbar: true,
+		access: "guest",
 	},
 	{
 		path: "/sign-in",
-		label: "Sign In",
+		label: "Вход",
 		component: SignIn,
-		showInNavbar: true
+		showInNavbar: true,
+		access: "guest",
+	},
+	{
+		path: "/profile",
+		label: "Профиль",
+		component: Profile,
+		showInNavbar: true,
+		access: "private",
 	},
 ];
