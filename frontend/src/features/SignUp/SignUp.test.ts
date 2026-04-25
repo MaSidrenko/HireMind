@@ -39,8 +39,8 @@ describe("SignUp api", () => {
 
 		const result = await SignUpRequest(payload);
 
-		expect(global.fetch).toHaveBeenCalledTimes(1);
-		expect(global.fetch).toHaveBeenCalledWith(
+		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+		expect(globalThis.fetch).toHaveBeenCalledWith(
 			expect.stringContaining("/api/auth/sign-up"),
 			{
 				method: "POST",
@@ -63,7 +63,7 @@ describe("SignUp api", () => {
 	});
 
 	it("throws server message when response is not ok", async () => {
-		vi.mocked(global.fetch).mockResolvedValue({
+		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			json: vi.fn().mockResolvedValue({
 				message: "Email already exists",
@@ -82,7 +82,7 @@ describe("SignUp api", () => {
 	});
 
 	it("throws default message when response is not ok and json parsing fails", async () => {
-		vi.mocked(global.fetch).mockResolvedValue({
+		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			json: vi.fn().mockRejectedValue(new Error("Invalid JSON")),
 		} as unknown as Response);
@@ -99,7 +99,7 @@ describe("SignUp api", () => {
 	});
 
 	it("throws default message when response is not ok and message is missing", async () => {
-		vi.mocked(global.fetch).mockResolvedValue({
+		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			json: vi.fn().mockResolvedValue({
 				error: "Bad request",
