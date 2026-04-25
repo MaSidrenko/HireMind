@@ -7,16 +7,9 @@
 	margin: 100px auto;
 	padding: 50px;
 	border: 3px solid rgba(222, 154, 82, 0.3);
-	/* border-top: 1px solid rgba(222, 154, 82, 0.3); */
 	border-radius: 8px;
 	background: rgba(31, 29, 27, 0.94);
 	box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
-	/* border-radius: 10px;
-	border: #de9a52 solid 1px;
-	backdrop-filter: blur(30px);
-	-webkit-backdrop-filter: blur(30px);
-
-	*/
 	box-shadow:
 		0 8px 32px #ff6b00,
 		0 2px 8px #fa972c,
@@ -78,7 +71,6 @@
 	padding: 20px;
 	font-size: 20px;
 	border: 1px solid #de9a52;
-	/* color: orangered; */
 	color: white;
 	font-weight: 700;
 	border-radius: 10px;
@@ -110,20 +102,17 @@
 .box-sign-up input.input-sign-up:hover {
 	background-color: transparent;
 	color: #fa972c;
-	/* box-shadow: 0 4px 12px #de9a52; */
 	transform: translateY(-2px);
 }
 
 .box-sign-up input.input-sign-up:active {
 	background-color: #ff6b00;
 	color: white;
-	/* box-shadow: 0 2px 6px #de9a52; */
 	transform: translateY(-2px);
 }
 
 .line-form-sign-up {
 	display: flex;
-	/* flex-direction: none; */
 	gap: 16px;
 }
 
@@ -141,7 +130,6 @@
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	/* justify-content: space-between; */
 	gap: 20px;
 	width: 100%;
 }

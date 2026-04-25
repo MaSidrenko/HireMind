@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { SignUp } from "./SignUp";
+import { SignUpRequest } from "./SignUp";
 
 describe("SignUp api", () => {
 	const originalFetch = globalThis.fetch;
@@ -37,7 +37,7 @@ describe("SignUp api", () => {
 			companyName: "My Company",
 		};
 
-		const result = await SignUp(payload);
+		const result = await SignUpRequest(payload);
 
 		expect(global.fetch).toHaveBeenCalledTimes(1);
 		expect(global.fetch).toHaveBeenCalledWith(
@@ -78,7 +78,7 @@ describe("SignUp api", () => {
 			contacts: {},
 		};
 
-		await expect(SignUp(payload)).rejects.toThrow("Email already exists");
+		await expect(SignUpRequest(payload)).rejects.toThrow("Email already exists");
 	});
 
 	it("throws default message when response is not ok and json parsing fails", async () => {
@@ -95,7 +95,7 @@ describe("SignUp api", () => {
 			contacts: {},
 		};
 
-		await expect(SignUp(payload)).rejects.toThrow("Ошибка при регистрации");
+		await expect(SignUpRequest(payload)).rejects.toThrow("Ошибка при регистрации");
 	});
 
 	it("throws default message when response is not ok and message is missing", async () => {
@@ -114,6 +114,6 @@ describe("SignUp api", () => {
 			contacts: {},
 		};
 
-		await expect(SignUp(payload)).rejects.toThrow("Ошибка при регистрации");
+		await expect(SignUpRequest(payload)).rejects.toThrow("Ошибка при регистрации");
 	});
 });
