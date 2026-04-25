@@ -83,7 +83,7 @@ describe("Home", () => {
 
 		expect(
 			screen.getByRole("heading", {
-				name: /Sign in - Page in development/i,
+				name: /Вход/i,
 			}),
 		).toBeInTheDocument();
 	});
@@ -96,7 +96,7 @@ describe("Home", () => {
 
 		expect(
 			screen.getByRole("heading", {
-				name: /Sign in - Page in development/i,
+				name: /Вход/i,
 			}),
 		).toBeInTheDocument();
 	});
