@@ -15,7 +15,7 @@ type SignUpPayload = {
 	companyName?: string;
 };
 
-export async function SignUp(payload: SignUpPayload) {
+export async function SignUpRequest(payload: SignUpPayload) {
 	const response = await fetch(`${API_BASE_URL}/api/auth/sign-up`, {
 		method: "POST",
 		headers: {
