@@ -12,7 +12,7 @@ vi.mock("@/widgets/contextStripMenu/contextStripMenu", () => ({
 	}: {
 		title: string;
 		items: string[];
-		onSelect: (itme: string) => void;
+		onSelect: (item: string) => void;
 	}) => (
 		<div data-testid="context-strip-menu">
 			<div>{title}</div>
@@ -114,7 +114,9 @@ describe("SignUp", () => {
 
 	it("call submit form", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		const consoleSpy = vi
+			.spyOn(console, "log")
+			.mockImplementation(() => {});
 
 		render(<SignUp />);
 
@@ -130,22 +132,47 @@ describe("SignUp", () => {
 			screen.getByPlaceholderText("Введите ваше отчество"),
 			"Иванович",
 		);
+
 		await user.type(
 			screen.getByPlaceholderText("Введите ваш email"),
 			"ivan@example.com",
 		);
 		await user.type(
 			screen.getByPlaceholderText("Введите ваш пароль"),
-			"password123",
+			"Password123!",
 		);
+
 		await user.type(
 			screen.getByPlaceholderText("Подтвердите ваш пароль"),
-			"password123",
+			"Password123!",
+		);
+
+		await user.click(screen.getByRole("button", { name: "Фрилансер" }));
+
+		await user.type(
+			screen.getByPlaceholderText("Введите ваш Telegram ID"),
+			"@ivan",
+		);
+		await user.type(
+			screen.getByPlaceholderText("+7 999 123 45 67"),
+			"+79991234567",
 		);
 
 		await user.click(screen.getByDisplayValue("Зарегистрироваться"));
 
-		expect(consoleSpy).toHaveBeenCalledWith("submit");
+		expect(consoleSpy).toHaveBeenCalledWith("Form valid: ", {
+			lastName: "Иванов",
+			firstName: "Иван",
+			middleName: "Иванович",
+			email: "ivan@example.com",
+			password: "Password123!",
+			confirmPassword: "Password123!",
+			role: "Фрилансер",
+			company: "",
+			telegram: "@ivan",
+			phone: "+79991234567",
+		});
+
 		expect(consoleSpy).toHaveBeenCalledTimes(1);
 	});
 });
