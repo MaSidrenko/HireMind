@@ -1,116 +1,224 @@
 import ContextStripMenu from "@/widgets/contextStripMenu/contextStripMenu";
 import "./SignUp.css";
-import { useEffect, useRef, useState } from "react";
-import SkillsAutoComplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
-
-const skills = [
-	"вебинар",
-	"Вебмастер",
-	"вебдизайн",
-	"React",
-	"TypeScript",
-	"JavaScript",
-	"Node.js",
-	"HTML",
-	"CSS",
-	"Redux",
-	"Next.js",
-	"Vue",
-	"Angular",
-];
+import React, { useState } from "react";
+import { validateSignUp, type SignUpForm } from "./lib/validateSignUp";
 
 export default function SignUp() {
-	const [selectedRole, setSelectedRole] = useState("Выберите роль");
+	const [form, setForm] = useState<SignUpForm>({
+		lastName: "",
+		firstName: "",
+		middleName: "",
+		email: "",
+		password: "",
+		confirmPassword: "",
+		role: "Выберите роль",
+		company: "",
+		telegram: "",
+		phone: "",
+	});
+
+	const [errors, setErrors] = useState<
+		Partial<Record<keyof SignUpForm, string>>
+	>({});
+
+	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const { name, value } = e.target;
+
+		setForm((prev) => ({
+			...prev,
+			[name]: value,
+		}));
+
+		setErrors((prev) => ({
+			...prev,
+			[name]: "",
+		}));
+	}
+
+	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault();
+
+		const validationErrors = validateSignUp(form);
+
+		if (Object.keys(validationErrors).length > 0) {
+			setErrors(validationErrors);
+			return;
+		}
+
+		console.log("Form valid: ", form);
+	}
 
 	return (
 		<div className="box-sign-up card">
-			<form
-				onSubmit={(e) => {
-					e.preventDefault();
-					console.log("submit");
-				}}
-			>
+			<form onSubmit={handleSubmit}>
 				<h1>Регистрация</h1>
 				<p>Создайте свой аккаунт, чтобы начать</p>
-				<label htmlFor="FullName">
-					ФИО:
+				<label>
+					{form.role === "Заказчик" ? ("ФИО контактного лица: ") : ("ФИО:")}
+					{/* ФИО: */}
 					<div className="line-form-sign-up">
-						<input
-							type="text"
-							placeholder="Введите вашу фамилию"
-							id="FullName"
-						/>
-						<input
-							type="text"
-							placeholder="Введите ваше имя"
-							id="FullName"
-						/>
-						<input
-							type="text"
-							placeholder="Введите ваше отчество"
-							id="FullName"
-						/>
+						<div className="fio-field">
+							<input
+								name="lastName"
+								type="text"
+								placeholder="Введите вашу фамилию"
+								id="lastName"
+								value={form.lastName}
+								onChange={handleChange}
+							/>
+							{errors.lastName && (
+								<span className="field-error">
+									{errors.lastName}
+								</span>
+							)}
+						</div>
+
+						<div className="fio-field">
+							<input
+								name="firstName"
+								type="text"
+								placeholder="Введите ваше имя"
+								id="firstName"
+								value={form.firstName}
+								onChange={handleChange}
+							/>
+							{errors.firstName && (
+								<span className="field-error">
+									{errors.firstName}
+								</span>
+							)}
+						</div>
+
+						<div className="fio-field">
+							<input
+								name="middleName"
+								type="text"
+								placeholder="Введите ваше отчество"
+								id="middleName"
+								value={form.middleName}
+								onChange={handleChange}
+							/>
+							{errors.middleName && (
+								<span className="field-error">
+									{errors.middleName}
+								</span>
+							)}
+						</div>
 					</div>
 				</label>
 				<label htmlFor="Email">
 					Email
 					<input
+						name="email"
 						type="email"
 						placeholder="Введите ваш email"
 						id="Email"
+						value={form.email}
+						onChange={handleChange}
 					/>
+					{errors.email && (
+						<span className="field-error">{errors.email}</span>
+					)}
 				</label>
 				<label htmlFor="Password">
 					Пароль
 					<input
+						name="password"
 						type="password"
 						placeholder="Введите ваш пароль"
 						id="Password"
+						value={form.password}
+						onChange={handleChange}
 					/>
+					{errors.password && (
+						<span className="field-error">{errors.password}</span>
+					)}
 				</label>
 				<label htmlFor="ConfirmPassword">
 					Подтвердите пароль
 					<input
+						name="confirmPassword"
 						type="password"
 						placeholder="Подтвердите ваш пароль"
 						id="ConfirmPassword"
+						value={form.confirmPassword}
+						onChange={handleChange}
 					/>
+					{errors.confirmPassword && (
+						<span className="field-error">
+							{errors.confirmPassword}
+						</span>
+					)}
 				</label>
 				<label htmlFor="" className="role-row">
 					Роль:
 					<ContextStripMenu
-						title={selectedRole}
+						title={form.role}
 						items={["Фрилансер", "Заказчик"]}
-						onSelect={(item) => setSelectedRole(item)}
-					/>
-				</label>
-				{/* {selectedRole == "Фрилансер" && (
-					<label htmlFor="Skills">
-						Навыки
-						<SkillsAutoComplete options={skills}></SkillsAutoComplete>
-					</label>
-				)} */}
+						onSelect={(item) => {
+							setForm((prev) => ({
+								...prev,
+								role: item,
+							}));
 
-				{selectedRole == "Заказчик" && (
+							setErrors((prev) => ({
+								...prev,
+								role: "",
+							}));
+						}}
+					/>
+					{errors.role && (
+						<span className="field-error">{errors.role}</span>
+					)}
+				</label>
+
+				{form.role === "Заказчик" && (
 					<label htmlFor="Company">
 						Компания
 						<input
+							name="company"
 							type="text"
 							placeholder="Введите название вашей компании"
 							id="Company"
+							value={form.company}
+							onChange={handleChange}
 						/>
+						{errors.company && (
+							<span className="field-error">
+								{errors.company}
+							</span>
+						)}
 					</label>
 				)}
 				<label htmlFor="Contacts">
 					Контакты
 					<input
+						name="telegram"
 						type="text"
 						placeholder="Введите ваш Telegram ID"
 						id="Contacts"
+						value={form.telegram}
+						onChange={handleChange}
 					/>
-					<input type="text" placeholder="+7 999 123 45 67" />
+					{errors.telegram && (
+						<span className="field-error">{errors.telegram}</span>
+					)}
+					<input
+						name="phone"
+						type="text"
+						placeholder="+7 999 123 45 67"
+						value={form.phone}
+						onChange={handleChange}
+					/>
+					{errors.phone && (
+						<span className="field-error">{errors.phone}</span>
+					)}
 				</label>
-				<input type="submit" value="Зарегистрироваться" className="input-sign-up" />
+				<input
+					type="submit"
+					value="Зарегистрироваться"
+					className="input-sign-up"
+				/>
 			</form>
 		</div>
 	);
