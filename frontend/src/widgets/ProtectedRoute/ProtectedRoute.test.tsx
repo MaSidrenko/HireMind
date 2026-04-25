@@ -23,7 +23,7 @@ describe("ProtectedRoute", () => {
 			user: null,
 			login: vi.fn(),
 			logout: vi.fn(),
-		});
+		} as any);
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>
 				<Routes>
