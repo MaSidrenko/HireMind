@@ -54,7 +54,7 @@ export default function SignUp() {
 				<h1>Регистрация</h1>
 				<p>Создайте свой аккаунт, чтобы начать</p>
 				<label>
-					{form.role === "Заказчик" ? ("ФИО контактного лица: ") : ("ФИО:")}
+					{form.role === "Заказчик" ? ("ФИО контактного лица* ") : ("ФИО*")}
 					{/* ФИО: */}
 					<div className="line-form-sign-up">
 						<div className="fio-field">
@@ -107,7 +107,7 @@ export default function SignUp() {
 					</div>
 				</label>
 				<label htmlFor="Email">
-					Email
+					Email*
 					<input
 						name="email"
 						type="email"
@@ -121,7 +121,7 @@ export default function SignUp() {
 					)}
 				</label>
 				<label htmlFor="Password">
-					Пароль
+					Пароль*
 					<input
 						name="password"
 						type="password"
@@ -135,7 +135,7 @@ export default function SignUp() {
 					)}
 				</label>
 				<label htmlFor="ConfirmPassword">
-					Подтвердите пароль
+					Подтвердите пароль*
 					<input
 						name="confirmPassword"
 						type="password"
@@ -151,7 +151,7 @@ export default function SignUp() {
 					)}
 				</label>
 				<label htmlFor="" className="role-row">
-					Роль:
+					Роль*
 					<ContextStripMenu
 						title={form.role}
 						items={["Фрилансер", "Заказчик"]}
@@ -174,7 +174,7 @@ export default function SignUp() {
 
 				{form.role === "Заказчик" && (
 					<label htmlFor="Company">
-						Компания
+						Компания*
 						<input
 							name="company"
 							type="text"

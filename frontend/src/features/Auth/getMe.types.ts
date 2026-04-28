@@ -1,15 +1,43 @@
-import type React from "react";
+// export type UserRole = "freelancer" | "client";
+
+// export type Contacts = {
+// 	telegram?: string;
+// 	phone?: string;
+// };
+
+// export type User = {
+// 	id: number;
+// 	fullName: string;
+// 	email: string;
+// 	role: UserRole;
+// 	contacts: Contacts;
+// 	companyName?: string;
+// 	isOnline: boolean;
+// };
+
+export type UserRole = "freelancer" | "client";
 
 export type Contacts = {
 	telegram?: string;
 	phone?: string;
 };
 
-export type User = {
+type BaseUser = {
 	id: number;
 	fullName: string;
 	email: string;
-	role: string;
 	contacts: Contacts;
+	isOnline: boolean;
+};
+
+export type FreelancerUser = BaseUser & {
+	role: "freelancer";
+	skills: string[];
+};
+
+export type ClientUser = BaseUser & {
+	role: "client";
 	companyName?: string;
 };
+
+export type User = FreelancerUser | ClientUser;

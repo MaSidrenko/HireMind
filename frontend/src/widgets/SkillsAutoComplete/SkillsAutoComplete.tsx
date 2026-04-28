@@ -1,21 +1,54 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type KeyboardEvent,
+} from "react";
 import "./SkillsAutoComplete.css";
 
 type SkillsAutocompleteProps = {
 	options: string[];
 	maxSelected?: number;
+	value?: string[];
+	defaultValue?: string[];
+	onChange?: (skills: string[]) => void;
+	title?: string;
+	description?: string;
+	placeholder?: string;
+	emptyText?: string;
+	hideHeader?: boolean;
 };
 
 export default function SkillsAutocomplete({
 	options,
 	maxSelected = 10,
+	value,
+	defaultValue = [],
+	onChange,
+	title = "Ваши навыки",
+	description,
+	placeholder = "Начните вводить навык",
+	emptyText = "Ничего не найдено",
+	hideHeader = false,
 }: SkillsAutocompleteProps) {
 	const [query, setQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
 	const [highlightedIndex, setHighlightedIndex] = useState(0);
-	const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+	const [internalSkills, setInternalSkills] = useState<string[]>(defaultValue);
 
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+	const selectedSkills = value ?? internalSkills;
+	const helperText =
+		description ?? `Можно указать до ${maxSelected} специальностей`;
+
+	const updateSkills = (nextSkills: string[]) => {
+		if (value === undefined) {
+			setInternalSkills(nextSkills);
+		}
+
+		onChange?.(nextSkills);
+	};
 
 	const filteredOptions = useMemo(() => {
 		const normalizedQuery = query.trim().toLowerCase();
@@ -53,18 +86,18 @@ export default function SkillsAutocomplete({
 	const handleSelect = (skill: string) => {
 		if (selectedSkills.length >= maxSelected) return;
 
-		setSelectedSkills((prev) => [...prev, skill]);
+		updateSkills([...selectedSkills, skill]);
 		setQuery("");
 		setIsOpen(false);
 	};
 
 	const handleRemove = (skillToRemove: string) => {
-		setSelectedSkills((prev) =>
-			prev.filter((skill) => skill !== skillToRemove),
+		updateSkills(
+			selectedSkills.filter((skill) => skill !== skillToRemove),
 		);
 	};
 
-	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (!isOpen && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
 			setIsOpen(true);
 			return;
@@ -98,14 +131,18 @@ export default function SkillsAutocomplete({
 			query === "" &&
 			selectedSkills.length > 0
 		) {
-			setSelectedSkills((prev) => prev.slice(0, -1));
+			updateSkills(selectedSkills.slice(0, -1));
 		}
 	};
 
 	return (
 		<div className="skills-box">
-			<h2>Ваши навыки</h2>
-			<p>Можно указать до {maxSelected} навыков</p>
+			{!hideHeader && (
+				<div className="skills-box__header">
+					<h2>{title}</h2>
+					<p>{helperText}</p>
+				</div>
+			)}
 
 			<div className="selected-skills">
 				{selectedSkills.map((skill) => (
@@ -115,7 +152,8 @@ export default function SkillsAutocomplete({
 						className="skill-tag"
 						onClick={() => handleRemove(skill)}
 					>
-						{skill} ×
+						{skill}
+						<span aria-hidden="true">×</span>
 					</button>
 				))}
 			</div>
@@ -125,7 +163,7 @@ export default function SkillsAutocomplete({
 					<input
 						type="text"
 						value={query}
-						placeholder="Начните вводить навык"
+						placeholder={placeholder}
 						onChange={(e) => {
 							setQuery(e.target.value);
 							setIsOpen(true);
@@ -134,7 +172,9 @@ export default function SkillsAutocomplete({
 						onKeyDown={handleKeyDown}
 						disabled={selectedSkills.length >= maxSelected}
 					/>
-					<span className="search-icon">⌕</span>
+					<span className="search-icon" aria-hidden="true">
+						⌕
+					</span>
 				</div>
 
 				{isOpen && filteredOptions.length > 0 && (
@@ -154,7 +194,9 @@ export default function SkillsAutocomplete({
 				)}
 
 				{isOpen && query.trim() !== "" && filteredOptions.length === 0 && (
-					<div className="dropdown empty">Ничего не найдено</div>
+					<div className="dropdown-skills dropdown-skills--empty">
+						{emptyText}
+					</div>
 				)}
 			</div>
 		</div>
