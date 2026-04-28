@@ -19,7 +19,10 @@ describe("SkillsAutocomplete", () => {
 		render(<SkillsAutocomplete options={skills} />);
 
 		expect(screen.getByText("Ваши навыки")).toBeInTheDocument();
-		expect(screen.getByText("Можно указать до 10 навыков")).toBeInTheDocument();
+		expect(
+			screen.getByText("Можно указать до 10 специальностей"),
+		).toBeInTheDocument();
+
 		expect(
 			screen.getByPlaceholderText("Начните вводить навык"),
 		).toBeInTheDocument();
@@ -30,11 +33,16 @@ describe("SkillsAutocomplete", () => {
 		render(<SkillsAutocomplete options={skills} />);
 
 		const input = screen.getByPlaceholderText("Начните вводить навык");
+
 		await user.click(input);
 
-		expect(screen.getByText("React")).toBeInTheDocument();
-		expect(screen.getByText("TypeScript")).toBeInTheDocument();
-		expect(screen.getByText("JavaScript")).toBeInTheDocument();
+		expect(screen.getByRole("option", { name: "React" })).toBeInTheDocument();
+		expect(
+			screen.getByRole("option", { name: "TypeScript" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("option", { name: "JavaScript" }),
+		).toBeInTheDocument();
 	});
 
 	it("filters options by typed query", async () => {
@@ -42,11 +50,18 @@ describe("SkillsAutocomplete", () => {
 		render(<SkillsAutocomplete options={skills} />);
 
 		const input = screen.getByPlaceholderText("Начните вводить навык");
+
 		await user.type(input, "rea");
 
-		expect(screen.getByText("React")).toBeInTheDocument();
-		expect(screen.queryByText("TypeScript")).not.toBeInTheDocument();
-		expect(screen.queryByText("JavaScript")).not.toBeInTheDocument();
+		expect(screen.getByRole("option", { name: "React" })).toBeInTheDocument();
+
+		expect(
+			screen.queryByRole("option", { name: "TypeScript" }),
+		).not.toBeInTheDocument();
+
+		expect(
+			screen.queryByRole("option", { name: "JavaScript" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("selects skill by click and clears input", async () => {
@@ -58,11 +73,16 @@ describe("SkillsAutocomplete", () => {
 		) as HTMLInputElement;
 
 		await user.click(input);
-		await user.click(screen.getByText("React"));
+		await user.click(screen.getByRole("option", { name: "React" }));
 
-		expect(screen.getByRole("button", { name: /React ×/ })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Удалить навык React" }),
+		).toBeInTheDocument();
+
 		expect(input.value).toBe("");
-		expect(screen.queryByText("React")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("option", { name: "React" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("removes selected skill on tag click", async () => {
@@ -72,15 +92,18 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		await user.click(screen.getByText("React"));
+		await user.click(screen.getByRole("option", { name: "React" }));
 
-		const tag = screen.getByRole("button", { name: /React ×/ });
+		const tag = screen.getByRole("button", {
+			name: "Удалить навык React",
+		});
+
 		expect(tag).toBeInTheDocument();
 
 		await user.click(tag);
 
 		expect(
-			screen.queryByRole("button", { name: /React ×/ }),
+			screen.queryByRole("button", { name: "Удалить навык React" }),
 		).not.toBeInTheDocument();
 	});
 
@@ -91,12 +114,17 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		await user.click(screen.getByText("React"));
+		await user.click(screen.getByRole("option", { name: "React" }));
 
 		await user.click(input);
 
-		const reactOptions = screen.queryAllByText("React");
-		expect(reactOptions).toHaveLength(0);
+		expect(
+			screen.queryByRole("option", { name: "React" }),
+		).not.toBeInTheDocument();
+
+		expect(
+			screen.getByRole("option", { name: "TypeScript" }),
+		).toBeInTheDocument();
 	});
 
 	it("shows empty state when nothing is found", async () => {
@@ -104,6 +132,7 @@ describe("SkillsAutocomplete", () => {
 		render(<SkillsAutocomplete options={skills} />);
 
 		const input = screen.getByPlaceholderText("Начните вводить навык");
+
 		await user.type(input, "Python");
 
 		expect(screen.getByText("Ничего не найдено")).toBeInTheDocument();
@@ -116,10 +145,10 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		await user.click(screen.getByText("React"));
+		await user.click(screen.getByRole("option", { name: "React" }));
 
 		await user.click(input);
-		await user.click(screen.getByText("TypeScript"));
+		await user.click(screen.getByRole("option", { name: "TypeScript" }));
 
 		expect(input).toBeDisabled();
 	});
@@ -131,13 +160,13 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		await user.click(screen.getByText("React"));
+		await user.click(screen.getByRole("option", { name: "React" }));
 
 		await user.click(input);
 		await user.keyboard("{Backspace}");
 
 		expect(
-			screen.queryByRole("button", { name: /React ×/ }),
+			screen.queryByRole("button", { name: "Удалить навык React" }),
 		).not.toBeInTheDocument();
 	});
 
@@ -152,7 +181,7 @@ describe("SkillsAutocomplete", () => {
 		await user.keyboard("{Enter}");
 
 		expect(
-			screen.getByRole("button", { name: /TypeScript ×|React ×/ }),
+			screen.getByRole("button", { name: "Удалить навык TypeScript" }),
 		).toBeInTheDocument();
 	});
 
@@ -163,11 +192,14 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		expect(screen.getByText("React")).toBeInTheDocument();
+
+		expect(screen.getByRole("option", { name: "React" })).toBeInTheDocument();
 
 		await user.keyboard("{Escape}");
 
-		expect(screen.queryByText("React")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("option", { name: "React" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("closes dropdown on outside click", async () => {
@@ -177,10 +209,13 @@ describe("SkillsAutocomplete", () => {
 		const input = screen.getByPlaceholderText("Начните вводить навык");
 
 		await user.click(input);
-		expect(screen.getByText("React")).toBeInTheDocument();
+
+		expect(screen.getByRole("option", { name: "React" })).toBeInTheDocument();
 
 		fireEvent.mouseDown(document.body);
 
-		expect(screen.queryByText("React")).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("option", { name: "React" }),
+		).not.toBeInTheDocument();
 	});
 });

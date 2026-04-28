@@ -35,7 +35,8 @@ export default function SkillsAutocomplete({
 	const [query, setQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
 	const [highlightedIndex, setHighlightedIndex] = useState(0);
-	const [internalSkills, setInternalSkills] = useState<string[]>(defaultValue);
+	const [internalSkills, setInternalSkills] =
+		useState<string[]>(defaultValue);
 
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
 	const selectedSkills = value ?? internalSkills;
@@ -92,9 +93,7 @@ export default function SkillsAutocomplete({
 	};
 
 	const handleRemove = (skillToRemove: string) => {
-		updateSkills(
-			selectedSkills.filter((skill) => skill !== skillToRemove),
-		);
+		updateSkills(selectedSkills.filter((skill) => skill !== skillToRemove));
 	};
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -151,6 +150,7 @@ export default function SkillsAutocomplete({
 						type="button"
 						className="skill-tag"
 						onClick={() => handleRemove(skill)}
+						aria-label={`Удалить навык ${skill}`}
 					>
 						{skill}
 						<span aria-hidden="true">×</span>
@@ -171,6 +171,8 @@ export default function SkillsAutocomplete({
 						onFocus={() => setIsOpen(true)}
 						onKeyDown={handleKeyDown}
 						disabled={selectedSkills.length >= maxSelected}
+						aria-autocomplete="list"
+						aria-expanded={isOpen}
 					/>
 					<span className="search-icon" aria-hidden="true">
 						⌕
@@ -182,6 +184,7 @@ export default function SkillsAutocomplete({
 						{filteredOptions.map((option, index) => (
 							<li
 								key={option}
+								role="option"
 								className={
 									index === highlightedIndex ? "active" : ""
 								}
@@ -193,11 +196,13 @@ export default function SkillsAutocomplete({
 					</ul>
 				)}
 
-				{isOpen && query.trim() !== "" && filteredOptions.length === 0 && (
-					<div className="dropdown-skills dropdown-skills--empty">
-						{emptyText}
-					</div>
-				)}
+				{isOpen &&
+					query.trim() !== "" &&
+					filteredOptions.length === 0 && (
+						<div className="dropdown-skills dropdown-skills--empty">
+							{emptyText}
+						</div>
+					)}
 			</div>
 		</div>
 	);
