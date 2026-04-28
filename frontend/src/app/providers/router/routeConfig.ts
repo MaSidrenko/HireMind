@@ -27,6 +27,6 @@ export const PageRoutes: AppPage[] = [
 		label: "Профиль",
 		component: Profile,
 		showInNavbar: true,
-		access: "private",
+		access: "public",
 	},
 ];
