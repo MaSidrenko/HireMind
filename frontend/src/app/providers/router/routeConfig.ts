@@ -1,5 +1,5 @@
 import type { AppPage } from "@/shared";
-import { HomePage, SignUp, SignIn, Profile } from "@/pages/index";
+import { HomePage, SignUp, SignIn, Profile, Projects } from "@/pages/index";
 export const PageRoutes: AppPage[] = [
 	{
 		path: "/",
@@ -27,6 +27,13 @@ export const PageRoutes: AppPage[] = [
 		label: "Профиль",
 		component: Profile,
 		showInNavbar: true,
-		access: "public",
+		access: "private",
 	},
+	{
+		path:"/projects",
+		label: "Проекты",
+		component: Projects,
+		showInNavbar: true,
+		access: "public"
+	}
 ];

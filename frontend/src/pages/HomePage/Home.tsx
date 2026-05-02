@@ -74,6 +74,7 @@ export default function Home() {
 									to="/projects"
 									key={idx}
 									className="category-card"
+									state={{ chosenCategory: cat.name }}
 								>
 									<span className="category-icon">
 										{cat.icon}

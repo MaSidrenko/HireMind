@@ -66,6 +66,7 @@ export default function Profile() {
 			setSelectedSkills([]);
 		}
 	}, [user]);
+	
 	if (!user) {
 		return null;
 	}
