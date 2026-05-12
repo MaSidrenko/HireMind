@@ -2,8 +2,12 @@ import ContextStripMenu from "@/widgets/contextStripMenu/contextStripMenu";
 import "./SignUp.css";
 import React, { useState } from "react";
 import { validateSignUp, type SignUpForm } from "./lib/validateSignUp";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/features";
 
 export default function SignUp() {
+	const navigate = useNavigate();
+	const { signUpLocal } = useAuth();
 	const [form, setForm] = useState<SignUpForm>({
 		lastName: "",
 		firstName: "",
@@ -20,6 +24,8 @@ export default function SignUp() {
 	const [errors, setErrors] = useState<
 		Partial<Record<keyof SignUpForm, string>>
 	>({});
+	const [formError, setFormError] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const { name, value } = e.target;
@@ -35,7 +41,7 @@ export default function SignUp() {
 		}));
 	}
 
-	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
 		const validationErrors = validateSignUp(form);
@@ -45,7 +51,31 @@ export default function SignUp() {
 			return;
 		}
 
-		console.log("Form valid: ", form);
+		setIsSubmitting(true);
+		setFormError("");
+
+		try {
+			await signUpLocal({
+				fullName: `${form.lastName} ${form.firstName} ${form.middleName}`.trim(),
+				email: form.email,
+				password: form.password,
+				role: form.role === "Заказчик" ? "client" : "freelancer",
+				companyName: form.company,
+				contacts: {
+					telegram: form.telegram,
+					phone: form.phone,
+				},
+			});
+			navigate(form.role === "Заказчик" ? "/projects/new" : "/projects");
+		} catch (error) {
+			setFormError(
+				error instanceof Error
+					? error.message
+					: "Не удалось зарегистрироваться",
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
 	}
 
 	return (
@@ -191,7 +221,7 @@ export default function SignUp() {
 					</label>
 				)}
 				<label htmlFor="Contacts">
-					Контакты
+					Контакты*
 					<input
 						name="telegram"
 						type="text"
@@ -216,9 +246,11 @@ export default function SignUp() {
 				</label>
 				<input
 					type="submit"
-					value="Зарегистрироваться"
+					value={isSubmitting ? "Создаём аккаунт..." : "Зарегистрироваться"}
 					className="input-sign-up"
+					disabled={isSubmitting}
 				/>
+				{formError && <span className="field-error">{formError}</span>}
 			</form>
 		</div>
 	);

@@ -1,6 +1,6 @@
 import { Navbar } from "@/widgets";
 import { Footer } from "@/widgets";
-import { Contacts, AboutUs, Projects } from "@/pages";
+import { Contacts, AboutUs, Projects, ProjectDetails } from "@/pages";
 import "./App.css";
 import { PageRoutes } from "./providers/router/routeConfig";
 import { Route, Routes } from "react-router-dom";
@@ -31,6 +31,7 @@ function App() {
 				<Route path="/contacts" element={<Contacts />} />
 				<Route path="/about" element={<AboutUs />} />
 				<Route path="/projects" element={<Projects />} />
+				<Route path="/projects/:projectId" element={<ProjectDetails />}/>
 			</Routes>
 			<Footer></Footer>
 		</div>

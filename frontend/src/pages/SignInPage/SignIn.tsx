@@ -2,17 +2,22 @@ import type React from "react";
 import "./SignIn.css";
 import { useState } from "react";
 import { type SignInForm, validateSignIn } from "./lib/validateSignIn";
-import type { SignUpForm } from "../SignUpPage/lib/validateSignUp";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/features";
 
 export default function SignIn() {
+	const navigate = useNavigate();
+	const { signInLocal } = useAuth();
 	const [form, setForm] = useState<SignInForm>({
 		email: "",
 		password: "",
 	});
 
 	const [errors, setErrors] = useState<
-		Partial<Record<keyof SignUpForm, string>>
+		Partial<Record<keyof SignInForm, string>>
 	>({});
+	const [formError, setFormError] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const { name, value } = e.target;
@@ -28,7 +33,7 @@ export default function SignIn() {
 		}));
 	}
 
-	function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+	async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
 		const validationErrors = validateSignIn(form);
@@ -38,7 +43,19 @@ export default function SignIn() {
 			return;
 		}
 
-		console.log("Form valid:", form);
+		setIsSubmitting(true);
+		setFormError("");
+
+		try {
+			await signInLocal(form.email, form.password);
+			navigate("/profile");
+		} catch (error) {
+			setFormError(
+				error instanceof Error ? error.message : "Не удалось войти",
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
 	}
 
 	return (
@@ -79,9 +96,13 @@ export default function SignIn() {
 					</label>
 					<input
 						type="submit"
-						value="Войти"
+						value={isSubmitting ? "Входим..." : "Войти"}
 						className="input-sign-in"
+						disabled={isSubmitting}
 					/>
+					{formError && (
+						<span className="field-error">{formError}</span>
+					)}
 				</div>
 			</form>
 		</div>

@@ -4,4 +4,6 @@ export { SignIn } from "./SignInPage";
 export { Contacts } from "./ContactsPage";
 export { AboutUs } from "./AboutUsPage";
 export { Projects } from "./ProjectsPage";
+export { ProjectDetails} from "./ProjectsPage";
 export { Profile } from "./ProfilePage";
+export { CreateProject } from "./ProjectsPage";

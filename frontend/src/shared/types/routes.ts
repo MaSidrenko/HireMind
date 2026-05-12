@@ -5,6 +5,6 @@ export type AppPage = {
 	label: string;
 	component: ComponentType;
 	showInNavbar?: boolean;
-	access?: "public" | "private" | "guest";
+	access?: "public" | "private" | "guest" | "client" | "freelancer";
 };
 
