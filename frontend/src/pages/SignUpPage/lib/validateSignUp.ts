@@ -52,5 +52,9 @@ export function validateSignUp(form: SignUpForm): SignUpErrors {
 		errors.phone = "Введите корректный номер телефона";
 	}
 
+	if(!form.telegram?.trim() && !form.phone?.trim()) {
+		errors.telegram = "Укажите Telegram или телефон";
+	}
+
 	return errors;
 }

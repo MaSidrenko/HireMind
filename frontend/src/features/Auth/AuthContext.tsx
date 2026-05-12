@@ -7,6 +7,7 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
+import { apiRequest } from "@/shared";
 import { getMe } from "./getMe";
 import type { User } from "./getMe.types";
 
@@ -15,36 +16,102 @@ type AuthContextType = {
 	isAuthenticated: boolean;
 	loading: boolean;
 	refreshAuth: () => Promise<void>;
+	signInLocal: (email: string, password: string) => Promise<void>;
+	signUpLocal: (payload: SignUpPayload) => Promise<void>;
+	updateProfileLocal: (patch: ProfilePatch) => Promise<void>;
 	logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+type SignUpPayload = {
+	fullName: string;
+	email: string;
+	password: string;
+	role: "freelancer" | "client";
+	contacts: {
+		telegram?: string;
+		phone?: string;
+	};
+	companyName?: string;
+};
 
-export function AuthProvider({ children }: { children : ReactNode }) {
+type ProfilePatch = {
+	fullName: string;
+	contacts: {
+		telegram?: string;
+		phone?: string;
+	};
+	avatarUrl?: string;
+	companyName?: string;
+	skills?: string[];
+};
+
+type AuthResponse = User | { user: User };
+
+function unwrapUser(response: AuthResponse | null) {
+	if (!response) return null;
+	if ("user" in response) return response.user;
+	return response;
+}
+
+function ensureContact(contacts: { telegram?: string; phone?: string }) {
+	if (!contacts.telegram?.trim() && !contacts.phone?.trim()) {
+		throw new Error("Укажите Telegram или телефон");
+	}
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
 	const [user, setUser] = useState<User | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	const refreshAuth = useCallback(async () => {
 		try {
 			setLoading(true);
-			const me = await getMe();
-			setUser(me);
+			setUser(await getMe());
 		} catch (error) {
 			console.error("Auth check failed: ", error);
+			setUser(null);
 		} finally {
 			setLoading(false);
 		}
 	}, []);
 
+	const signInLocal = useCallback(async (email: string, password: string) => {
+		const response = await apiRequest<AuthResponse>("/api/auth/sign-in", {
+			method: "POST",
+			body: { email, login: email, password },
+		});
+		const nextUser = unwrapUser(response) ?? await getMe();
+		setUser(nextUser);
+	}, []);
+
+	const signUpLocal = useCallback(async (payload: SignUpPayload) => {
+		ensureContact(payload.contacts);
+		const response = await apiRequest<AuthResponse>("/api/auth/sign-up", {
+			method: "POST",
+			body: {
+				...payload,
+				username: payload.fullName,
+			},
+		});
+		const nextUser = unwrapUser(response) ?? await getMe();
+		setUser(nextUser);
+	}, []);
+
+	const updateProfileLocal = useCallback(async (patch: ProfilePatch) => {
+		ensureContact(patch.contacts);
+		const response = await apiRequest<AuthResponse>("/api/profile", {
+			method: "PUT",
+			body: patch,
+		});
+		const nextUser = unwrapUser(response) ?? await getMe();
+		setUser(nextUser);
+	}, []);
+
 	const logout = useCallback(async () => {
 		try {
-			await fetch(`${API_BASE_URL}/api/auth/logout`, {
-				method: "POST",
-				credentials: "include",
-			});
+			await apiRequest<null>("/api/auth/logout", { method: "POST" });
 		} catch (error) {
 			console.error("Logout error: ", error);
 		} finally {
@@ -62,18 +129,21 @@ export function AuthProvider({ children }: { children : ReactNode }) {
 			isAuthenticated: !!user,
 			loading,
 			refreshAuth,
+			signInLocal,
+			signUpLocal,
+			updateProfileLocal,
 			logout,
 		}),
-		[user, loading, refreshAuth, logout],
+		[user, loading, refreshAuth, signInLocal, signUpLocal, updateProfileLocal, logout],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function  useAuth() {
+export function useAuth() {
 	const context = useContext(AuthContext);
 
-	if(!context) {
+	if (!context) {
 		throw new Error("useAuth must be used inside AuthProvider");
 	}
 

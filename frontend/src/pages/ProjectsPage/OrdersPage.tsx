@@ -1,0 +1,99 @@
+import { useMemo, useState } from "react";
+import { useAuth } from "@/features";
+import { type OrderStatus, type ProjectOrder } from "@/features/projects/types";
+import { OrderCard } from "./components/OrderCard";
+import { EmptyState } from "./components/EmptyState";
+
+type SortMode = "none" | "priceAsc" | "priceDesc" | "newest";
+
+type OrdersPageProps = {
+	orders: ProjectOrder[];
+	loading: boolean;
+	error?: string;
+	onCreate: () => void;
+	onOpen: (id: number) => void;
+};
+
+export default function OrdersPage({ orders, loading, error, onCreate, onOpen }: OrdersPageProps) {
+	const { user } = useAuth();
+	const [status, setStatus] = useState<"all" | OrderStatus>("all");
+	const [query, setQuery] = useState("");
+	const [priceFrom, setPriceFrom] = useState("");
+	const [priceTo, setPriceTo] = useState("");
+	const [sort, setSort] = useState<SortMode>("none");
+	const canCreate = user?.role === "client";
+
+	const filteredOrders = useMemo(() => {
+		const from = Number(priceFrom) || 0;
+		const to = Number(priceTo) || Infinity;
+		const normalizedQuery = query.trim().toLowerCase();
+		const result = orders.filter((order) => {
+			const matchesStatus = status === "all" || order.status === status;
+			const matchesQuery = !normalizedQuery || order.title.toLowerCase().includes(normalizedQuery);
+			return matchesStatus && matchesQuery && order.budgetMax >= from && order.budgetMin <= to;
+		});
+
+		return [...result].sort((a, b) => {
+			if (sort === "priceAsc") return a.budgetMin - b.budgetMin;
+			if (sort === "priceDesc") return b.budgetMax - a.budgetMax;
+			if (sort === "newest") return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+			return 0;
+		});
+	}, [orders, priceFrom, priceTo, query, sort, status]);
+
+	const reset = () => {
+		setStatus("all");
+		setQuery("");
+		setPriceFrom("");
+		setPriceTo("");
+		setSort("none");
+	};
+
+	return (
+		<main className="orders-page orders-page--flat">
+			<h1 className="orders-title">Заказы</h1>
+			<section className="orders-filterbar">
+				<select value={status} onChange={(event) => setStatus(event.target.value as "all" | OrderStatus)}>
+					<option value="all">Все проекты</option>
+					<option value="draft">Черновики</option>
+					<option value="published">Опубликованные</option>
+					<option value="paused">На паузе</option>
+					<option value="in_progress">В работе</option>
+					<option value="completed">Завершённые</option>
+					<option value="archived">Архив</option>
+				</select>
+				<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Название заказа" />
+				<input value={priceFrom} onChange={(event) => setPriceFrom(event.target.value)} placeholder="Цена от" inputMode="numeric" />
+				<input value={priceTo} onChange={(event) => setPriceTo(event.target.value)} placeholder="Цена до" inputMode="numeric" />
+				<select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
+					<option value="none">Без сортировки</option>
+					<option value="priceAsc">Цена по возрастанию</option>
+					<option value="priceDesc">Цена по убыванию</option>
+					<option value="newest">Сначала новые</option>
+				</select>
+				<button type="button" className="hm-button hm-button--ghost" onClick={reset}>Сбросить</button>
+				{canCreate ? (
+					<button type="button" className="hm-button hm-button--ghost orders-create-button" onClick={onCreate}>
+						Создать заказ
+					</button>
+				) : null}
+			</section>
+
+			{loading ? <h2 className="orders-loading">Загрузка проектов...</h2> : null}
+			{error ? <p className="form-error">{error}</p> : null}
+			{!loading && filteredOrders.length === 0 ? (
+				<EmptyState
+					title="Заказы не найдены"
+					text="Попробуйте изменить фильтры или вернуться к списку позже."
+					action={canCreate ? "Создать заказ" : undefined}
+					onAction={canCreate ? onCreate : undefined}
+				/>
+			) : null}
+			<div className="orders-list">
+				{filteredOrders.map((order) => (
+					<OrderCard key={order.id} order={order} onOpen={onOpen} />
+				))}
+			</div>
+		</main>
+	);
+}

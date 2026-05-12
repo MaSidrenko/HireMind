@@ -1,5 +1,5 @@
 import type { AppPage } from "@/shared";
-import { HomePage, SignUp, SignIn, Profile, Projects } from "@/pages/index";
+import { HomePage, SignUp, SignIn, Profile, Projects, CreateProject } from "@/pages/index";
 export const PageRoutes: AppPage[] = [
 	{
 		path: "/",
@@ -30,10 +30,38 @@ export const PageRoutes: AppPage[] = [
 		access: "private",
 	},
 	{
+		path: "/projects/new",
+		label: "Новый заказ",
+		component: Projects,
+		showInNavbar: false,
+		access: "client",
+	},
+	{
+		path: "/projects/:projectId",
+		label: "Заказ",
+		component: Projects,
+		showInNavbar: false,
+		access: "private",
+	},
+	// {
+	// 	path: "/freelancers",
+	// 	label: "Фрилансеры",
+	// 	component: Freelancers,
+	// 	showInNavbar: true,
+	// 	access: "client",
+	// },
+	{
 		path:"/projects",
-		label: "Проекты",
+		label: "Заказы",
 		component: Projects,
 		showInNavbar: true,
+		access: "public"
+	},
+	{
+		path: "/create-project",
+		label: "Создать проект",
+		component: CreateProject,
+		showInNavbar: false,
 		access: "public"
 	}
 ];

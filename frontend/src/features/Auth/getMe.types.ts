@@ -28,6 +28,7 @@ type BaseUser = {
 	email: string;
 	contacts: Contacts;
 	isOnline: boolean;
+	avatarUrl?: string;
 };
 
 export type FreelancerUser = BaseUser & {

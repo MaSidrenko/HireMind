@@ -15,6 +15,14 @@ export function renderRoutes(pages: AppPage[]) {
 			)
 		}
 
+		if(access === "client" || access === "freelancer") {
+			element = (
+				<ProtectedRoute allowedRole={access}>
+					<Component />
+				</ProtectedRoute>
+			)
+		}
+
 		if(access === "guest") {
 			element = (
 				<GuestRoute>
