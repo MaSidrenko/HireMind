@@ -9,7 +9,8 @@ import {
 } from "react";
 import { apiRequest } from "@/shared";
 import { signInRequest } from "@/features/SignIn";
-import { signUpRequest, type SignUpPayload } from "@/features/SignUp";
+import { signUpRequest } from "@/features/SignUp";
+import type { SignUpPayload } from "@/features/SignUp"
 import { getMe } from "./getMe";
 import type { User } from "./getMe.types";
 

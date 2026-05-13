@@ -46,4 +46,4 @@ export async function signUpRequest(payload: SignUpPayload) {
 	}
 }
 
-export { signUpRequest as SignUpRequest };
+

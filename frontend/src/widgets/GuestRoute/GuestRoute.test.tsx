@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { useAuth } from "@/features/Auth/AuthContext";
+import { useAuth } from "../../features/Auth/AuthContext";
 import GuestRoute from "../GuestRoute/GuestRoute";
 
 
@@ -12,19 +12,31 @@ vi.mock("@/features/Auth/AuthContext", () => ({
 
 const mockedUseAuth = vi.mocked(useAuth);
 
+function makeAuthState(
+	overrides: Partial<ReturnType<typeof useAuth>>,
+): ReturnType<typeof useAuth> {
+	return {
+		user: null,
+		isAuthenticated: false,
+		loading: false,
+		refreshAuth: vi.fn(),
+		signIn: vi.fn(),
+		signUp: vi.fn(),
+		updateProfile: vi.fn(),
+		logout: vi.fn(),
+		...overrides,
+	};
+}
+
 describe("GuestRoute", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it("Show loading, if auth checking", () => {
-		mockedUseAuth.mockReturnValue({
-			isAuthenticated: false,
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			loading: true,
-			user: null,
-			login: vi.fn(),
-			logout: vi.fn()
-		} as any);
+		}));
 
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>
@@ -41,18 +53,18 @@ describe("GuestRoute", () => {
 			</MemoryRouter>
 		);
 
-		expect(screen.getByText("Загрузка....")).toBeInTheDocument();
+		expect(screen.getByText("Загрузка")).toBeInTheDocument();
+		expect(
+			screen.getByText("Проверяем, есть ли активная сессия."),
+		).toBeInTheDocument();
 		expect(screen.queryByText("Guest page")).not.toBeInTheDocument();
 	});
 
 	it("render on children, if user not auth", () => {
-		mockedUseAuth.mockReturnValue({
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			isAuthenticated: false,
 			loading: false,
-			user: null,
-			login: vi.fn(),
-			logout: vi.fn(),
-		} as any);
+		}));
 
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>
@@ -73,13 +85,18 @@ describe("GuestRoute", () => {
 	});
 
 	it("redirect on /profile, if user auth", () => {
-		mockedUseAuth.mockReturnValue({
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			isAuthenticated: true,
 			loading: false,
-			user: { id: 1, name: "Test User" },
-			login: vi.fn(),
-			logout: vi.fn(),
-		} as any);
+			user: {
+				id: 1,
+				fullName: "Test User",
+				email: "test@example.com",
+				role: "client",
+				contacts: {},
+				isOnline: true,
+			},
+		}));
 
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>

@@ -16,7 +16,7 @@ const validForm: SignUpForm = {
 	confirmPassword: "Password1!",
 	role: "Фрилансер",
 	company: "",
-	telegram: "",
+	telegram: "@ivan",
 	phone: "",
 };
 
