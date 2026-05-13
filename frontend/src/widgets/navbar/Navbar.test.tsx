@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import Navbar from "./Navbar";
-import type { AppPage } from "@/shared";
+import type { AppPage } from "../../shared";
 
 const MockComponent = () => <div>Mock component</div>;
 

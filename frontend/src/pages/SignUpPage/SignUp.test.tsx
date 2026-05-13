@@ -1,8 +1,14 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { useAuth } from "../../features";
 import SignUp from "./SignUp";
+
+vi.mock("@/features", () => ({
+	useAuth: vi.fn(),
+}));
 
 vi.mock("@/widgets/contextStripMenu/contextStripMenu", () => ({
 	default: ({
@@ -36,9 +42,37 @@ afterEach(() => {
 	vi.resetAllMocks();
 });
 
+const mockedUseAuth = vi.mocked(useAuth);
+const signUpMock = vi.fn();
+
+function renderSignUp() {
+	return render(
+		<MemoryRouter initialEntries={["/sign-up"]}>
+			<Routes>
+				<Route path="/sign-up" element={<SignUp />} />
+				<Route path="/projects" element={<div>Projects page</div>} />
+			</Routes>
+		</MemoryRouter>,
+	);
+}
+
 describe("SignUp", () => {
+	beforeEach(() => {
+		signUpMock.mockResolvedValue(undefined);
+		mockedUseAuth.mockReturnValue({
+			user: null,
+			isAuthenticated: false,
+			loading: false,
+			refreshAuth: vi.fn(),
+			signIn: vi.fn(),
+			signUp: signUpMock,
+			updateProfile: vi.fn(),
+			logout: vi.fn(),
+		} as ReturnType<typeof useAuth>);
+	});
+
 	it("Render basic forms", () => {
-		render(<SignUp />);
+		renderSignUp();
 
 		expect(
 			screen.getByRole("heading", { name: "Регистрация" }),
@@ -88,7 +122,7 @@ describe("SignUp", () => {
 	it("Show company field when user role is 'Заказчик'", async () => {
 		const user = userEvent.setup();
 
-		render(<SignUp />);
+		renderSignUp();
 
 		await user.click(screen.getByRole("button", { name: "Заказчик" }));
 		expect(
@@ -98,7 +132,7 @@ describe("SignUp", () => {
 
 	it("Hide company field when user role is 'Фрилансер'", async () => {
 		const user = userEvent.setup();
-		render(<SignUp />);
+		renderSignUp();
 
 		await user.click(screen.getByRole("button", { name: "Заказчик" }));
 		expect(
@@ -114,11 +148,8 @@ describe("SignUp", () => {
 
 	it("call submit form", async () => {
 		const user = userEvent.setup();
-		const consoleSpy = vi
-			.spyOn(console, "log")
-			.mockImplementation(() => {});
 
-		render(<SignUp />);
+		renderSignUp();
 
 		await user.type(
 			screen.getByPlaceholderText("Введите вашу фамилию"),
@@ -160,19 +191,20 @@ describe("SignUp", () => {
 
 		await user.click(screen.getByDisplayValue("Зарегистрироваться"));
 
-		expect(consoleSpy).toHaveBeenCalledWith("Form valid: ", {
-			lastName: "Иванов",
-			firstName: "Иван",
-			middleName: "Иванович",
-			email: "ivan@example.com",
-			password: "Password123!",
-			confirmPassword: "Password123!",
-			role: "Фрилансер",
-			company: "",
-			telegram: "@ivan",
-			phone: "+79991234567",
+		await waitFor(() => {
+			expect(signUpMock).toHaveBeenCalledWith({
+				fullName: "Иванов Иван Иванович",
+				email: "ivan@example.com",
+				password: "Password123!",
+				role: "freelancer",
+				companyName: "",
+				contacts: {
+					telegram: "@ivan",
+					phone: "+79991234567",
+				},
+			});
 		});
 
-		expect(consoleSpy).toHaveBeenCalledTimes(1);
+		expect(screen.getByText("Projects page")).toBeInTheDocument();
 	});
 });

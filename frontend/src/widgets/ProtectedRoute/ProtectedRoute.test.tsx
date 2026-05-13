@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { useAuth } from "@/features/Auth/AuthContext";
+import { useAuth } from "../../features/Auth/AuthContext";
 import ProtectedRoute from "../ProtectedRoute/ProtectedRoute";
 
 vi.mock("@/features/Auth/AuthContext", () => ({
@@ -11,19 +11,31 @@ vi.mock("@/features/Auth/AuthContext", () => ({
 
 const mockedUseAuth = vi.mocked(useAuth);
 
+function makeAuthState(
+	overrides: Partial<ReturnType<typeof useAuth>>,
+): ReturnType<typeof useAuth> {
+	return {
+		user: null,
+		isAuthenticated: false,
+		loading: false,
+		refreshAuth: vi.fn(),
+		signIn: vi.fn(),
+		signUp: vi.fn(),
+		updateProfile: vi.fn(),
+		logout: vi.fn(),
+		...overrides,
+	};
+}
+
 describe("ProtectedRoute", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it("Show loading, if auth checking", () => {
-		mockedUseAuth.mockReturnValue({
-			isAuthenticated: false,
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			loading: true,
-			user: null,
-			login: vi.fn(),
-			logout: vi.fn(),
-		} as any);
+		}));
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>
 				<Routes>
@@ -39,19 +51,19 @@ describe("ProtectedRoute", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.getByText("Проверка авторизации...."),
+			screen.getByText("Проверяем доступ"),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText("Сверяем роль и состояние авторизации."),
 		).toBeInTheDocument();
 		expect(screen.queryByText("Protected page")).not.toBeInTheDocument();
 	});
 
 	it("redirect on /sign-in, if user not auth", () => {
-		mockedUseAuth.mockReturnValue({
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			isAuthenticated: false,
 			loading: false,
-			user: null,
-			login: vi.fn(),
-			logout: vi.fn(),
-		} as any);
+		}));
 
 		render(
 			<MemoryRouter initialEntries={["/profile"]}>
@@ -74,13 +86,18 @@ describe("ProtectedRoute", () => {
 	});
 
 	it("render children, if user auth", () => {
-		mockedUseAuth.mockReturnValue({
+		mockedUseAuth.mockReturnValue(makeAuthState({
 			isAuthenticated: true,
 			loading: false,
-			user: { id: 1, name: "Test User" },
-			login: vi.fn(),
-			logout: vi.fn(),
-		} as any);
+			user: {
+				id: 1,
+				fullName: "Test User",
+				email: "test@example.com",
+				role: "client",
+				contacts: {},
+				isOnline: true,
+			},
+		}));
 
 		render(
 			<MemoryRouter initialEntries={["/sign-in"]}>

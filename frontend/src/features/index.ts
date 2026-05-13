@@ -9,7 +9,6 @@ export {
 	type AiBriefResult,
 	type AiMessage,
 } from "./aiAssistant";
-export { getProjectById, getProject } from "./getProjects";
 export {
 	statusLabels,
 	workflowLabels,

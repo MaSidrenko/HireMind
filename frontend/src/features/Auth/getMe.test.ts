@@ -24,20 +24,19 @@ describe("getMe", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: true,
 			status: 200,
-			json: vi.fn().mockResolvedValue(mockUser),
+			text: vi.fn().mockResolvedValue(JSON.stringify(mockUser)),
 		} as unknown as Response);
 
 		const result = await getMe();
 
 		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-		expect(globalThis.fetch).toHaveBeenCalledWith(
-			expect.stringContaining("/api/auth/me"),
-			{
-				method: "GET",
-				credentials: "include",
-				signal: undefined,
-			},
-		);
+		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+		expect(url).toEqual(expect.stringContaining("/api/auth/me"));
+		expect(init).toMatchObject({
+			method: "GET",
+			credentials: "include",
+			signal: undefined,
+		});
 		expect(result).toEqual(mockUser);
 	});
 
@@ -45,7 +44,7 @@ describe("getMe", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			status: 401,
-			json: vi.fn(),
+			text: vi.fn().mockResolvedValue(""),
 		} as unknown as Response);
 
 		const result = await getMe();
@@ -57,7 +56,7 @@ describe("getMe", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			status: 500,
-			json: vi.fn(),
+			text: vi.fn().mockResolvedValue(""),
 		} as unknown as Response);
 
 		await expect(getMe()).rejects.toThrow("Failed to fetch user");
@@ -69,18 +68,16 @@ describe("getMe", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			status: 401,
-			json: vi.fn(),
+			text: vi.fn().mockResolvedValue(""),
 		} as unknown as Response);
 
 		await getMe(controller.signal);
 
-		expect(globalThis.fetch).toHaveBeenCalledWith(
-			expect.stringContaining("/api/auth/me"),
-			{
-				method: "GET",
-				credentials: "include",
-				signal: controller.signal,
-			},
-		);
+		const [, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+		expect(init).toMatchObject({
+			method: "GET",
+			credentials: "include",
+			signal: controller.signal,
+		});
 	});
 });

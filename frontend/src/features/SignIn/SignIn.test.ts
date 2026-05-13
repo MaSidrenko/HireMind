@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { SignInRequest } from "./SignIn";
+import { signInRequest } from "./SignIn";
 
 describe("SignIn api", () => {
 	const originalFetch = globalThis.fetch;
@@ -15,32 +15,39 @@ describe("SignIn api", () => {
 
 	it("sends correct request and returns correct response", async () => {
 		const mockResponse = {
-			success: true,
+			id: 1,
+			email: "test@test.com",
+			fullName: "Test User",
+			role: "freelancer",
+			contacts: {
+				telegram: "@test",
+			},
+			isOnline: true,
+			skills: [],
 		};
 
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: true,
-			json: vi.fn().mockResolvedValue(mockResponse),
+			status: 200,
+			text: vi.fn().mockResolvedValue(JSON.stringify(mockResponse)),
 		} as unknown as Response);
 
-		const result = await SignInRequest("test@test.com", "123456Qw!");
+		const result = await signInRequest("test@test.com", "123456Qw!");
 
 		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-		expect(globalThis.fetch).toHaveBeenCalledWith(
-			expect.stringContaining("/sign-in"),
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
-				},
-				credentials: "include",
-				body: JSON.stringify({
-					login: "test@test.com",
-					password: "123456Qw!",
-				}),
-			},
-		);
+		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+		expect(url).toEqual(expect.stringContaining("/api/auth/sign-in"));
+		expect(init).toMatchObject({
+			method: "POST",
+			credentials: "include",
+			body: JSON.stringify({
+				login: "test@test.com",
+				password: "123456Qw!",
+			}),
+		});
+		const headers = init?.headers as Headers;
+		expect(headers.get("Content-Type")).toBe("application/json");
+		expect(headers.get("Accept")).toBe("application/json");
 
 		expect(result).toEqual(mockResponse);
 	});
@@ -49,11 +56,11 @@ describe("SignIn api", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			status: 500,
-			json: vi.fn(),
+			text: vi.fn().mockResolvedValue(""),
 		} as unknown as Response);
 
 		await expect(
-			SignInRequest("test@test.com", "123456Qw!"),
+			signInRequest("test@test.com", "123456Qw!"),
 		).rejects.toThrow("Не удалось войти. Попробуйте позже");
 	});
 
@@ -61,11 +68,11 @@ describe("SignIn api", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: false,
 			status: 400,
-			json: vi.fn(),
+			text: vi.fn().mockResolvedValue(""),
 		} as unknown as Response);
 
 		await expect(
-			SignInRequest("test@test.com", "123456Qw!"),
+			signInRequest("test@test.com", "123456Qw!"),
 		).rejects.toThrow("Неверный логин или пароль");
 	});
 });

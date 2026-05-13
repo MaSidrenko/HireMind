@@ -1,12 +1,47 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { useAuth } from "../../features/Auth";
 import SignIn from "./SignIn";
 
+vi.mock("@/features/Auth", () => ({
+	useAuth: vi.fn(),
+}));
+
+const mockedUseAuth = vi.mocked(useAuth);
+const signInMock = vi.fn();
+
+function renderSignIn() {
+	return render(
+		<MemoryRouter initialEntries={["/sign-in"]}>
+			<Routes>
+				<Route path="/sign-in" element={<SignIn />} />
+				<Route path="/profile" element={<div>Profile page</div>} />
+			</Routes>
+		</MemoryRouter>,
+	);
+}
+
 describe("SignIn", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		signInMock.mockResolvedValue(undefined);
+		mockedUseAuth.mockReturnValue({
+			user: null,
+			isAuthenticated: false,
+			loading: false,
+			refreshAuth: vi.fn(),
+			signIn: signInMock,
+			signUp: vi.fn(),
+			updateProfile: vi.fn(),
+			logout: vi.fn(),
+		} as ReturnType<typeof useAuth>);
+	});
+
 	it("Render basic forms", () => {
-		render(<SignIn />);
+		renderSignIn();
 
 		expect(
 			screen.getByRole("heading", { name: "Вход" }),
@@ -30,11 +65,7 @@ describe("SignIn", () => {
 	it("call submit form", async () => {
 		const user = userEvent.setup();
 
-		const consoleSpy = vi
-			.spyOn(console, "log")
-			.mockImplementation(() => {});
-
-		render(<SignIn />);
+		renderSignIn();
 
 		await user.type(
 			screen.getByPlaceholderText("Введите ваш email"),
@@ -48,21 +79,23 @@ describe("SignIn", () => {
 
 		await user.click(screen.getByRole("button", { name: "Войти" }));
 
-		expect(consoleSpy).toHaveBeenCalledWith("Form valid:", {
-			email: "test@test.com",
-			password: "Password123!",
+		await waitFor(() => {
+			expect(signInMock).toHaveBeenCalledWith(
+				"test@test.com",
+				"Password123!",
+			);
 		});
-
-		expect(consoleSpy).toHaveBeenCalledTimes(1);
+		expect(screen.getByText("Profile page")).toBeInTheDocument();
 	});
 
 	it("does not submit invalid form", async () => {
 		const user = userEvent.setup();
 
-		render(<SignIn />);
+		renderSignIn();
 
 		await user.click(screen.getByRole("button", { name: "Войти" }));
 
 		expect(screen.getAllByText("Поле обязательно")).toHaveLength(2);
+		expect(signInMock).not.toHaveBeenCalled();
 	});
 });

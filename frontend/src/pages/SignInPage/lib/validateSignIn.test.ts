@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { validateSignIn, type SignInForm } from "./validateSignIn";
-import { isEmailValid, isPasswordValid } from "@/shared";
-import { validateSignUp } from "@/pages/SignUpPage/lib/validateSignUp";
 
 vi.mock("@/shared", () => ({
 	isEmailValid: vi.fn((email: string) => email === "test@example.com"),

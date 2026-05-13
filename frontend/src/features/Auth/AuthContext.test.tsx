@@ -3,12 +3,33 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { getMe } from "./getMe";
+import type { User } from "./getMe.types";
 
 vi.mock("./getMe", () => ({
 	getMe: vi.fn(),
 }));
 
 const mockedGetMe = vi.mocked(getMe);
+
+const clientUser: User = {
+	id: 1,
+	email: "ivan@example.com",
+	fullName: "Иван Иванов",
+	role: "client",
+	contacts: {},
+	isOnline: true,
+	companyName: "HireMind",
+};
+
+const freelancerUser: User = {
+	id: 2,
+	email: "newuser@example.com",
+	fullName: "Новый Пользователь",
+	role: "freelancer",
+	contacts: {},
+	isOnline: true,
+	skills: [],
+};
 
 function TestConsumer() {
 	const { user, isAuthenticated, loading, refreshAuth, logout } = useAuth();
@@ -43,12 +64,7 @@ describe("AuthProvider", () => {
 	});
 
 	it("calls getMe on mount and sets authenticated user", async () => {
-		mockedGetMe.mockResolvedValue({
-			id: 1,
-			email: "ivan@example.com",
-			fullName: "Иван Иванов",
-			role: "customer",
-		} as any);
+		mockedGetMe.mockResolvedValue(clientUser);
 
 		render(
 			<AuthProvider>
@@ -66,7 +82,9 @@ describe("AuthProvider", () => {
 			expect(screen.getByTestId("loading")).toHaveTextContent("false");
 		});
 
-		expect(screen.getByTestId("is-authenticated")).toHaveTextContent("true");
+		expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+			"true",
+		);
 		expect(screen.getByTestId("user-email")).toHaveTextContent(
 			"ivan@example.com",
 		);
@@ -85,7 +103,9 @@ describe("AuthProvider", () => {
 			expect(screen.getByTestId("loading")).toHaveTextContent("false");
 		});
 
-		expect(screen.getByTestId("is-authenticated")).toHaveTextContent("false");
+		expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+			"false",
+		);
 		expect(screen.getByTestId("user-email")).toHaveTextContent("null");
 	});
 
@@ -106,7 +126,9 @@ describe("AuthProvider", () => {
 			expect(screen.getByTestId("loading")).toHaveTextContent("false");
 		});
 
-		expect(screen.getByTestId("is-authenticated")).toHaveTextContent("false");
+		expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+			"false",
+		);
 		expect(screen.getByTestId("user-email")).toHaveTextContent("null");
 		expect(consoleErrorSpy).toHaveBeenCalled();
 
@@ -116,12 +138,7 @@ describe("AuthProvider", () => {
 	it("refreshAuth updates auth state", async () => {
 		mockedGetMe
 			.mockResolvedValueOnce(null)
-			.mockResolvedValueOnce({
-				id: 2,
-				email: "newuser@example.com",
-				fullName: "Новый Пользователь",
-				role: "freelancer",
-			} as any);
+			.mockResolvedValueOnce(freelancerUser);
 
 		render(
 			<AuthProvider>
@@ -133,7 +150,9 @@ describe("AuthProvider", () => {
 			expect(screen.getByTestId("loading")).toHaveTextContent("false");
 		});
 
-		expect(screen.getByTestId("is-authenticated")).toHaveTextContent("false");
+		expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+			"false",
+		);
 		expect(screen.getByTestId("user-email")).toHaveTextContent("null");
 
 		fireEvent.click(screen.getByRole("button", { name: "refresh" }));
@@ -143,7 +162,9 @@ describe("AuthProvider", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByTestId("is-authenticated")).toHaveTextContent("true");
+			expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+				"true",
+			);
 		});
 
 		expect(screen.getByTestId("user-email")).toHaveTextContent(
@@ -152,16 +173,13 @@ describe("AuthProvider", () => {
 	});
 
 	it("logout sends request and clears user", async () => {
-		mockedGetMe.mockResolvedValue({
-			id: 1,
-			email: "ivan@example.com",
-			fullName: "Иван Иванов",
-			role: "customer",
-		} as any);
+		mockedGetMe.mockResolvedValue(clientUser);
 
-		vi.mocked(globalThis.fetch).mockResolvedValue({
-			ok: true,
-		} as Response);
+		vi.mocked(globalThis.fetch).mockResolvedValue(
+			new Response("", {
+				status: 200,
+			}),
+		);
 
 		render(
 			<AuthProvider>
@@ -170,7 +188,9 @@ describe("AuthProvider", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("is-authenticated")).toHaveTextContent("true");
+			expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+				"true",
+			);
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "logout" }));
@@ -179,16 +199,17 @@ describe("AuthProvider", () => {
 			expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 		});
 
-		expect(globalThis.fetch).toHaveBeenCalledWith(
-			expect.stringContaining("/api/auth/logout"),
-			{
-				method: "POST",
-				credentials: "include",
-			},
-		);
+		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+		expect(url).toEqual(expect.stringContaining("/api/auth/logout"));
+		expect(init).toMatchObject({
+			method: "POST",
+			credentials: "include",
+		});
 
 		await waitFor(() => {
-			expect(screen.getByTestId("is-authenticated")).toHaveTextContent("false");
+			expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+				"false",
+			);
 		});
 
 		expect(screen.getByTestId("user-email")).toHaveTextContent("null");
@@ -199,14 +220,11 @@ describe("AuthProvider", () => {
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
 
-		mockedGetMe.mockResolvedValue({
-			id: 1,
-			email: "ivan@example.com",
-			fullName: "Иван Иванов",
-			role: "customer",
-		} as any);
+		mockedGetMe.mockResolvedValue(clientUser);
 
-		vi.mocked(globalThis.fetch).mockRejectedValue(new Error("Logout failed"));
+		vi.mocked(globalThis.fetch).mockRejectedValue(
+			new Error("Logout failed"),
+		);
 
 		render(
 			<AuthProvider>
@@ -215,13 +233,17 @@ describe("AuthProvider", () => {
 		);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("is-authenticated")).toHaveTextContent("true");
+			expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+				"true",
+			);
 		});
 
 		fireEvent.click(screen.getByRole("button", { name: "logout" }));
 
 		await waitFor(() => {
-			expect(screen.getByTestId("is-authenticated")).toHaveTextContent("false");
+			expect(screen.getByTestId("is-authenticated")).toHaveTextContent(
+				"false",
+			);
 		});
 
 		expect(screen.getByTestId("user-email")).toHaveTextContent("null");

@@ -130,8 +130,11 @@ describe("Home", () => {
 
 		expect(
 			screen.getByRole("heading", {
-				name: /Project - Page in development/i,
+				name: /Заказы/i,
 			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("option", { name: "Веб-разработка", selected: true }),
 		).toBeInTheDocument();
 	});
 });
