@@ -303,7 +303,7 @@ async function getProjectsFromBackend({
 	return response.json();
 }
 
-export async function getProjects(
+export async function getProject(
 	params: GetProjectsParams,
 ): Promise<GetProjectsResponse> {
 	if (USE_MOCK_DATA) {

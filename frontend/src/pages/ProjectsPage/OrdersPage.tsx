@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { useAuth } from "@/features";
-import { type OrderStatus, type ProjectOrder } from "@/features/projects/types";
+import { useAuth, type OrderStatus, type ProjectOrder } from "@/features";
 import { OrderCard } from "./components/OrderCard";
 import { EmptyState } from "./components/EmptyState";
 
