@@ -35,21 +35,6 @@ const freelancerSkillsOptions = [
 
 export default function Profile() {
 	const { user, logout } = useAuth();
-	// const { user: authUser, logout } = useAuth();
-	//Тестовые данные.
-	//TODO: НЕ ЗАБУДЬ УДАЛИТЬ!
-	// const user = authUser ?? {
-	// 	id: 1,
-	// 	fullName: "John Doe",
-	// 	email: "john.doe@example.com",
-	// 	role: "freelancer",
-	// 	isOnline: true,
-	// 	contacts: {
-	// 		telegram: "@john_doe",
-	// 		phone: "+792583456789",
-	// 	},
-	// 	skills: [],
-	// };
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 	const [skillsError, setSkillsError] = useState<string | null>(null);
 	const [isSavingSkills, setIsSavingSkills] = useState(false);

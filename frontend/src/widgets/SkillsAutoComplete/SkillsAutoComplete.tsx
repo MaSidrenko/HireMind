@@ -65,10 +65,6 @@ export default function SkillsAutocomplete({
 	}, [options, query, selectedSkills]);
 
 	useEffect(() => {
-		setHighlightedIndex(0);
-	}, [query]);
-
-	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
 				wrapperRef.current &&
@@ -166,6 +162,7 @@ export default function SkillsAutocomplete({
 						placeholder={placeholder}
 						onChange={(e) => {
 							setQuery(e.target.value);
+							setHighlightedIndex(0);
 							setIsOpen(true);
 						}}
 						onFocus={() => setIsOpen(true)}

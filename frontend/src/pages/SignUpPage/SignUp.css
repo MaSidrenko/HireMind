@@ -133,3 +133,39 @@
 	gap: 20px;
 	width: 100%;
 }
+
+@media (max-width: 760px) {
+	.box-sign-up {
+		box-sizing: border-box;
+		width: min(100% - 24px, 100%);
+		margin: 48px auto;
+		padding: 28px 18px;
+	}
+
+	.box-sign-up h1 {
+		font-size: 42px;
+	}
+
+	.box-sign-up p {
+		font-size: 22px;
+	}
+
+	.box-sign-up label {
+		font-size: 22px;
+	}
+
+	.line-form-sign-up {
+		flex-direction: column;
+	}
+
+	.box-sign-up input {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 16px;
+	}
+
+	.box-sign-up label.role-row {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}

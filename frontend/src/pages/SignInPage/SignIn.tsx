@@ -7,7 +7,7 @@ import { useAuth } from "@/features";
 
 export default function SignIn() {
 	const navigate = useNavigate();
-	const { signInLocal } = useAuth();
+	const { signIn } = useAuth();
 	const [form, setForm] = useState<SignInForm>({
 		email: "",
 		password: "",
@@ -47,7 +47,7 @@ export default function SignIn() {
 		setFormError("");
 
 		try {
-			await signInLocal(form.email, form.password);
+			await signIn(form.email, form.password);
 			navigate("/profile");
 		} catch (error) {
 			setFormError(

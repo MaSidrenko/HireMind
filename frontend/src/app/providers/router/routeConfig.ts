@@ -64,18 +64,18 @@ export const PageRoutes: AppPage[] = [
 		showInNavbar: true,
 		access: "public",
 	},
-	{
-		path: "/projects/new",
-		label: "Новый заказ",
-		component: Projects,
-		showInNavbar: false,
-		access: "client",
-	},
-	{
-		path: "/projects/:projectId",
-		label: "Заказ",
-		component: Projects,
-		showInNavbar: false,
-		access: "private",
-	},
+	// {
+	// 	path: "/projects/new",
+	// 	label: "Новый заказ",
+	// 	component: Projects,
+	// 	showInNavbar: false,
+	// 	access: "client",
+	// },
+	// {
+	// 	path: "/projects/:projectId",
+	// 	label: "Заказ",
+	// 	component: Projects,
+	// 	showInNavbar: false,
+	// 	access: "private",
+	// },
 ];

@@ -7,7 +7,7 @@ import { useAuth } from "@/features";
 
 export default function SignUp() {
 	const navigate = useNavigate();
-	const { signUpLocal } = useAuth();
+	const { signUp } = useAuth();
 	const [form, setForm] = useState<SignUpForm>({
 		lastName: "",
 		firstName: "",
@@ -55,7 +55,7 @@ export default function SignUp() {
 		setFormError("");
 
 		try {
-			await signUpLocal({
+			await signUp({
 				fullName: `${form.lastName} ${form.firstName} ${form.middleName}`.trim(),
 				email: form.email,
 				password: form.password,

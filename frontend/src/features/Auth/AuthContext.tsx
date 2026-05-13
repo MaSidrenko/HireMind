@@ -8,6 +8,8 @@ import {
 	type ReactNode,
 } from "react";
 import { apiRequest } from "@/shared";
+import { signInRequest } from "@/features/SignIn";
+import { signUpRequest, type SignUpPayload } from "@/features/SignUp";
 import { getMe } from "./getMe";
 import type { User } from "./getMe.types";
 
@@ -16,25 +18,13 @@ type AuthContextType = {
 	isAuthenticated: boolean;
 	loading: boolean;
 	refreshAuth: () => Promise<void>;
-	signInLocal: (email: string, password: string) => Promise<void>;
-	signUpLocal: (payload: SignUpPayload) => Promise<void>;
-	updateProfileLocal: (patch: ProfilePatch) => Promise<void>;
+	signIn: (email: string, password: string) => Promise<void>;
+	signUp: (payload: SignUpPayload) => Promise<void>;
+	updateProfile: (patch: ProfilePatch) => Promise<void>;
 	logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-type SignUpPayload = {
-	fullName: string;
-	email: string;
-	password: string;
-	role: "freelancer" | "client";
-	contacts: {
-		telegram?: string;
-		phone?: string;
-	};
-	companyName?: string;
-};
 
 type ProfilePatch = {
 	fullName: string;
@@ -77,29 +67,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, []);
 
-	const signInLocal = useCallback(async (email: string, password: string) => {
-		const response = await apiRequest<AuthResponse>("/api/auth/sign-in", {
-			method: "POST",
-			body: { email, login: email, password },
-		});
+	const signIn = useCallback(async (email: string, password: string) => {
+		const response = await signInRequest(email, password);
 		const nextUser = unwrapUser(response) ?? await getMe();
 		setUser(nextUser);
 	}, []);
 
-	const signUpLocal = useCallback(async (payload: SignUpPayload) => {
+	const signUp = useCallback(async (payload: SignUpPayload) => {
 		ensureContact(payload.contacts);
-		const response = await apiRequest<AuthResponse>("/api/auth/sign-up", {
-			method: "POST",
-			body: {
-				...payload,
-				username: payload.fullName,
-			},
-		});
+		const response = await signUpRequest(payload);
 		const nextUser = unwrapUser(response) ?? await getMe();
 		setUser(nextUser);
 	}, []);
 
-	const updateProfileLocal = useCallback(async (patch: ProfilePatch) => {
+	const updateProfile = useCallback(async (patch: ProfilePatch) => {
 		ensureContact(patch.contacts);
 		const response = await apiRequest<AuthResponse>("/api/profile", {
 			method: "PUT",
@@ -129,12 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			isAuthenticated: !!user,
 			loading,
 			refreshAuth,
-			signInLocal,
-			signUpLocal,
-			updateProfileLocal,
+			signIn,
+			signUp,
+			updateProfile,
 			logout,
 		}),
-		[user, loading, refreshAuth, signInLocal, signUpLocal, updateProfileLocal, logout],
+		[user, loading, refreshAuth, signIn, signUp, updateProfile, logout],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

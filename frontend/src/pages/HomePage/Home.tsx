@@ -1,9 +1,9 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import "./Home.css";
 import { useAuth } from "@/features/Auth/AuthContext";
 
 export default function Home() {
-	const { user, isAuthenticated, loading, logout } = useAuth();
+	const { isAuthenticated, loading } = useAuth();
 
 	const categories = [
 		{ name: "Веб-разработка", icon: "💻", count: 1250 },
@@ -39,9 +39,9 @@ export default function Home() {
 						<button
 							className="btn-main-page"
 							onClick={() => {
-								isAuthenticated
-									? navigate("/profile")
-									: navigate("/sign-in");
+								navigate(
+									isAuthenticated ? "/profile" : "/sign-in",
+								);
 							}}
 						>
 							Заказать услугу
@@ -49,9 +49,9 @@ export default function Home() {
 						<button
 							className="btn-main-page"
 							onClick={() => {
-								isAuthenticated
-									? navigate("/profile")
-									: navigate("/sign-in");
+								navigate(
+									isAuthenticated ? "/profile" : "/sign-in",
+								);
 							}}
 						>
 							Найти работу

@@ -1,6 +1,7 @@
 import { Navbar } from "@/widgets";
 import { Footer } from "@/widgets";
-import { Contacts, AboutUs } from "@/pages";
+import { PageState } from "@/widgets";
+import { Contacts, AboutUs, NotFound } from "@/pages";
 import "./App.css";
 import { PageRoutes } from "./providers/router/routeConfig";
 import { Route, Routes } from "react-router-dom";
@@ -10,7 +11,13 @@ import { useAuth } from "@/features/Auth/AuthContext";
 function App() {
 	const { isAuthenticated, loading, user } = useAuth();
 	if (loading) {
-		return <div>Загрузка...</div>;
+		return (
+			<PageState
+				variant="loading"
+				title="Загрузка HireMind"
+				text="Проверяем авторизацию и готовим интерфейс."
+			/>
+		);
 	}
 
 	const navBarLinks = PageRoutes.filter((route) => {
@@ -34,6 +41,7 @@ function App() {
 				{renderRoutes(PageRoutes)}
 				<Route path="/contacts" element={<Contacts />} />
 				<Route path="/about" element={<AboutUs />} />
+				<Route path="*" element={<NotFound />} />
 			</Routes>
 			<Footer></Footer>
 		</div>

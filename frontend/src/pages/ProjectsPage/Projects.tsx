@@ -3,9 +3,14 @@ import "./Projects.css";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth, getProjects, updateProjectRequest, type ProjectOrder } from "@/features";
 import { EmptyState } from "./components/EmptyState";
+import { PageState } from "@/widgets";
 import CreateOrderPage from "./CreateOrderPage";
 import ProjectWorkspacePage from "./ProjectWorkspacePage.tsx";
 import OrdersPage from "./OrdersPage";
+
+type ProjectsLocationState = {
+	chosenCategory?: string;
+};
 
 export default function Projects() {
 	const navigate = useNavigate();
@@ -15,6 +20,11 @@ export default function Projects() {
 	const [orders, setOrders] = useState<ProjectOrder[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState("");
+	const locationState = location.state as ProjectsLocationState | null;
+	const initialCategory =
+		typeof locationState?.chosenCategory === "string"
+			? locationState.chosenCategory
+			: "all";
 
 	useEffect(() => {
 		void getProjects()
@@ -62,7 +72,11 @@ export default function Projects() {
 		if (!currentOrder && loading) {
 			return (
 				<main className="orders-page">
-					<h2 className="orders-loading">Загрузка заказа...</h2>
+					<PageState
+						variant="loading"
+						title="Загружаем заказ"
+						text="Получаем данные проекта и отклики."
+					/>
 				</main>
 			);
 		}
@@ -88,9 +102,11 @@ export default function Projects() {
 
 	return (
 		<OrdersPage
+			key={initialCategory}
 			loading={loading}
 			error={loadError}
 			orders={orders}
+			initialCategory={initialCategory}
 			onCreate={() => navigate("/projects/new")}
 			onOpen={(id) => navigate(`/projects/${id}`)}
 		/>

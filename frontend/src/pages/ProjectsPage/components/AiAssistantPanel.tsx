@@ -19,20 +19,30 @@ export function AiAssistantPanel({ order, onApply }: AiAssistantPanelProps) {
 	const submit = async () => {
 		if (!prompt.trim()) return;
 		setLoading(true);
-		setAnswer(await askProjectAi(order, prompt));
-		setLoading(false);
+		try {
+			setAnswer(await askProjectAi(order, prompt));
+		} catch {
+			setAnswer("Не удалось получить ответ ИИ. Попробуйте повторить позже.");
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const generateBrief = async () => {
 		setGenerating(true);
-		const result = await generateAiBrief({
-			title: order.title,
-			category: order.category,
-			rawDescription: order.rawDescription,
-		});
-		setBriefResult(result);
-		setAnswer(result.summary);
-		setGenerating(false);
+		try {
+			const result = await generateAiBrief({
+				title: order.title,
+				category: order.category,
+				rawDescription: order.rawDescription,
+			});
+			setBriefResult(result);
+			setAnswer(result.summary);
+		} catch {
+			setAnswer("Не удалось обновить бриф ИИ. Проверьте соединение с сервером.");
+		} finally {
+			setGenerating(false);
+		}
 	};
 
 	return (
