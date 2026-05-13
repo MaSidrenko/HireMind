@@ -35,13 +35,19 @@ export default function CreateOrderPage({
 
 	const runAi = async () => {
 		setLoadingAi(true);
-		const result = await generateAiBrief({
-			title,
-			category,
-			rawDescription,
-		});
-		setAiSummary(result.summary);
-		setLoadingAi(false);
+		setError("");
+		try {
+			const result = await generateAiBrief({
+				title,
+				category,
+				rawDescription,
+			});
+			setAiSummary(result.summary);
+		} catch {
+			setError("Не удалось получить AI-подсказку");
+		} finally {
+			setLoadingAi(false);
+		}
 	};
 
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -51,23 +57,28 @@ export default function CreateOrderPage({
 			return;
 		}
 
-		const order = await createProjectRequest({
-			hirerId: user?.id ?? 0,
-			hirerName: user?.fullName ?? "Заказчик",
-			title,
-			companyName,
-			category,
-			rawDescription,
-			budgetMin: Number(budgetMin) || 0,
-			budgetMax: Number(budgetMax) || Number(budgetMin) || 0,
-			currency,
-			budgetType,
-			skills: skills
-				.split(",")
-				.map((skills) => skills.trim())
-				.filter(Boolean),
-		});
-		onCreated(order);
+		setError("");
+		try {
+			const order = await createProjectRequest({
+				hirerId: user?.id ?? 0,
+				hirerName: user?.fullName ?? "Заказчик",
+				title,
+				companyName,
+				category,
+				rawDescription,
+				budgetMin: Number(budgetMin) || 0,
+				budgetMax: Number(budgetMax) || Number(budgetMin) || 0,
+				currency,
+				budgetType,
+				skills: skills
+					.split(",")
+					.map((skill) => skill.trim())
+					.filter(Boolean),
+			});
+			onCreated(order);
+		} catch {
+			setError("Не удалось создать заказ");
+		}
 	};
 
 	return (
@@ -122,7 +133,7 @@ export default function CreateOrderPage({
 						<input
 							value={budgetMax}
 							onChange={(event) =>
-								setBudgetMin(event.target.value)
+								setBudgetMax(event.target.value)
 							}
 							placeholder="Цена до"
 							inputMode="numeric"

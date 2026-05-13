@@ -1,55 +1,49 @@
-const API_BASE_URL =
-	import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+import { ApiError, apiRequest } from "@/shared";
+import type { User } from "@/features/Auth/getMe.types";
 
 type Contacts = {
 	telegram?: string;
 	phone?: string;
 };
 
-type SignUpPayload = {
+export type SignUpPayload = {
 	fullName: string;
 	email: string;
 	password: string;
-	role: string;
+	role: "freelancer" | "client";
 	contacts: Contacts;
 	companyName?: string;
 };
 
-export async function SignUpRequest(payload: SignUpPayload) {
-	const response = await fetch(`${API_BASE_URL}/api/auth/sign-up`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		credentials: "include",
-		body: JSON.stringify({
-			username: payload.fullName,
-			email: payload.email,
-			password: payload.password,
-			role: payload.role,
-			contacts: payload.contacts,
-			companyName: payload.companyName,
-		}),
-	});
-	let data = null;
+export type AuthResponse = User | { user: User };
 
+export async function signUpRequest(payload: SignUpPayload) {
 	try {
-		data = await response.json();
-	} catch {
-		data = null;
+		return await apiRequest<AuthResponse>("/api/auth/sign-up", {
+			method: "POST",
+			body: {
+				username: payload.fullName,
+				fullName: payload.fullName,
+				email: payload.email,
+				password: payload.password,
+				role: payload.role,
+				contacts: payload.contacts,
+				companyName: payload.companyName,
+			},
+		});
+	} catch (error) {
+		if (
+			error instanceof ApiError &&
+			error.message !== "Ошибка запроса к серверу" &&
+			typeof error.data === "object" &&
+			error.data &&
+			"message" in error.data
+		) {
+			throw new Error(error.message);
+		}
+
+		throw new Error("Ошибка при регистрации");
 	}
-
-	if (!response.ok) {
-		const message =
-			typeof data === "object" &&
-			data != null &&
-			"message" in data &&
-			typeof(data as { message?: unknown }).message === "string"
-				? (data as { message: string }).message
-				: "Ошибка при регистрации";
-
-		throw new Error(message);
-	}
-
-	return data;
 }
+
+export { signUpRequest as SignUpRequest };

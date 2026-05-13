@@ -1,0 +1,64 @@
+.page-state {
+	display: grid;
+	gap: 14px;
+	align-items: start;
+	padding: 28px;
+	border: 1px solid rgba(250, 151, 44, 0.28);
+	border-radius: 10px;
+	background: rgba(31, 29, 27, 0.94);
+	box-shadow: 0 18px 55px rgba(0, 0, 0, 0.32);
+	color: #f1eee8;
+}
+
+.page-state strong {
+	display: block;
+	font-size: 28px;
+	line-height: 1.15;
+}
+
+.page-state p {
+	max-width: 720px;
+	margin: 10px 0 0;
+	color: rgba(232, 230, 225, 0.68);
+	line-height: 1.55;
+}
+
+.page-state__spinner {
+	width: 34px;
+	height: 34px;
+	border: 3px solid rgba(250, 151, 44, 0.22);
+	border-top-color: #fa972c;
+	border-radius: 50%;
+	animation: page-state-spin 0.8s linear infinite;
+}
+
+.page-state__button {
+	width: fit-content;
+	padding: 14px 18px;
+	border: 1px solid rgba(250, 151, 44, 0.5);
+	border-radius: 8px;
+	background: rgba(250, 151, 44, 0.04);
+	color: #f1eee8;
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.page-state__button:hover {
+	color: #fa972c;
+	border-color: #fa972c;
+}
+
+.page-state--error {
+	border-color: rgba(255, 154, 154, 0.42);
+}
+
+.page-state--error strong {
+	color: #ffb0a8;
+}
+
+@keyframes page-state-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

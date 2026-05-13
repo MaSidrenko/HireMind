@@ -11,3 +11,4 @@ export {
 } from "./ProjectsPage";
 export { Profile } from "./ProfilePage";
 export { Freelancers } from "./FreelancersPage";
+export { NotFound } from "./NotFoundPage";

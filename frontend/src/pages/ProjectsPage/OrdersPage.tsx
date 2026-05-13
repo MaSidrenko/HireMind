@@ -1,26 +1,52 @@
 import { useMemo, useState } from "react";
 import { useAuth, type OrderStatus, type ProjectOrder } from "@/features";
 import { OrderCard } from "./components/OrderCard";
-import { EmptyState } from "./components/EmptyState";
+import { PageState } from "@/widgets";
 
 type SortMode = "none" | "priceAsc" | "priceDesc" | "newest";
+
+const defaultCategories = [
+	"Веб-разработка",
+	"Дизайн",
+	"Копирайтинг",
+	"Мобильная разработка",
+	"Маркетинг",
+];
 
 type OrdersPageProps = {
 	orders: ProjectOrder[];
 	loading: boolean;
 	error?: string;
+	initialCategory?: string;
 	onCreate: () => void;
 	onOpen: (id: number) => void;
 };
 
-export default function OrdersPage({ orders, loading, error, onCreate, onOpen }: OrdersPageProps) {
+export default function OrdersPage({
+	orders,
+	loading,
+	error,
+	initialCategory = "all",
+	onCreate,
+	onOpen,
+}: OrdersPageProps) {
 	const { user } = useAuth();
 	const [status, setStatus] = useState<"all" | OrderStatus>("all");
+	const [category, setCategory] = useState(initialCategory);
 	const [query, setQuery] = useState("");
 	const [priceFrom, setPriceFrom] = useState("");
 	const [priceTo, setPriceTo] = useState("");
 	const [sort, setSort] = useState<SortMode>("none");
 	const canCreate = user?.role === "client";
+
+	const categoryOptions = useMemo(() => {
+		return Array.from(
+			new Set([
+				...defaultCategories,
+				...orders.map((order) => order.category).filter(Boolean),
+			]),
+		);
+	}, [orders]);
 
 	const filteredOrders = useMemo(() => {
 		const from = Number(priceFrom) || 0;
@@ -28,8 +54,9 @@ export default function OrdersPage({ orders, loading, error, onCreate, onOpen }:
 		const normalizedQuery = query.trim().toLowerCase();
 		const result = orders.filter((order) => {
 			const matchesStatus = status === "all" || order.status === status;
+			const matchesCategory = category === "all" || order.category === category;
 			const matchesQuery = !normalizedQuery || order.title.toLowerCase().includes(normalizedQuery);
-			return matchesStatus && matchesQuery && order.budgetMax >= from && order.budgetMin <= to;
+			return matchesStatus && matchesCategory && matchesQuery && order.budgetMax >= from && order.budgetMin <= to;
 		});
 
 		return [...result].sort((a, b) => {
@@ -38,10 +65,11 @@ export default function OrdersPage({ orders, loading, error, onCreate, onOpen }:
 			if (sort === "newest") return Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
 			return 0;
 		});
-	}, [orders, priceFrom, priceTo, query, sort, status]);
+	}, [category, orders, priceFrom, priceTo, query, sort, status]);
 
 	const reset = () => {
 		setStatus("all");
+		setCategory("all");
 		setQuery("");
 		setPriceFrom("");
 		setPriceTo("");
@@ -61,6 +89,14 @@ export default function OrdersPage({ orders, loading, error, onCreate, onOpen }:
 					<option value="completed">Завершённые</option>
 					<option value="archived">Архив</option>
 				</select>
+				<select value={category} onChange={(event) => setCategory(event.target.value)}>
+					<option value="all">Все категории</option>
+					{categoryOptions.map((item) => (
+						<option key={item} value={item}>
+							{item}
+						</option>
+					))}
+				</select>
 				<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Название заказа" />
 				<input value={priceFrom} onChange={(event) => setPriceFrom(event.target.value)} placeholder="Цена от" inputMode="numeric" />
 				<input value={priceTo} onChange={(event) => setPriceTo(event.target.value)} placeholder="Цена до" inputMode="numeric" />
@@ -78,21 +114,36 @@ export default function OrdersPage({ orders, loading, error, onCreate, onOpen }:
 				) : null}
 			</section>
 
-			{loading ? <h2 className="orders-loading">Загрузка проектов...</h2> : null}
-			{error ? <p className="form-error">{error}</p> : null}
-			{!loading && filteredOrders.length === 0 ? (
-				<EmptyState
+			{loading ? (
+				<PageState
+					variant="loading"
+					title="Загружаем заказы"
+					text="Получаем список проектов с сервера."
+				/>
+			) : null}
+			{!loading && error ? (
+				<PageState
+					variant="error"
+					title="Не удалось загрузить заказы"
+					text="Проверьте backend или попробуйте обновить страницу."
+				/>
+			) : null}
+			{!loading && !error && filteredOrders.length === 0 ? (
+				<PageState
+					variant="empty"
 					title="Заказы не найдены"
 					text="Попробуйте изменить фильтры или вернуться к списку позже."
 					action={canCreate ? "Создать заказ" : undefined}
 					onAction={canCreate ? onCreate : undefined}
 				/>
 			) : null}
-			<div className="orders-list">
-				{filteredOrders.map((order) => (
-					<OrderCard key={order.id} order={order} onOpen={onOpen} />
-				))}
-			</div>
+			{!loading && !error ? (
+				<div className="orders-list">
+					{filteredOrders.map((order) => (
+						<OrderCard key={order.id} order={order} onOpen={onOpen} />
+					))}
+				</div>
+			) : null}
 		</main>
 	);
 }

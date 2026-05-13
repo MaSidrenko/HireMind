@@ -98,3 +98,31 @@
 	color: #525252;
 	box-shadow: none;
 }
+
+@media (max-width: 760px) {
+	.footer {
+		font-size: 18px;
+	}
+
+	.footer-top-row,
+	.copyrights {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 10px;
+		padding: 0 18px;
+		margin-left: 0;
+	}
+
+	.links-footer {
+		flex-wrap: wrap;
+		margin-left: 18px;
+	}
+
+	.footer-info {
+		font-size: 16px;
+	}
+
+	.footer-confidentiality {
+		padding-left: 0;
+	}
+}

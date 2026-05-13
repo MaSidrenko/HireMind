@@ -1,5 +1,5 @@
-export { SignUpRequest } from "./SignUp";
-export { SignInRequest } from "./SignIn";
+export { signUpRequest } from "./SignUp";
+export { signInRequest } from "./SignIn";
 export { useAuth, AuthProvider } from "./Auth";
 export { getMe } from "./Auth";
 export { updateProfileSkills } from "./updateProfileSkills";

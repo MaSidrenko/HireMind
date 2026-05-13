@@ -1,1 +1,1 @@
-export { SignUpRequest } from "./SignUp.ts";
+export { signUpRequest } from "./SignUp.ts";

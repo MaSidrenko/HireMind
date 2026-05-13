@@ -4,14 +4,34 @@ type ApiOptions = Omit<RequestInit, "body"> & {
 	body?: unknown;
 };
 
+export class ApiError extends Error {
+	status: number;
+	data: unknown;
+
+	constructor(message: string, status: number, data: unknown) {
+		super(message);
+		this.name = "ApiError";
+		this.status = status;
+		this.data = data;
+	}
+}
+
 async function readResponse(response: Response) {
-	const text = await response.text();
-	if (!text) return null;
+	if (typeof response.text === "function") {
+		const text = await response.text();
+		if (!text) return null;
+
+		try {
+			return JSON.parse(text) as unknown;
+		} catch {
+			return text;
+		}
+	}
 
 	try {
-		return JSON.parse(text) as unknown;
+		return await response.json();
 	} catch {
-		return text;
+		return null;
 	}
 }
 
@@ -48,7 +68,11 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
 	const data = await readResponse(response);
 
 	if (!response.ok) {
-		throw new Error(getErrorMessage(data, "Ошибка запроса к серверу"));
+		throw new ApiError(
+			getErrorMessage(data, "Ошибка запроса к серверу"),
+			response.status,
+			data,
+		);
 	}
 
 	return data as T;

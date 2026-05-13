@@ -103,3 +103,28 @@
 	color: #ff5c5c;
 	font-size: 14px;
 }
+
+@media (max-width: 760px) {
+	.box-sign-in {
+		box-sizing: border-box;
+		width: min(100% - 24px, 100%);
+		margin: 48px auto;
+		padding: 28px 18px;
+	}
+
+	.box-sign-in h1 {
+		font-size: 44px;
+	}
+
+	.box-sign-in p {
+		font-size: 22px;
+	}
+
+	.box-sign-in label {
+		font-size: 22px;
+	}
+
+	.box-sign-in input {
+		padding: 16px;
+	}
+}

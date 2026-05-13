@@ -1,4 +1,5 @@
 .navbar {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -9,6 +10,26 @@
 	border: #333 1px solid;
 	border-radius: 15px;
 	box-shadow: 0 8px 12px -6px #de9a52;
+}
+
+.navbar-toggle {
+	display: none;
+	width: 44px;
+	height: 44px;
+	margin-right: 14px;
+	border: 1px solid rgba(250, 151, 44, 0.48);
+	border-radius: 8px;
+	background: rgba(250, 151, 44, 0.06);
+	cursor: pointer;
+}
+
+.navbar-toggle span {
+	display: block;
+	width: 20px;
+	height: 2px;
+	margin: 5px auto;
+	border-radius: 999px;
+	background: #fa972c;
 }
 .text-logo {
 	font-weight: 700;
@@ -63,4 +84,53 @@
 {
 	color:#525252;
 	box-shadow: none;
+}
+
+@media (max-width: 760px) {
+	.navbar {
+		align-items: flex-start;
+		min-height: 58px;
+		border-radius: 0 0 12px 12px;
+	}
+
+	.logo-container {
+		min-height: 58px;
+		padding-left: 16px;
+	}
+
+	.navbar-toggle {
+		display: block;
+		margin-top: 7px;
+	}
+
+	.navlinks {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: calc(100% + 1px);
+		z-index: 5;
+		display: none;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0;
+		padding: 8px;
+		border: 1px solid rgba(250, 151, 44, 0.28);
+		border-radius: 0 0 12px 12px;
+		background: rgba(18, 17, 16, 0.98);
+		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+	}
+
+	.navlinks--open {
+		display: flex;
+	}
+
+	.navlink {
+		padding: 14px 16px;
+		border-radius: 8px;
+		color: #d7d2c9;
+	}
+
+	.navlink:hover {
+		background: rgba(250, 151, 44, 0.08);
+	}
 }
