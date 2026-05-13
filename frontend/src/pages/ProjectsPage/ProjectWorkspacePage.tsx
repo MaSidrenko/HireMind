@@ -1,39 +1,23 @@
 import { useMemo, useState } from "react";
-// import {
-// 	briefSections,
-// 	budgetTypeLabels,
-// 	calculateReadiness,
-// 	formatBudget,
-// 	formatDate,
-// 	proposalStatusLabels,
-// 	riskLevelLabels,
-// 	scopeBucketLabels,
-// 	useAuth,
-// 	type AiBriefResult,
-// 	type BudgetType,
-// 	type BriefSectionKey,
-// 	type Currency,
-// 	type OrderStatus,
-// 	type ProjectOrder,
-// 	type ProjectProposal,
-// 	type ScopeBucket,
-// } from "@/features";
-import { briefSections } from "@/features/projects/projectDictionaries";
-import { budgetTypeLabels } from "@/features/projects/projectDictionaries";
-import { calculateReadiness } from "@/features/projects/projectLogic";
-import { formatBudget } from "@/features/projects/projectFormatters";
-import { formatDate } from "@/features/projects/projectFormatters";
-import { proposalStatusLabels } from "@/features/projects/projectDictionaries";
-import { riskLevelLabels } from "@/features/projects/projectDictionaries";
-import { scopeBucketLabels } from "@/features/projects/projectDictionaries";
-import { useAuth } from "@/features";
-import type { AiBriefResult } from "@/features/aiAssistant/types";
-import type { BriefSectionKey, BudgetType } from "@/features/projects/types";
-import type { Currency } from "@/features/projects/types";
-import type { OrderStatus } from "@/features/projects/types";
-import type { ProjectOrder } from "@/features/projects/types";
-import type { ProjectProposal } from "@/features/projects/types";
-import type { ScopeBucket } from "@/features/projects/types";
+import {
+	briefSections,
+	budgetTypeLabels,
+	calculateReadiness,
+	formatBudget,
+	formatDate,
+	proposalStatusLabels,
+	riskLevelLabels,
+	scopeBucketLabels,
+	useAuth,
+	type AiBriefResult,
+	type BudgetType,
+	type BriefSectionKey,
+	type Currency,
+	type OrderStatus,
+	type ProjectOrder,
+	type ProjectProposal,
+	type ScopeBucket,
+} from "@/features";
 import { AiAssistantPanel } from "./components/AiAssistantPanel";
 import { StageBadge, StatusBadge } from "./components/StatusBadge";
 

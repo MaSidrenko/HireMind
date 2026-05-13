@@ -3,7 +3,11 @@ export { SignUp } from "./SignUpPage";
 export { SignIn } from "./SignInPage";
 export { Contacts } from "./ContactsPage";
 export { AboutUs } from "./AboutUsPage";
-export { Projects } from "./ProjectsPage";
-export { ProjectDetails} from "./ProjectsPage";
+export {
+	Projects,
+	CreateOrderPage,
+	ordersPage,
+	ProjectWorkspacePage,
+} from "./ProjectsPage";
 export { Profile } from "./ProfilePage";
-export { CreateProject } from "./ProjectsPage";
+export { Freelancers } from "./FreelancersPage";

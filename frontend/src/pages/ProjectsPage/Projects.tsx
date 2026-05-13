@@ -1,9 +1,7 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Projects.css";
 import { useEffect, useMemo, useState } from "react";
-import { getProjects, updateProjectRequest } from "@/features/projects/projectsApi.ts";
-import { useAuth } from "@/features";
-import type { ProjectOrder } from "@/features/projects/types";
+import { useAuth, getProjects, updateProjectRequest, type ProjectOrder } from "@/features";
 import { EmptyState } from "./components/EmptyState";
 import CreateOrderPage from "./CreateOrderPage";
 import ProjectWorkspacePage from "./ProjectWorkspacePage.tsx";
