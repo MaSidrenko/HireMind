@@ -1,13 +1,53 @@
 import { briefSections } from "./projectDictionaries";
 import type {
+	BudgetType,
 	BriefSections,
 	ClarificationQuestion,
 	CreateProjectInput,
+	Currency,
 	DoneCriterion,
+	OrderStatus,
 	ProjectOrder,
 	RiskItem,
 	ScopeItem,
+	WorkflowStage,
 } from "./types";
+
+const orderStatuses: OrderStatus[] = [
+	"draft",
+	"published",
+	"paused",
+	"in_progress",
+	"completed",
+	"cancelled",
+	"archived",
+];
+
+const workflowStages: WorkflowStage[] = ["raw", "clarification", "brief", "review", "approved"];
+const currencies: Currency[] = ["RUB", "USD", "EUR"];
+const budgetTypes: BudgetType[] = ["fixed", "hourly"];
+
+function pickValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+	return typeof value === "string" && allowed.includes(value as T)
+		? (value as T)
+		: fallback;
+}
+
+function safeNumber(value: unknown, fallback = 0) {
+	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function safeString(value: unknown, fallback = "") {
+	return typeof value === "string" ? value : fallback;
+}
+
+function safeDate(value: unknown) {
+	return typeof value === "string" && value ? value : new Date().toISOString();
+}
+
+function ratio(done: number, total: number) {
+	return total > 0 ? done / total : 0;
+}
 
 export function makeBrief(title: string, raw: string, category: string): BriefSections {
 	return {
@@ -103,13 +143,80 @@ export function makeRisks(): RiskItem[] {
 }
 
 export function calculateReadiness(order: ProjectOrder) {
-	const brief = briefSections.filter(({ key }) => order.briefSections[key].trim().length > 20).length / briefSections.length;
-	const answers = order.clarificationQuestions.filter((q) => q.answer.trim()).length / order.clarificationQuestions.length;
-	const done = order.doneCriteria.filter((item) => item.checked).length / order.doneCriteria.length;
-	const risks = order.risks.filter((item) => item.resolved).length / order.risks.length;
+	const brief = ratio(
+		briefSections.filter(({ key }) => order.briefSections[key].trim().length > 20).length,
+		briefSections.length,
+	);
+	const answers = ratio(
+		order.clarificationQuestions.filter((q) => q.answer.trim()).length,
+		order.clarificationQuestions.length,
+	);
+	const done = ratio(
+		order.doneCriteria.filter((item) => item.checked).length,
+		order.doneCriteria.length,
+	);
+	const risks = ratio(
+		order.risks.filter((item) => item.resolved).length,
+		order.risks.length,
+	);
 	const approvals = (Number(order.approvals.client) + Number(order.approvals.freelancer)) / 2;
 
 	return Math.round(brief * 30 + answers * 25 + done * 20 + risks * 10 + approvals * 15);
+}
+
+export function normalizeProjectOrder(order: Partial<ProjectOrder>): ProjectOrder {
+	const title = safeString(order.title, "Без названия");
+	const rawDescription = safeString(order.rawDescription);
+	const category = safeString(order.category, "Разработка");
+	const proposals = Array.isArray(order.proposals) ? order.proposals : [];
+	const fallbackBrief = makeBrief(title, rawDescription, category);
+	const brief = briefSections.reduce((acc, { key }) => {
+		const value = order.briefSections?.[key];
+		acc[key] = typeof value === "string" ? value : fallbackBrief[key];
+		return acc;
+	}, {} as BriefSections);
+
+	const normalized: ProjectOrder = {
+		id: safeNumber(order.id),
+		hirerId: safeNumber(order.hirerId),
+		hirerName: safeString(order.hirerName, "Заказчик"),
+		selectedFreelancerId:
+			typeof order.selectedFreelancerId === "number" ? order.selectedFreelancerId : null,
+		selectedFreelancerName:
+			typeof order.selectedFreelancerName === "string" ? order.selectedFreelancerName : null,
+		title,
+		shortDescription: safeString(order.shortDescription, rawDescription.slice(0, 150)),
+		rawDescription,
+		technicalSpecification: safeString(order.technicalSpecification),
+		status: pickValue(order.status, orderStatuses, "draft"),
+		workflowStage: pickValue(order.workflowStage, workflowStages, "raw"),
+		category,
+		budgetMin: safeNumber(order.budgetMin),
+		budgetMax: safeNumber(order.budgetMax, safeNumber(order.budgetMin)),
+		currency: pickValue(order.currency, currencies, "RUB"),
+		budgetType: pickValue(order.budgetType, budgetTypes, "fixed"),
+		skills: Array.isArray(order.skills) ? order.skills : [],
+		proposalsCount: proposals.length,
+		proposals,
+		publishedAt: typeof order.publishedAt === "string" ? order.publishedAt : null,
+		updatedAt: safeDate(order.updatedAt),
+		companyName: safeString(order.companyName),
+		aiGenerated: Boolean(order.aiGenerated),
+		readinessScore: 0,
+		briefSections: brief,
+		clarificationQuestions: Array.isArray(order.clarificationQuestions)
+			? order.clarificationQuestions
+			: [],
+		scopeItems: Array.isArray(order.scopeItems) ? order.scopeItems : [],
+		doneCriteria: Array.isArray(order.doneCriteria) ? order.doneCriteria : [],
+		risks: Array.isArray(order.risks) ? order.risks : [],
+		approvals: {
+			client: Boolean(order.approvals?.client),
+			freelancer: Boolean(order.approvals?.freelancer),
+		},
+	};
+
+	return { ...normalized, readinessScore: calculateReadiness(normalized) };
 }
 
 export function createProject(input: CreateProjectInput): ProjectOrder {
@@ -123,7 +230,7 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		title: input.title,
 		shortDescription: input.rawDescription.slice(0, 150),
 		rawDescription: input.rawDescription,
-		technicalSpecification: `AI-черновик ТЗ для "${input.title}".`,
+		technicalSpecification: input.aiSummary || `AI-черновик ТЗ для "${input.title}".`,
 		status: "draft",
 		workflowStage: "clarification",
 		category: input.category,
@@ -139,11 +246,11 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		companyName: input.companyName || "Новая компания",
 		aiGenerated: true,
 		readinessScore: 0,
-		briefSections: makeBrief(input.title, input.rawDescription, input.category),
-		clarificationQuestions: makeQuestions(input.category),
+		briefSections: input.briefSections ?? makeBrief(input.title, input.rawDescription, input.category),
+		clarificationQuestions: input.clarificationQuestions ?? makeQuestions(input.category),
 		scopeItems: makeScope(),
 		doneCriteria: makeDone(),
-		risks: makeRisks(),
+		risks: input.risks ?? makeRisks(),
 		approvals: { client: false, freelancer: false },
 	};
 

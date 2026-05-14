@@ -18,6 +18,7 @@ import {
 	type ProjectProposal,
 	type ScopeBucket,
 } from "@/features";
+import { ApiError } from "@/shared";
 import { AiAssistantPanel } from "./components/AiAssistantPanel";
 import { StageBadge, StatusBadge } from "./components/StatusBadge";
 
@@ -31,6 +32,11 @@ type ProjectWorkspacePageProps = {
 const categories = ["Разработка", "Дизайн", "Маркетинг", "Контент"];
 const currencies: Currency[] = ["RUB", "USD", "EUR"];
 const budgetTypes: BudgetType[] = ["fixed", "hourly"];
+
+function getErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof ApiError) return error.message;
+	return fallback;
+}
 
 function prepareOrder(order: ProjectOrder): ProjectOrder {
 	const withCounters = {
@@ -97,8 +103,8 @@ export default function ProjectWorkspacePage({
 			setDraft(next);
 			setDirty(false);
 			setSaveMessage(message);
-		} catch {
-			setFormError("Не удалось сохранить изменения");
+		} catch (error) {
+			setFormError(getErrorMessage(error, "Не удалось сохранить изменения"));
 		} finally {
 			setSaving(false);
 		}

@@ -125,14 +125,22 @@ export default function OrdersPage({
 				<PageState
 					variant="error"
 					title="Не удалось загрузить заказы"
-					text="Проверьте backend или попробуйте обновить страницу."
+					text={
+						error && error !== "Не удалось загрузить заказы"
+							? error
+							: "Проверьте backend или попробуйте обновить страницу."
+					}
 				/>
 			) : null}
 			{!loading && !error && filteredOrders.length === 0 ? (
 				<PageState
 					variant="empty"
-					title="Заказы не найдены"
-					text="Попробуйте изменить фильтры или вернуться к списку позже."
+					title={orders.length ? "Заказы не найдены" : "Пока нет заказов"}
+					text={
+						orders.length
+							? "Попробуйте изменить фильтры или вернуться к списку позже."
+							: "Создайте первый заказ, чтобы AI помог превратить идею в понятное ТЗ."
+					}
 					action={canCreate ? "Создать заказ" : undefined}
 					onAction={canCreate ? onCreate : undefined}
 				/>

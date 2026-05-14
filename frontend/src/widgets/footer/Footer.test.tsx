@@ -11,8 +11,8 @@ describe("Footer", ()=> {
 			</MemoryRouter>
 		);
 
-		const contactsLink = screen.getByRole("link", {name: /contacts/i});
-		const aboutLink = screen.getByRole("link", {name: /about us/i});
+		const contactsLink = screen.getByRole("link", { name: "Контакты" });
+		const aboutLink = screen.getByRole("link", { name: "О проекте" });
 
 		expect(contactsLink).toBeInTheDocument();
 		expect(aboutLink).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("Footer", ()=> {
 			</MemoryRouter>
 		);
 
-		const aboutLink = screen.getByRole("link", {name: /about us/i});
+		const aboutLink = screen.getByRole("link", { name: "О проекте" });
 		expect(aboutLink).toHaveAttribute("aria-current", "page");
 	});
 });

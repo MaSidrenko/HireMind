@@ -132,7 +132,7 @@ describe("OrdersPage", () => {
 
 		await user.click(screen.getAllByRole("button", { name: "Создать заказ" })[1]);
 
-		expect(screen.getByText("Заказы не найдены")).toBeInTheDocument();
+		expect(screen.getByText("Пока нет заказов")).toBeInTheDocument();
 		expect(onCreate).toHaveBeenCalledTimes(1);
 	});
 

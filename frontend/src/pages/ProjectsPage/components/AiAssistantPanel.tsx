@@ -3,11 +3,17 @@ import { useState } from "react";
 import { askProjectAi, generateAiBrief } from "@/features/aiAssistant/aiAssistntAPI";
 import type { AiBriefResult } from "@/features/aiAssistant/types";
 import type { ProjectOrder } from "@/features/projects/types";
+import { ApiError } from "@/shared";
 
 type AiAssistantPanelProps = {
 	order: ProjectOrder;
 	onApply?: (result: AiBriefResult) => void;
 };
+
+function getErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof ApiError) return error.message;
+	return fallback;
+}
 
 export function AiAssistantPanel({ order, onApply }: AiAssistantPanelProps) {
 	const [prompt, setPrompt] = useState("");
@@ -21,8 +27,8 @@ export function AiAssistantPanel({ order, onApply }: AiAssistantPanelProps) {
 		setLoading(true);
 		try {
 			setAnswer(await askProjectAi(order, prompt));
-		} catch {
-			setAnswer("Не удалось получить ответ ИИ. Попробуйте повторить позже.");
+		} catch (error) {
+			setAnswer(getErrorMessage(error, "Не удалось получить ответ ИИ. Попробуйте повторить позже."));
 		} finally {
 			setLoading(false);
 		}
@@ -38,8 +44,8 @@ export function AiAssistantPanel({ order, onApply }: AiAssistantPanelProps) {
 			});
 			setBriefResult(result);
 			setAnswer(result.summary);
-		} catch {
-			setAnswer("Не удалось обновить бриф ИИ. Проверьте соединение с сервером.");
+		} catch (error) {
+			setAnswer(getErrorMessage(error, "Не удалось обновить бриф ИИ. Проверьте соединение с сервером."));
 		} finally {
 			setGenerating(false);
 		}

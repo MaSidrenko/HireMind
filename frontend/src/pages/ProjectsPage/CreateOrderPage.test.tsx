@@ -102,6 +102,7 @@ describe("CreateOrderPage", () => {
 
 		await user.type(screen.getByPlaceholderText("Название заказа"), "Лендинг");
 		await user.type(screen.getByPlaceholderText("Компания"), "HireMind");
+		await user.selectOptions(screen.getAllByRole("combobox")[0], "Разработка");
 		await user.type(
 			screen.getByPlaceholderText("Сырой запрос заказчика"),
 			"Нужно сделать понятный лендинг для дипломной демонстрации продукта.",
@@ -132,10 +133,14 @@ describe("CreateOrderPage", () => {
 		render(<CreateOrderPage onBack={vi.fn()} onCreated={vi.fn()} />);
 
 		await user.type(screen.getByPlaceholderText("Название заказа"), "Лендинг");
+		await user.selectOptions(screen.getAllByRole("combobox")[0], "Разработка");
 		await user.type(
 			screen.getByPlaceholderText("Сырой запрос заказчика"),
 			"Нужно сделать понятный лендинг для дипломной демонстрации продукта.",
 		);
+		await user.type(screen.getByPlaceholderText("Цена от"), "10000");
+		await user.type(screen.getByPlaceholderText("Цена до"), "25000");
+		await user.type(screen.getByPlaceholderText("Навыки через запятую"), "React, CSS");
 		await user.click(screen.getByRole("button", { name: "Сформировать заказ" }));
 
 		expect(
@@ -148,6 +153,12 @@ describe("CreateOrderPage", () => {
 
 		render(<CreateOrderPage onBack={vi.fn()} onCreated={vi.fn()} />);
 
+		await user.type(screen.getByPlaceholderText("Название заказа"), "Лендинг");
+		await user.selectOptions(screen.getAllByRole("combobox")[0], "Разработка");
+		await user.type(
+			screen.getByPlaceholderText("Сырой запрос заказчика"),
+			"Нужно сделать понятный лендинг для дипломной демонстрации продукта.",
+		);
 		await user.click(screen.getByRole("button", { name: "Проанализировать" }));
 
 		expect(await screen.findByText("AI summary")).toBeInTheDocument();
@@ -159,6 +170,12 @@ describe("CreateOrderPage", () => {
 
 		render(<CreateOrderPage onBack={vi.fn()} onCreated={vi.fn()} />);
 
+		await user.type(screen.getByPlaceholderText("Название заказа"), "Лендинг");
+		await user.selectOptions(screen.getAllByRole("combobox")[0], "Разработка");
+		await user.type(
+			screen.getByPlaceholderText("Сырой запрос заказчика"),
+			"Нужно сделать понятный лендинг для дипломной демонстрации продукта.",
+		);
 		await user.click(screen.getByRole("button", { name: "Проанализировать" }));
 
 		expect(

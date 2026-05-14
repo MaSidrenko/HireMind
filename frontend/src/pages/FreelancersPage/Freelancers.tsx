@@ -7,8 +7,14 @@ import {
 	type ContactRequest,
 	type Freelancer,
 } from "@/features";
+import { ApiError } from "@/shared";
 import { PageState } from "@/widgets";
 import "./Freelancers.css";
+
+function getErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof ApiError) return error.message;
+	return fallback;
+}
 
 export default function Freelancers() {
 	const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
@@ -30,7 +36,9 @@ export default function Freelancers() {
 				setFreelancers(freelancersItems);
 				setRequests(requestItems);
 			})
-			.catch(() => setError("Не удалось загрузить список фрилансеров"))
+			.catch((error) =>
+				setError(getErrorMessage(error, "Не удалось загрузить список фрилансеров")),
+			)
 			.finally(() => setLoading(false));
 	}, []);
 
@@ -69,8 +77,8 @@ export default function Freelancers() {
 			});
 			setRequests((items) => [request, ...items.filter((item) => item.id !== request.id)]);
 
-		} catch {
-			setError("Не удалось отправить заявку");
+		} catch (error) {
+			setError(getErrorMessage(error, "Не удалось отправить заявку"));
 		} finally {
 			setSending(false);
 		}
@@ -103,8 +111,12 @@ export default function Freelancers() {
 			{!loading && !error && filtered.length === 0 ? (
 				<PageState
 					variant="empty"
-					title="Специалисты не найдены"
-					text="Попробуйте другой навык или очистите фильтр."
+					title={freelancers.length ? "Специалисты не найдены" : "Пока нет фрилансеров"}
+					text={
+						freelancers.length
+							? "Попробуйте другой навык или очистите фильтр."
+							: "Когда backend вернет специалистов, они появятся в этом списке."
+					}
 					action={skill ? "Очистить фильтр" : undefined}
 					onAction={skill ? () => setSkill("") : undefined}
 				/>
