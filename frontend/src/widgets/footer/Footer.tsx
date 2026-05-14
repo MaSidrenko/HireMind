@@ -10,8 +10,7 @@ export default function Footer() {
 						<span className="footer-project-name">HireMind</span>
 					</div>
 					<span className="footer-info">
-						The project was created for educational and research
-						purposes
+						Проект создан в учебных и исследовательских целях
 					</span>
 				</div>
 				<hr className="footer-divider" />
@@ -21,19 +20,19 @@ export default function Footer() {
 						to="/contacts"
 						className="link-footer"
 					>
-						Contacts
+						Контакты
 					</NavLink>
 					<NavLink key="/about" to="/about" className="link-footer">
-						About Us
+						О проекте
 					</NavLink>
 			
 				</div>
 				<div className="copyrights">
 					<p>
-						All rights reserved &copy;{" "}
+						Все права защищены &copy;{" "}
 						{new Date().getFullYear()}{" "}
 					</p>
-					<p className="footer-confidentiality">Confidentiality</p>
+					<p className="footer-confidentiality">Конфиденциальность</p>
 				</div>
 			</div>
 		</footer>

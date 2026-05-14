@@ -46,6 +46,9 @@ const freelancer = {
 describe("Freelancers", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockedGetFreelancers.mockReset();
+		mockedGetContactRequests.mockReset();
+		mockedSendContactRequest.mockReset();
 		mockedFormatBudget.mockReturnValue("1000 ₽ / час");
 		mockedGetContactRequests.mockResolvedValue([]);
 		mockedSendContactRequest.mockResolvedValue({
@@ -81,7 +84,7 @@ describe("Freelancers", () => {
 
 		render(<Freelancers />);
 
-		expect(await screen.findByText("Специалисты не найдены")).toBeInTheDocument();
+		expect(await screen.findByText("Пока нет фрилансеров")).toBeInTheDocument();
 	});
 
 	it("renders freelancer list", async () => {

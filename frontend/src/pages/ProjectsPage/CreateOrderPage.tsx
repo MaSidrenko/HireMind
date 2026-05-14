@@ -3,15 +3,37 @@ import {
 	useAuth,
 	createProjectRequest,
 	generateAiBrief,
-	type Currency,
+	type AiBriefResult,
 	type BudgetType,
+	type Currency,
 	type ProjectOrder,
 } from "@/features";
+import { ApiError } from "@/shared";
 
 type CreateOrderPageProps = {
 	onBack: () => void;
 	onCreated: (order: ProjectOrder) => void;
 };
+
+const categoryPlaceholder = "Выберите категорию";
+const categories = ["Разработка", "Дизайн", "Маркетинг", "Контент"];
+
+function getErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof ApiError) return error.message;
+	return fallback;
+}
+
+function parsePositiveNumber(value: string) {
+	const normalized = Number(value);
+	return Number.isFinite(normalized) ? normalized : 0;
+}
+
+function parseSkills(value: string) {
+	return value
+		.split(",")
+		.map((skill) => skill.trim())
+		.filter(Boolean);
+}
 
 export default function CreateOrderPage({
 	onBack,
@@ -19,8 +41,8 @@ export default function CreateOrderPage({
 }: CreateOrderPageProps) {
 	const { user } = useAuth();
 	const [title, setTitle] = useState("");
-	const [companyName, setComapnyName] = useState("");
-	const [category, setCategory] = useState("Выберите категорию");
+	const [companyName, setCompanyName] = useState("");
+	const [category, setCategory] = useState(categoryPlaceholder);
 	const [rawDescription, setRawDescription] = useState("");
 	const [budgetMin, setBudgetMin] = useState("");
 	const [budgetMax, setBudgetMax] = useState("");
@@ -30,54 +52,117 @@ export default function CreateOrderPage({
 	const [aiSummary, setAiSummary] = useState(
 		"AI поможет найти недостающие вопросы до публикации",
 	);
+	const [aiResult, setAiResult] = useState<AiBriefResult | null>(null);
+	const [aiApplied, setAiApplied] = useState(false);
 	const [error, setError] = useState("");
 	const [loadingAi, setLoadingAi] = useState(false);
 
+	const validateDraft = () => {
+		if (title.trim().length < 5 || rawDescription.trim().length < 30) {
+			return "Заполните название и описание задачи подробнее.";
+		}
+
+		if (category === categoryPlaceholder) {
+			return "Выберите категорию заказа";
+		}
+
+		const min = parsePositiveNumber(budgetMin);
+		const max = parsePositiveNumber(budgetMax) || min;
+
+		if (min < 0 || max < 0) {
+			return "Бюджет не может быть отрицательным";
+		}
+
+		if (max < min) {
+			return "Цена до не может быть меньше цены от";
+		}
+
+		if (!parseSkills(skills).length) {
+			return "Добавьте хотя бы один навык";
+		}
+
+		return "";
+	};
+
+	const validateAiInput = () => {
+		if (title.trim().length < 5 || rawDescription.trim().length < 30) {
+			return "Добавьте название и подробное описание перед AI-анализом";
+		}
+
+		if (category === categoryPlaceholder) {
+			return "Выберите категорию перед AI-анализом";
+		}
+
+		return "";
+	};
+
 	const runAi = async () => {
+		const validationError = validateAiInput();
+		if (validationError) {
+			setError(validationError);
+			return;
+		}
+
 		setLoadingAi(true);
 		setError("");
+		setAiApplied(false);
+
 		try {
 			const result = await generateAiBrief({
 				title,
 				category,
 				rawDescription,
 			});
+			setAiResult(result);
 			setAiSummary(result.summary);
-		} catch {
-			setError("Не удалось получить AI-подсказку");
+		} catch (err) {
+			setError(getErrorMessage(err, "Не удалось получить AI-подсказку"));
 		} finally {
 			setLoadingAi(false);
 		}
 	};
 
+	const applyAiResult = () => {
+		if (!aiResult) return;
+		setAiApplied(true);
+		setError("");
+	};
+
 	const submit = async (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		if (title.trim().length < 5 || rawDescription.trim().length < 30) {
-			setError("Заполните название и описание задачи подробнее.");
+
+		const validationError = validateDraft();
+		if (validationError) {
+			setError(validationError);
 			return;
 		}
+
+		const min = parsePositiveNumber(budgetMin);
+		const max = parsePositiveNumber(budgetMax) || min;
+		const appliedAi = aiApplied ? aiResult : null;
 
 		setError("");
 		try {
 			const order = await createProjectRequest({
 				hirerId: user?.id ?? 0,
 				hirerName: user?.fullName ?? "Заказчик",
-				title,
-				companyName,
+				title: title.trim(),
+				companyName: companyName.trim(),
 				category,
-				rawDescription,
-				budgetMin: Number(budgetMin) || 0,
-				budgetMax: Number(budgetMax) || Number(budgetMin) || 0,
+				rawDescription: rawDescription.trim(),
+				budgetMin: min,
+				budgetMax: max,
 				currency,
 				budgetType,
-				skills: skills
-					.split(",")
-					.map((skill) => skill.trim())
-					.filter(Boolean),
+				skills: parseSkills(skills),
+				aiSummary: appliedAi?.summary,
+				briefSections: appliedAi?.briefSections,
+				clarificationQuestions: appliedAi?.questions,
+				risks: appliedAi?.risks,
 			});
 			onCreated(order);
-		} catch {
-			setError("Не удалось создать заказ");
+		} catch (err) {
+			setError(getErrorMessage(err, "Не удалось создать заказ"));
 		}
 	};
 
@@ -102,39 +187,41 @@ export default function CreateOrderPage({
 					/>
 					<input
 						value={companyName}
-						onChange={(event) => setComapnyName(event.target.value)}
+						onChange={(event) => setCompanyName(event.target.value)}
 						placeholder="Компания"
 					/>
 					<select
 						value={category}
-						onChange={(event) => setCategory(event.target.value)}
+						onChange={(event) => {
+							setCategory(event.target.value);
+							setAiApplied(false);
+						}}
 					>
-						<option>Разработка</option>
-						<option>Дизайн</option>
-						<option>Маркетинг</option>
-						<option>Контент</option>
+						<option value={categoryPlaceholder}>{categoryPlaceholder}</option>
+						{categories.map((item) => (
+							<option key={item} value={item}>
+								{item}
+							</option>
+						))}
 					</select>
 					<textarea
 						value={rawDescription}
-						onChange={(event) =>
-							setRawDescription(event.target.value)
-						}
+						onChange={(event) => {
+							setRawDescription(event.target.value);
+							setAiApplied(false);
+						}}
 						placeholder="Сырой запрос заказчика"
 					/>
 					<div className="create-form__row">
 						<input
 							value={budgetMin}
-							onChange={(event) =>
-								setBudgetMin(event.target.value)
-							}
+							onChange={(event) => setBudgetMin(event.target.value)}
 							placeholder="Цена от"
 							inputMode="numeric"
 						/>
 						<input
 							value={budgetMax}
-							onChange={(event) =>
-								setBudgetMax(event.target.value)
-							}
+							onChange={(event) => setBudgetMax(event.target.value)}
 							placeholder="Цена до"
 							inputMode="numeric"
 						/>
@@ -172,6 +259,9 @@ export default function CreateOrderPage({
 					<span className="hm-kicker">AI</span>
 					<h2>Проверка запроса</h2>
 					<p>{aiSummary}</p>
+					{aiApplied ? (
+						<p className="detail-note">AI-бриф будет добавлен в заказ</p>
+					) : null}
 					<button
 						type="button"
 						className="hm-button hm-button--ghost"
@@ -180,6 +270,16 @@ export default function CreateOrderPage({
 					>
 						{loadingAi ? "Анализ..." : "Проанализировать"}
 					</button>
+					{aiResult ? (
+						<button
+							type="button"
+							className="hm-button hm-button--ghost"
+							onClick={applyAiResult}
+							disabled={aiApplied}
+						>
+							{aiApplied ? "AI-бриф применен" : "Применить AI-бриф"}
+						</button>
+					) : null}
 				</aside>
 			</form>
 		</main>

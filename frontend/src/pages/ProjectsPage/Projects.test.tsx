@@ -3,13 +3,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getProjects } from "../../features/projects/projectsApi";
+import { getProjectById, getProjects } from "../../features/projects/projectsApi";
 import { updateProjectRequest } from "../../features/projects/projectsApi";
 import { useAuth } from "../../features/Auth/AuthContext";
+import { ApiError } from "@/shared";
 import type { ProjectOrder } from "../../features/projects/types";
 import Projects from "./Projects";
 
 vi.mock("../../features/projects/projectsApi", () => ({
+	getProjectById: vi.fn(),
 	getProjects: vi.fn(),
 	updateProjectRequest: vi.fn(),
 }));
@@ -20,6 +22,7 @@ vi.mock("../../features/Auth/AuthContext", () => ({
 
 
 const mockedGetProjects = vi.mocked(getProjects);
+const mockedGetProjectById = vi.mocked(getProjectById);
 const mockedUpdateProjectRequest = vi.mocked(updateProjectRequest);
 const mockedUseAuth = vi.mocked(useAuth);
 
@@ -83,6 +86,7 @@ function renderProjects(initialEntry = "/projects") {
 describe("Projects", () => {
 	beforeEach(() => {
 		mockedGetProjects.mockReset();
+		mockedGetProjectById.mockReset();
 		mockedUpdateProjectRequest.mockReset();
 		mockedUseAuth.mockReturnValue({
 			user: {
@@ -106,6 +110,7 @@ describe("Projects", () => {
 	it("loads projects and opens selected order workspace", async () => {
 		const user = userEvent.setup();
 		mockedGetProjects.mockResolvedValueOnce([makeOrder()]);
+		mockedGetProjectById.mockResolvedValueOnce(makeOrder());
 
 		renderProjects();
 
@@ -127,7 +132,7 @@ describe("Projects", () => {
 	});
 
 	it("shows not found state for missing project id", async () => {
-		mockedGetProjects.mockResolvedValueOnce([]);
+		mockedGetProjectById.mockRejectedValueOnce(new ApiError("missing", 404, null));
 
 		renderProjects("/projects/404");
 

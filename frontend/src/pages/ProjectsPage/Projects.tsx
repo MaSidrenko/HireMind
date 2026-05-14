@@ -1,9 +1,16 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Projects.css";
 import { useEffect, useMemo, useState } from "react";
-import { useAuth, getProjects, updateProjectRequest, type ProjectOrder } from "@/features";
+import {
+	useAuth,
+	getProjectById,
+	getProjects,
+	updateProjectRequest,
+	type ProjectOrder,
+} from "@/features";
 import { EmptyState } from "./components/EmptyState";
 import { PageState } from "@/widgets";
+import { ApiError } from "@/shared";
 import CreateOrderPage from "./CreateOrderPage";
 import ProjectWorkspacePage from "./ProjectWorkspacePage.tsx";
 import OrdersPage from "./OrdersPage";
@@ -12,14 +19,40 @@ type ProjectsLocationState = {
 	chosenCategory?: string;
 };
 
+function getErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof ApiError && error.status === 404) {
+		return "";
+	}
+
+	if (error instanceof ApiError) return error.message;
+	return fallback;
+}
+
+function upsertOrder(orders: ProjectOrder[], nextOrder: ProjectOrder) {
+	const exists = orders.some((order) => order.id === nextOrder.id);
+	return exists
+		? orders.map((order) => (order.id === nextOrder.id ? nextOrder : order))
+		: [nextOrder, ...orders];
+}
+
 export default function Projects() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const params = useParams<{ projectId?: string }>();
 	const { user } = useAuth();
+	const isCreatePage = location.pathname.endsWith("/new");
+	const parsedOrderId = params.projectId ? Number(params.projectId) : null;
+	const currentOrderId =
+		parsedOrderId !== null && Number.isFinite(parsedOrderId)
+			? parsedOrderId
+			: null;
+	const isDetailPage = params.projectId !== undefined;
 	const [orders, setOrders] = useState<ProjectOrder[]>([]);
+	const [currentOrder, setCurrentOrder] = useState<ProjectOrder | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [detailLoading, setDetailLoading] = useState(false);
 	const [loadError, setLoadError] = useState("");
+	const [detailError, setDetailError] = useState("");
 	const locationState = location.state as ProjectsLocationState | null;
 	const initialCategory =
 		typeof locationState?.chosenCategory === "string"
@@ -27,49 +60,107 @@ export default function Projects() {
 			: "all";
 
 	useEffect(() => {
-		void getProjects()
-			.then((items) => {
-				setOrders(items);
-			})
-			.catch(() => setLoadError("Не удалось загрузить заказы"))
-			.finally(() => setLoading(false));
-	}, []);
+		if (isCreatePage || isDetailPage) {
+			return;
+		}
 
-	const currentOrderId = params.projectId ? Number(params.projectId) : null;
-	const currentOrder = useMemo(
-		() => orders.find((order) => order.id === currentOrderId),
-		[currentOrderId, orders],
+		let active = true;
+		const loadProjects = async () => {
+			setLoading(true);
+			setLoadError("");
+			try {
+				const items = await getProjects();
+				if (active) setOrders(items);
+			} catch (error) {
+				if (active) {
+					setLoadError(getErrorMessage(error, "Не удалось загрузить заказы"));
+				}
+			} finally {
+				if (active) setLoading(false);
+			}
+		};
+
+		void loadProjects();
+		return () => {
+			active = false;
+		};
+	}, [isCreatePage, isDetailPage]);
+
+	useEffect(() => {
+		if (!isDetailPage) {
+			return;
+		}
+
+		if (currentOrderId === null) {
+			return;
+		}
+
+		let active = true;
+		const loadProject = async () => {
+			setDetailLoading(true);
+			setDetailError("");
+			try {
+				const order = await getProjectById(currentOrderId);
+				if (!active) return;
+				setCurrentOrder(order);
+				setOrders((items) => upsertOrder(items, order));
+			} catch (error) {
+				if (!active) return;
+				setCurrentOrder(null);
+				setDetailError(getErrorMessage(error, "Не удалось загрузить заказ"));
+			} finally {
+				if (active) setDetailLoading(false);
+			}
+		};
+
+		void loadProject();
+		return () => {
+			active = false;
+		};
+	}, [currentOrderId, isDetailPage]);
+
+	const visibleOrder = useMemo(
+		() =>
+			currentOrderId === null
+				? null
+				: currentOrder ??
+					orders.find((order) => order.id === currentOrderId) ??
+					null,
+		[currentOrder, currentOrderId, orders],
 	);
 
-	const persist = (nextOrders: ProjectOrder[]) => {
-		setOrders(nextOrders);
+	const persistOrder = (nextOrder: ProjectOrder) => {
+		setCurrentOrder(nextOrder);
+		setOrders((items) => upsertOrder(items, nextOrder));
 	};
 
 	const updateOrder = async (nextOrder: ProjectOrder) => {
-		const previousOrders = orders;
-		persist(orders.map((order) => (order.id === nextOrder.id ? nextOrder : order)));
+		const previousOrder = visibleOrder;
+		persistOrder(nextOrder);
+
 		try {
-			await updateProjectRequest(nextOrder);
+			const savedOrder = await updateProjectRequest(nextOrder);
+			persistOrder(savedOrder);
 		} catch (error) {
-			persist(previousOrders);
+			if (previousOrder) persistOrder(previousOrder);
 			throw error;
 		}
 	};
 
-	if (location.pathname.endsWith("/new")) {
+	if (isCreatePage) {
 		return (
 			<CreateOrderPage
 				onBack={() => navigate("/projects")}
 				onCreated={(order) => {
-					persist([order, ...orders]);
+					persistOrder(order);
 					navigate(`/projects/${order.id}`);
 				}}
 			/>
 		);
 	}
 
-	if (currentOrderId) {
-		if (!currentOrder && loading) {
+	if (isDetailPage) {
+		if (detailLoading && !visibleOrder) {
 			return (
 				<main className="orders-page">
 					<PageState
@@ -81,19 +172,38 @@ export default function Projects() {
 			);
 		}
 
-		if (!currentOrder) {
+		if (detailError) {
 			return (
 				<main className="orders-page">
-					<EmptyState title="Заказ не найден" text="В локальных данных нет такого заказа." action="К заказам" onAction={() => navigate("/projects")} />
+					<PageState
+						variant="error"
+						title="Не удалось загрузить заказ"
+						text={detailError}
+						action="К заказам"
+						onAction={() => navigate("/projects")}
+					/>
+				</main>
+			);
+		}
+
+		if (!visibleOrder) {
+			return (
+				<main className="orders-page">
+					<EmptyState
+						title="Заказ не найден"
+						text="Такого заказа нет или у вас нет доступа к нему."
+						action="К заказам"
+						onAction={() => navigate("/projects")}
+					/>
 				</main>
 			);
 		}
 
 		return (
 			<ProjectWorkspacePage
-				key={`${currentOrder.id}-${currentOrder.updatedAt}`}
-				order={currentOrder}
-				canEdit={user?.role === "client" && currentOrder.hirerId === user.id}
+				key={`${visibleOrder.id}-${visibleOrder.updatedAt}`}
+				order={visibleOrder}
+				canEdit={user?.role === "client" && visibleOrder.hirerId === user.id}
 				onBack={() => navigate("/projects")}
 				onChange={updateOrder}
 			/>

@@ -16,9 +16,11 @@ export {
 	makeRisks,
 	calculateReadiness,
 	createProject,
+	normalizeProjectOrder,
 } from "./projectLogic";
 export {
 	getProjects,
+	getProjectById,
 	createProjectRequest,
 	updateProjectRequest,
 } from "./projectsApi";

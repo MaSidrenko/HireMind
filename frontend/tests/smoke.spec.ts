@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("home page opens and category link applies orders filter", async ({ page }) => {
+test("home page opens and category link applies orders filter", async ({
+	page,
+}) => {
 	await page.goto("/");
 
 	await expect(
@@ -20,10 +22,9 @@ test("unknown route renders 404 page", async ({ page }) => {
 	await expect(
 		page.getByRole("heading", { name: "Страница не найдена" }),
 	).toBeVisible();
-	await expect(page.getByRole("link", { name: "На главную" })).toHaveAttribute(
-		"href",
-		"/",
-	);
+	await expect(
+		page.getByRole("link", { name: "На главную" }),
+	).toHaveAttribute("href", "/");
 });
 
 test("mobile navigation opens menu", async ({ page }) => {
@@ -35,3 +36,27 @@ test("mobile navigation opens menu", async ({ page }) => {
 	await expect(page.getByRole("link", { name: "Главная" })).toBeVisible();
 	await expect(page.getByRole("link", { name: "Вход" })).toBeVisible();
 });
+
+test("sign in route opens", async ({ page }) => {
+	await page.goto("/sign-in");
+
+	await expect(
+		page.getByRole("heading", { name: /вход|sign in|login/i }),
+	).toBeVisible();
+});
+
+test("sign up route opens", async ({ page }) => {
+	await page.goto('/sign-up');
+
+	await expect(
+		page.getByRole("heading", {name: /Регистрация/i})
+	).toBeVisible();
+})
+
+test("open page profile", async ({ page }) => {
+	await page.goto('/projects');
+
+	await expect(
+		page.getByPlaceholder("Название заказа")
+	).toBeVisible();
+})

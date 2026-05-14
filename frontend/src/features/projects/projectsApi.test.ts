@@ -3,6 +3,7 @@ import { apiRequest } from "../../shared";
 import type { CreateProjectInput, ProjectOrder } from "./types";
 import {
 	createProjectRequest,
+	getProjectById,
 	getProjects,
 	updateProjectRequest,
 } from "./projectsApi";
@@ -67,15 +68,29 @@ describe("projectsApi", () => {
 	it("loads projects", async () => {
 		mockedApiRequest.mockResolvedValueOnce([project]);
 
-		await expect(getProjects()).resolves.toEqual([project]);
+		await expect(getProjects()).resolves.toEqual([
+			expect.objectContaining({ id: 99, readinessScore: 0 }),
+		]);
 
 		expect(mockedApiRequest).toHaveBeenCalledWith("/api/projects");
+	});
+
+	it("loads one project by id", async () => {
+		mockedApiRequest.mockResolvedValueOnce(project);
+
+		await expect(getProjectById(99)).resolves.toEqual(
+			expect.objectContaining({ id: 99, readinessScore: 0 }),
+		);
+
+		expect(mockedApiRequest).toHaveBeenCalledWith("/api/projects/99");
 	});
 
 	it("creates project with POST body", async () => {
 		mockedApiRequest.mockResolvedValueOnce(project);
 
-		await expect(createProjectRequest(createInput)).resolves.toEqual(project);
+		await expect(createProjectRequest(createInput)).resolves.toEqual(
+			expect.objectContaining({ id: 99, readinessScore: 0 }),
+		);
 
 		expect(mockedApiRequest).toHaveBeenCalledWith("/api/projects", {
 			method: "POST",
@@ -86,7 +101,9 @@ describe("projectsApi", () => {
 	it("updates project by id", async () => {
 		mockedApiRequest.mockResolvedValueOnce(project);
 
-		await expect(updateProjectRequest(project)).resolves.toEqual(project);
+		await expect(updateProjectRequest(project)).resolves.toEqual(
+			expect.objectContaining({ id: 99, readinessScore: 0 }),
+		);
 
 		expect(mockedApiRequest).toHaveBeenCalledWith("/api/projects/99", {
 			method: "PUT",

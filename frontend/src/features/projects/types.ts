@@ -116,4 +116,8 @@ export type CreateProjectInput = {
 	currency: Currency;
 	budgetType: BudgetType;
 	skills: string[];
+	aiSummary?: string;
+	briefSections?: BriefSections;
+	clarificationQuestions?: ClarificationQuestion[];
+	risks?: RiskItem[];
 };
