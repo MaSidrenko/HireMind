@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const updateProfile = useCallback(async (patch: ProfilePatch) => {
 		ensureContact(patch.contacts);
-		const response = await apiRequest<AuthResponse>("/api/profile", {
+		const response = await apiRequest<AuthResponse>("/profile", {
 			method: "PUT",
 			body: patch,
 		});
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const logout = useCallback(async () => {
 		try {
-			await apiRequest<null>("/api/auth/logout", { method: "POST" });
+			await apiRequest<{message: string}>("/auth/logout", { method: "POST" });
 		} catch (error) {
 			console.error("Logout error: ", error);
 		} finally {

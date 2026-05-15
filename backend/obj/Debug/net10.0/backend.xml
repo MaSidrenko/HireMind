@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>backend</name>
+    </assembly>
+    <members>
+        <member name="T:MyApp.Namespace.AuthController">
+            <summary>
+            Auth controller for handling authentication requests.
+            </summary>
+        </member>
+        <member name="T:backend.AppDbContext">
+            <summary>
+            DbContext for main BD
+            </summary>
+        </member>
+        <member name="M:backend.AppDbContext.#ctor(Microsoft.EntityFrameworkCore.DbContextOptions{backend.AppDbContext})">
+            <summary>
+            Constructor for DbContext. Needed for connection to DB
+            </summary>
+            <param name="options">DbContextOptions connect to db</param>
+        </member>
+        <member name="P:backend.AppDbContext.Users">
+            <summary>
+            User table in BD
+            </summary>
+        </member>
+        <member name="T:backend.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddUserFullName">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserFullName.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserFullName.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserFullName.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Contacts">
+            <summary>
+            Contacts User. Minimum required fields: telegram or phone. 
+            </summary>
+        </member>
+        <member name="P:backend.Contacts.Telegram">
+            <summary>
+            Telegram contact of user.
+            </summary>
+        </member>
+        <member name="P:backend.Contacts.Phone">
+            <summary>
+            Phone contact of user.
+            </summary> 
+        </member>
+        <member name="T:backend.UserDto">
+            <summary>
+            Record for user. Dto for frontend 
+            Id - user id,
+            Email - email of user,
+            Role - role user: freelancer | client | admin
+            Contacts - optional contacts of user. Telegram or phone required 
+            CompanyName - company name if user is client
+            </summary>
+        </member>
+        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,backend.Role,backend.Contacts,System.String)">
+            <summary>
+            Record for user. Dto for frontend 
+            Id - user id,
+            Email - email of user,
+            Role - role user: freelancer | client | admin
+            Contacts - optional contacts of user. Telegram or phone required 
+            CompanyName - company name if user is client
+            </summary>
+        </member>
+        <member name="T:backend.CreateUserRequest">
+            <summary>
+            Record for sing-up request.
+            </summary>
+        </member>
+        <member name="M:backend.CreateUserRequest.#ctor(System.String,System.String,System.String,backend.Role,backend.Contacts,System.String)">
+            <summary>
+            Record for sing-up request.
+            </summary>
+        </member>
+        <member name="T:backend.User">
+            <summary>
+            User model for db
+            </summary>
+        </member>
+        <member name="P:backend.User.Id">
+            <summary>
+            User id
+            </summary>
+        </member>
+        <member name="P:backend.User.Email">
+            <summary>
+            Email user. Used for user login. Must be unique
+            </summary>
+        </member>
+        <member name="P:backend.User.PasswordHash">
+            <summary>
+            Password Hash
+            </summary>
+        </member>
+        <member name="P:backend.User.Salt">
+            <summary>
+            Salt for hash password
+            </summary>
+        </member>
+        <member name="P:backend.User.Role">
+            <summary>
+            User role in the system.
+            </summary>
+        </member>
+        <member name="P:backend.User.Contacts">
+            <summary>
+            Contacts User. Minimum required fields: telegram or phone. 
+            </summary>
+        </member>
+        <member name="P:backend.User.CompanyName">
+            <summary>
+            Company Name for heir's
+            </summary>
+        </member>
+        <member name="P:backend.User.CreatedAt">
+            <summary>
+            When user sing in to us
+            </summary>
+        </member>
+        <member name="P:backend.User.LastSeenAt">
+            <summary>
+            When user last seen on our system
+            </summary>
+        </member>
+        <member name="P:backend.User.IsOnline">
+            <summary>
+            Is user online or not. True if yes, false otherwise. 
+            </summary>
+        </member>
+        <member name="T:backend.IPasswordHashSerivce">
+            <summary>
+            Interface for password hashing service
+            </summary>
+        </member>
+        <member name="T:backend.PasswordHashResult">
+            <summary>
+            Record for result of hash algorithm
+            </summary>
+        </member>
+        <member name="M:backend.PasswordHashResult.#ctor(System.String,System.String)">
+            <summary>
+            Record for result of hash algorithm
+            </summary>
+        </member>
+        <member name="T:backend.Pbkdf2PasswordHashService">
+            <summary>
+            Service for hashing algorithm using PBKDF2 algorithm
+            </summary>
+        </member>
+        <member name="T:Program">
+            <summary>
+            Auto-generated public partial Program class for top-level statement apps.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
+            <summary>
+            Generates a documentation comment ID for a type.
+            Example: T:Namespace.Outer+Inner`1 becomes T:Namespace.Outer.Inner`1
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.PropertyInfo)">
+            <summary>
+            Generates a documentation comment ID for a property.
+            Example: P:Namespace.ContainingType.PropertyName or for an indexer P:Namespace.ContainingType.Item(System.Int32)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type,System.String)">
+            <summary>
+            Generates a documentation comment ID for a property given its container type and property name.
+            Example: P:Namespace.ContainingType.PropertyName
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.MethodInfo)">
+            <summary>
+            Generates a documentation comment ID for a method (or constructor).
+            For example:
+              M:Namespace.ContainingType.MethodName(ParamType1,ParamType2)~ReturnType
+              M:Namespace.ContainingType.#ctor(ParamType)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.GetTypeDocId(System.Type,System.Boolean,System.Boolean)">
+            <summary>
+            Generates a documentation ID string for a type.
+            This method handles nested types (replacing '+' with '.'),
+            generic types, arrays, pointers, by-ref types, and generic parameters.
+            The <paramref name="includeGenericArguments"/> flag controls whether
+            constructed generic type arguments are emitted, while <paramref name="omitGenericArity"/>
+            controls whether the generic arity marker (e.g. "`1") is appended.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.NormalizeDocId(System.String)">
+            <summary>
+            Normalizes a documentation comment ID to match the compiler-style format.
+            Strips the return type suffix for ordinary methods but retains it for conversion operators.
+            </summary>
+            <param name="docId">The documentation comment ID to normalize.</param>
+            <returns>The normalized documentation comment ID.</returns>
+        </member>
+    </members>
+</doc>

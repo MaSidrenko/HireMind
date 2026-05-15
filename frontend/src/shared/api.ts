@@ -1,4 +1,5 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = "/api";
 
 type ApiOptions = Omit<RequestInit, "body"> & {
 	body?: unknown;
@@ -46,6 +47,7 @@ function getErrorMessage(data: unknown, fallback: string) {
 }
 
 export async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
+	  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 	const headers = new Headers(options.headers);
 	const hasBody = typeof options.body !== "undefined";
 
@@ -55,7 +57,7 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
 
 	headers.set("Accept", "application/json");
 
-	const response = await fetch(`${API_BASE_URL}${path}`, {
+	const response = await fetch(`${API_BASE_URL}${normalizedPath}`, {
 		...options,
 		headers,
 		credentials: "include",

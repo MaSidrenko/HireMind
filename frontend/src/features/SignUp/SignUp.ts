@@ -19,10 +19,9 @@ export type AuthResponse = User | { user: User };
 
 export async function signUpRequest(payload: SignUpPayload) {
 	try {
-		return await apiRequest<AuthResponse>("/api/auth/sign-up", {
+		return await apiRequest<AuthResponse>("/auth/sign-up", {
 			method: "POST",
 			body: {
-				username: payload.fullName,
 				fullName: payload.fullName,
 				email: payload.email,
 				password: payload.password,

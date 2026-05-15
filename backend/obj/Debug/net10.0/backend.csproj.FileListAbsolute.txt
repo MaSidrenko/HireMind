@@ -160,3 +160,10 @@
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.pdb
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/ref/backend.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.xml
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.xml
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/DotNetEnv.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Superpower.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll

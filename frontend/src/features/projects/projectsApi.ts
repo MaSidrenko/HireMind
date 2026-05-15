@@ -3,17 +3,17 @@ import { normalizeProjectOrder } from "./projectLogic";
 import type { CreateProjectInput, ProjectOrder } from "./types";
 
 export async function getProjects() {
-	const projects = await apiRequest<Partial<ProjectOrder>[]>("/api/projects");
+	const projects = await apiRequest<Partial<ProjectOrder>[]>("/projects");
 	return projects.map(normalizeProjectOrder);
 }
 
 export async function getProjectById(id: number) {
-	const project = await apiRequest<Partial<ProjectOrder>>(`/api/projects/${id}`);
+	const project = await apiRequest<Partial<ProjectOrder>>(`/projects/${id}`);
 	return normalizeProjectOrder(project);
 }
 
 export async function createProjectRequest(input: CreateProjectInput) {
-	const project = await apiRequest<Partial<ProjectOrder>>("/api/projects", {
+	const project = await apiRequest<Partial<ProjectOrder>>("/projects", {
 		method: "POST",
 		body: input,
 	});
@@ -40,7 +40,7 @@ export async function createProjectRequest(input: CreateProjectInput) {
 }
 
 export async function updateProjectRequest(project: ProjectOrder) {
-	const nextProject = await apiRequest<Partial<ProjectOrder>>(`/api/projects/${project.id}`, {
+	const nextProject = await apiRequest<Partial<ProjectOrder>>(`/projects/${project.id}`, {
 		method: "PUT",
 		body: project,
 	});

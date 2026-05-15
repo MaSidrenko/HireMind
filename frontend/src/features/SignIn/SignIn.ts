@@ -8,7 +8,7 @@ export async function signInRequest(
 	password: string,
 ): Promise<AuthResponse> {
 	try {
-		return await apiRequest<AuthResponse>("/api/auth/sign-in", {
+		return await apiRequest<AuthResponse>("/auth/sign-in", {
 			method: "POST",
 			body: { login: email, password: password },
 		});
