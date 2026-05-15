@@ -16,155 +16,72 @@ namespace MyApp.Namespace
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly IPasswordHashSerivce _passwordHashSerivce;
-        private readonly IJwtTokenService _jwtTokenService;
+
         private readonly JwtOptions _jwtOptions;
+        private readonly IAuthService _authService;
         public AuthController(
             AppDbContext context, 
-            IPasswordHashSerivce passwordHashSerivce,
-            IJwtTokenService jwtTokenService,
-            IOptions<JwtOptions> jwtOptions
+            IOptions<JwtOptions> jwtOptions,
+            IAuthService authService
             )
         {
             _db = context;
-            _passwordHashSerivce = passwordHashSerivce;
-            _jwtTokenService = jwtTokenService;
             _jwtOptions = jwtOptions.Value;
+            _authService = authService;
         }
         
         [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp([FromBody] CreateUserRequest request)
+        public async Task<IActionResult> SignUp([FromBody] CreateUserRequest request, CancellationToken ct)
         {
-             if (string.IsNullOrWhiteSpace(request.FullName))
-            {
-                return BadRequest(new
-                {
-                    message = "Full name is required."
-                });
-            }
-
-            var email = request.Email.Trim().ToLowerInvariant();
-
-            bool emailAlreadyExists = await _db.Users.AnyAsync(user => user.Email == email);
-
-            if(emailAlreadyExists)
+            AuthResult? result = await _authService.SignUpAsync(request, ct);
+              if(!result.IsSuccess)
             {
                 return Conflict(
                     new
                     {
-                        message = "User with this email already exists."
+                        message = result.ErrorMessage
                     });
             }
-            var passwordHashResult = _passwordHashSerivce.HashPassword(request.Password);
-            User newUser = new()
-            {
-                Email = email,
-                FullName = request.FullName,
-                Role = request.Role,
-                Contacts = request.Contacts,
-                CompanyName = request.CompanyName,
-                PasswordHash = passwordHashResult.Hash,
-                Salt = passwordHashResult.Salt,
-                CreatedAt = DateTime.UtcNow,
-                LastSeenAt = DateTime.UtcNow
-            };
 
-            _db.Users.Add(newUser);
-            await _db.SaveChangesAsync();
-
-            var expiresAtUtc = DateTime.UtcNow.AddMinutes(
-                _jwtOptions.AccessTokenExpirationMinutes
-            );
-
-            var accessToken = _jwtTokenService.GenerateAccessToken(
-                newUser,
-                expiresAtUtc
-            );
-
-            AppendAccessTokenCookie(accessToken, expiresAtUtc);
+            AppendAccessTokenCookie(result.AccessToken!, result.ExpiresAtUtc);
 
             return Ok(new
             {
-                user = ToUserResponse(newUser)
+                user = result.User
             });
         }
         [HttpPost("sign-in")]
-        public async Task<IActionResult> SignIn([FromBody] LoginRequest request)
+        public async Task<IActionResult> SignIn([FromBody] LoginRequest request, CancellationToken ct)
         {
-            var email = request.Email.Trim().ToLowerInvariant();
+            AuthResult? result = await _authService.SignInAsync(request, ct);
 
-            var user = await _db.Users
-                    .FirstOrDefaultAsync(user => user.Email == email);
-
-            if(user is null)
+            if(!result.IsSuccess)
             {
                 return Unauthorized(new
                 {
-                    message = "Invalid email or password. Please try again." 
+                    message = result.ErrorMessage
                 });
             }
 
-            if(string.IsNullOrWhiteSpace(user.PasswordHash) || string.IsNullOrWhiteSpace(user.Salt))
-            {
-                return Unauthorized(new
-                {
-                    message = "Invalid email or password. Please try again." 
-                });
-            }
-
-            bool isValidPassword = _passwordHashSerivce.VerifyPassword(
-                password: request.Password,
-                storedHash: user.PasswordHash,
-                storedSalt: user.Salt
-            );
-
-            if(!isValidPassword)
-            {
-                return Unauthorized(new
-                {
-                   message = "Invalid email or password. Please try again." 
-                });
-            }
-
-            user.LastSeenAt = DateTime.UtcNow;
-            user.IsOnline = true;
-
-            await _db.SaveChangesAsync();
-
-            var expiresAtUtc = DateTime.UtcNow.AddMinutes(
-                _jwtOptions.AccessTokenExpirationMinutes
-            );
-
-            var accessToken = _jwtTokenService.GenerateAccessToken(
-                user,
-                expiresAtUtc
-            );
-
-            AppendAccessTokenCookie(accessToken, expiresAtUtc);
+            AppendAccessTokenCookie(result.AccessToken!, result.ExpiresAtUtc);
 
             return Ok(new
             {
-               user = ToUserResponse(user) 
+               user = result.User
             });
         }
         [Authorize]
         [HttpPost("logout")]
-        public async Task<IActionResult> SignOut()
+        public async Task<IActionResult> SignOut(CancellationToken ct)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if(int.TryParse(userId, out var parsedUserId))
+            if(!int.TryParse(userId, out int parsedUserId))
             {
-                var user = await _db.Users.FirstOrDefaultAsync(user => user.Id == parsedUserId);
-
-                if(user is not null)
-                {
-                    user.IsOnline = false;
-                    user.LastSeenAt = DateTime.UtcNow;
-
-                    await _db.SaveChangesAsync();
-                }
+               return Unauthorized();
             }
+
+            await _authService.SignOutAsnyc(parsedUserId, ct);
 
             Response.Cookies.Delete(
                 _jwtOptions.CookieName,
@@ -184,7 +101,7 @@ namespace MyApp.Namespace
         }
         [Authorize]
         [HttpGet("me")]
-        public async Task<IActionResult> Me()
+        public async Task<IActionResult> Me(CancellationToken ct)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -193,17 +110,19 @@ namespace MyApp.Namespace
                 return Unauthorized();
             }
 
-            var user = await _db.Users
-                    .FirstOrDefaultAsync(user => user.Id == parsedUserId);
+            UserResult result = await _authService.Me(parsedUserId, ct);
 
-            if(user is null)
+            if(!result.IsSuccess)
             {
-                return Unauthorized();
+                return Unauthorized(new
+                {
+                    message = result.ErrorMessage
+                });
             }
 
             return Ok(new
             {
-                user = ToUserResponse(user)
+                user = result.User
             });
         }
 
@@ -231,22 +150,6 @@ namespace MyApp.Namespace
                 "lax" => SameSiteMode.Lax,
                 "none" => SameSiteMode.None,
                 _ => SameSiteMode.Lax
-            };
-        }
-
-        private static object ToUserResponse(User user)
-        {
-            return new
-            {
-                user.Id,
-                user.Email,
-                user.FullName,
-                Role = user.Role.ToString(),
-                user.Contacts,
-                user.CompanyName,
-                user.CreatedAt,
-                user.LastSeenAt,
-                user.IsOnline
             };
         }
     }

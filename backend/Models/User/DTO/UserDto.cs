@@ -11,7 +11,11 @@
 public sealed record UserDto (
 	int Id,
 	string Email,
+	string FullName,
 	Role Role,
 	Contacts? Contacts,
-	string? CompanyName
+	string? CompanyName,
+	DateTime CreatedAt,
+	DateTime LastSeenAt,
+	bool IsOnline
 );

@@ -6,9 +6,12 @@
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.runtimeconfig.json
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.pdb
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.xml
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Azure.Core.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Azure.Identity.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/DotNetEnv.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Humanizer.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.AspNetCore.OpenApi.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.Bcl.AsyncInterfaces.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
@@ -39,6 +42,9 @@
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.VisualStudio.SolutionPersistence.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Mono.TextTemplating.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Newtonsoft.Json.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Superpower.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Swashbuckle.AspNetCore.Swagger.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerGen.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerUI.dll
@@ -157,13 +163,7 @@
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.csproj.Up2Date
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.dll
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/refint/backend.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.xml
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.pdb
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/ref/backend.dll
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/backend.xml
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.xml
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.dll
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/DotNetEnv.dll
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Superpower.dll
-/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll

@@ -74,7 +74,7 @@
             CompanyName - company name if user is client
             </summary>
         </member>
-        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,backend.Role,backend.Contacts,System.String)">
+        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,System.String,backend.Role,backend.Contacts,System.String,System.DateTime,System.DateTime,System.Boolean)">
             <summary>
             Record for user. Dto for frontend 
             Id - user id,
