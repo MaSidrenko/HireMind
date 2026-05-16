@@ -56,7 +56,8 @@ export default function SignUp() {
 
 		try {
 			await signUp({
-				fullName: `${form.lastName} ${form.firstName} ${form.middleName}`.trim(),
+				fullName:
+					`${form.lastName} ${form.firstName} ${form.middleName}`.trim(),
 				email: form.email,
 				password: form.password,
 				role: form.role === "Заказчик" ? "client" : "freelancer",
@@ -66,7 +67,14 @@ export default function SignUp() {
 					phone: form.phone,
 				},
 			});
-			navigate(form.role === "Заказчик" ? "/projects/new" : "/projects");
+
+			sessionStorage.setItem("emailVerifyAllowed", "true");
+
+			navigate("/email-code", {
+				state: {
+					userRole: form.role,
+				},
+			});
 		} catch (error) {
 			setFormError(
 				error instanceof Error
@@ -84,7 +92,9 @@ export default function SignUp() {
 				<h1>Регистрация</h1>
 				<p>Создайте свой аккаунт, чтобы начать</p>
 				<label>
-					{form.role === "Заказчик" ? ("ФИО контактного лица* ") : ("ФИО*")}
+					{form.role === "Заказчик"
+						? "ФИО контактного лица* "
+						: "ФИО*"}
 					{/* ФИО: */}
 					<div className="line-form-sign-up">
 						<div className="fio-field">
@@ -246,7 +256,11 @@ export default function SignUp() {
 				</label>
 				<input
 					type="submit"
-					value={isSubmitting ? "Создаём аккаунт..." : "Зарегистрироваться"}
+					value={
+						isSubmitting
+							? "Создаём аккаунт..."
+							: "Зарегистрироваться"
+					}
 					className="input-sign-up"
 					disabled={isSubmitting}
 				/>
