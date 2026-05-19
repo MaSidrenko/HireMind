@@ -42,7 +42,7 @@ export const PageRoutes: AppPage[] = [
 		label: "Новый заказ",
 		component: Projects,
 		showInNavbar: false,
-		access: "client",
+		access: "Client",
 	},
 	{
 		path: "/projects/:projectId",
@@ -56,7 +56,7 @@ export const PageRoutes: AppPage[] = [
 		label: "Фрилансеры",
 		component: Freelancers,
 		showInNavbar: true,
-		access: "client",
+		access: "Client",
 	},
 	{
 		path: "/projects",
@@ -65,13 +65,6 @@ export const PageRoutes: AppPage[] = [
 		showInNavbar: true,
 		access: "public",
 	},
-	{
-		path: "/email-code",
-		label: "Код верификации",
-		component: EmailVerify,
-		showInNavbar: true,
-		access: "public"
-	}
 	// {
 	// 	path: "/projects/new",
 	// 	label: "Новый заказ",

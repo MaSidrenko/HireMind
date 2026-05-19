@@ -1,24 +1,31 @@
 import { ApiError, apiRequest } from "@/shared";
 
 type EmailVerifyResponse = {
-	message: string;
+    message: string;
 };
 
 export async function emailVerifyRequest(
-	code: string
+    email: string,
+    code: string,
 ): Promise<EmailVerifyResponse> {
-	try {
-		return await apiRequest<EmailVerifyResponse>("/api/auth/email-verify", {
-			method: "POST",
-			body: {
-				emailCode: code,
-			},
-		});
-	} catch (error) {
-		if (error instanceof ApiError && [400, 401].includes(error.status)) {
-			throw new Error("Неверный код подтверждения");
-		}
+    try {
+        return await apiRequest<EmailVerifyResponse>("/auth/email-verify", {
+            method: "POST",
+            body: {
+                email: email.trim().toLowerCase(),
+                code: code.trim(),
+            },
+        });
+    } catch (error) {
+        if (error instanceof ApiError) {
+            console.log("VERIFY ERROR DATA:", error.data);
+            throw new Error(
+                typeof error.data === "string"
+                    ? error.data
+                    : "Не удалось подтвердить email",
+            );
+        }
 
-		throw new Error("Не удалось проверить код. Попробуйте позже");
-	}
+        throw new Error("Не удалось проверить код. Попробуйте позже");
+    }
 }

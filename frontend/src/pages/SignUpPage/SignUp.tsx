@@ -72,6 +72,7 @@ export default function SignUp() {
 
 			navigate("/email-code", {
 				state: {
+					 email: form.email,
 					userRole: form.role,
 				},
 			});

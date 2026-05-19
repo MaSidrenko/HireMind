@@ -8,9 +8,9 @@ export async function signInRequest(
 	password: string,
 ): Promise<AuthResponse> {
 	try {
-		return await apiRequest<AuthResponse>("/api/auth/sign-in", {
+		return await apiRequest<AuthResponse>("/auth/sign-in", {
 			method: "POST",
-			body: { login: email, password: password },
+			body: { email: email, password: password },
 		});
 	} catch (error) {
 		if (error instanceof ApiError && [400, 401].includes(error.status)) {

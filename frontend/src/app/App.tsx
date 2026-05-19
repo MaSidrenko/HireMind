@@ -26,10 +26,10 @@ function App() {
 
 		if (route.access === "public") return true;
 		if (route.access === "private") return isAuthenticated;
-		if (route.access === "client")
-			return isAuthenticated && user?.role === "client";
-		if (route.access === "freelancer")
-			return isAuthenticated && user?.role === "freelancer";
+		if (route.access === "Client")
+			return isAuthenticated && user?.role === "Client";
+		if (route.access === "Freelancer")
+			return isAuthenticated && user?.role === "Freelancer";
 		if (route.access === "guest") return !isAuthenticated;
 
 		return false;

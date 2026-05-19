@@ -1,3 +1,4 @@
+import type { UserRole } from "@/features/Auth/getMe.types";
 import type { ComponentType } from "react";
 
 export type AppPage = {
@@ -5,6 +6,6 @@ export type AppPage = {
 	label: string;
 	component: ComponentType;
 	showInNavbar?: boolean;
-	access?: "public" | "private" | "guest" | "client" | "freelancer";
+	access?: "public" | "private" | "guest" | UserRole
 };
 

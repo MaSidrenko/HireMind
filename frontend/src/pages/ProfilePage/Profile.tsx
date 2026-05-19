@@ -45,27 +45,34 @@ export default function Profile() {
 			return;
 		}
 
-		if (user.role === "freelancer") {
+		if (user.role.toLowerCase() === "freelancer") {
 			setSelectedSkills(user.skills ?? []);
 		} else {
 			setSelectedSkills([]);
 		}
 	}, [user]);
-	
+
 	if (!user) {
 		return null;
 	}
 
-	const isFreelancer = user.role === "freelancer";
-	const isClient = user.role === "client";
+	const normalizedRole = user.role.toLowerCase();
 
-	const roleLabel = user.role === "client" ? "Заказчик" : "Исполнитель";
+	const isFreelancer = normalizedRole === "freelancer";
+	const isClient = normalizedRole === "client";
 
-	const initials = user.fullName
-		.split(" ")
+	const roleLabel = isClient ? "Заказчик" : "Исполнитель";
+
+	const contacts = user.contacts ?? {};
+
+	const displayName =
+		user.fullName?.trim() || user.email?.split("@")[0] || "Пользователь";
+
+	const initials = displayName
+		.split(/\s+/)
 		.filter(Boolean)
 		.slice(0, 2)
-		.map((part) => part[0]?.toUpperCase())
+		.map((part) => part.charAt(0).toUpperCase())
 		.join("");
 
 	const handleSkillsChange = async (skills: string[]) => {
@@ -110,7 +117,7 @@ export default function Profile() {
 		{
 			label: "Контакты",
 			value:
-				user.contacts.telegram || user.contacts.phone
+				contacts.telegram || contacts.phone
 					? "Заполнены"
 					: "Ожидают заполнения",
 			description: "Чем больше данных, тем легче связаться с Вами",
@@ -153,7 +160,7 @@ export default function Profile() {
 							<span className="profile-kicker">
 								Личный кабинет
 							</span>
-							<h1>{user.fullName}</h1>
+							<h1>{displayName}</h1>
 							<p>
 								Управляйте своим профилем, контактами и рабочими
 								сценариями в одном месте.
@@ -214,9 +221,7 @@ export default function Profile() {
 					<div className="profile-info-list">
 						<div className="profile-info-row">
 							<span>Telegram</span>
-							<strong>
-								{user.contacts.telegram || "Не указан"}
-							</strong>
+							<strong>{contacts.telegram || "Не указан"}</strong>
 						</div>
 						<div className="profile-info-row">
 							<span>Телефон</span>
@@ -224,14 +229,6 @@ export default function Profile() {
 								{user.contacts.phone || "Не указан"}
 							</strong>
 						</div>
-						{isClient && (
-							<div className="profile-info-row">
-								<span>Компания</span>
-								<strong>
-									{user.companyName || "Не указана"}
-								</strong>
-							</div>
-						)}
 					</div>
 				</div>
 				<div className="profile-card">

@@ -10,7 +10,7 @@ import {
 import { apiRequest } from "@/shared";
 import { signInRequest } from "@/features/SignIn";
 import { signUpRequest } from "@/features/SignUp";
-import type { SignUpPayload } from "@/features/SignUp"
+import type { SignUpPayload } from "@/features/SignUp";
 import { getMe } from "./getMe";
 import type { User } from "./getMe.types";
 
@@ -70,30 +70,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const signIn = useCallback(async (email: string, password: string) => {
 		const response = await signInRequest(email, password);
-		const nextUser = unwrapUser(response) ?? await getMe();
+		const nextUser = unwrapUser(response) ?? (await getMe());
 		setUser(nextUser);
 	}, []);
 
 	const signUp = useCallback(async (payload: SignUpPayload) => {
 		ensureContact(payload.contacts);
-		const response = await signUpRequest(payload);
-		const nextUser = unwrapUser(response) ?? await getMe();
-		setUser(nextUser);
+
+		await signUpRequest(payload);
+
+		setUser(null);
 	}, []);
 
 	const updateProfile = useCallback(async (patch: ProfilePatch) => {
 		ensureContact(patch.contacts);
-		const response = await apiRequest<AuthResponse>("/api/profile", {
+		const response = await apiRequest<AuthResponse>("/profile", {
 			method: "PUT",
 			body: patch,
 		});
-		const nextUser = unwrapUser(response) ?? await getMe();
+		const nextUser = unwrapUser(response) ?? (await getMe());
 		setUser(nextUser);
 	}, []);
 
 	const logout = useCallback(async () => {
 		try {
-			await apiRequest<null>("/api/auth/logout", { method: "POST" });
+			await apiRequest<{ message: string }>("/auth/logout", {
+				method: "POST",
+			});
 		} catch (error) {
 			console.error("Logout error: ", error);
 		} finally {
@@ -119,7 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		[user, loading, refreshAuth, signIn, signUp, updateProfile, logout],
 	);
 
-	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+	return (
+		<AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+	);
 }
 
 export function useAuth() {

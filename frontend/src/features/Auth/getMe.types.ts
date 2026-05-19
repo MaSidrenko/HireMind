@@ -15,7 +15,7 @@
 // 	isOnline: boolean;
 // };
 
-export type UserRole = "freelancer" | "client";
+export type UserRole = "Freelancer" | "Client";
 
 export type Contacts = {
 	telegram?: string;
@@ -32,12 +32,12 @@ type BaseUser = {
 };
 
 export type FreelancerUser = BaseUser & {
-	role: "freelancer";
+	role: "Freelancer";
 	skills: string[];
 };
 
 export type ClientUser = BaseUser & {
-	role: "client";
+	role: "Client";
 	companyName?: string;
 };
 

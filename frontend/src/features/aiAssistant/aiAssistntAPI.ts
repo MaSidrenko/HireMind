@@ -7,14 +7,14 @@ export async function generateAiBrief(input: {
 	category: string;
 	rawDescription: string;
 }): Promise<AiBriefResult> {
-	return apiRequest<AiBriefResult>("/api/ai/briefs/generate", {
+	return apiRequest<AiBriefResult>("/ai/briefs/generate", {
 		method: "POST",
 		body: input,
 	});
 }
 
 export async function askProjectAi(order: ProjectOrder, prompt: string) {
-	const response = await apiRequest<{ answer: string }>("/api/ai/project-assistant", {
+	const response = await apiRequest<{ answer: string }>("/ai/project-assistant", {
 		method: "POST",
 		body: { projectId: order.id, prompt },
 	});
