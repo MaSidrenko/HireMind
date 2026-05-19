@@ -3,9 +3,10 @@ import "./EmailVerify.css";
 import { emailVerifyRequest } from "@/features";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type EmailVerifyLocationState  = {
-	userRole: string 
-}
+type EmailVerifyLocationState = {
+	email: string;
+	userRole: string;
+};
 
 export default function EmailVerify() {
 	const location = useLocation();
@@ -25,6 +26,11 @@ export default function EmailVerify() {
 	async function handelSubmit(e: React.FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 
+		if (!state?.email) {
+			setFormError("Email не найден. Зарегистрируйтесь заново.");
+			return;
+		}
+
 		if (!codeEmail.trim()) {
 			setFormError("Введите код подтверждения");
 			return;
@@ -36,10 +42,11 @@ export default function EmailVerify() {
 		}
 
 		try {
-			await emailVerifyRequest(codeEmail);
+			await emailVerifyRequest(state.email, codeEmail);
 			sessionStorage.removeItem("emailVerifyAllowed");
-			navigate(state?.userRole === "Заказчик" ? "/projects/new" : "/projects");
-
+			navigate(
+				"/sign-in"
+			);
 		} catch (error) {
 			if (error instanceof Error) {
 				setFormError(error.message);

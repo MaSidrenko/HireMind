@@ -49,6 +49,18 @@
         <member name="M:backend.Migrations.AddUserFullName.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:backend.Migrations.AddEmailVerify">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddEmailVerify.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddEmailVerify.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddEmailVerify.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:backend.Contacts">
             <summary>
             Contacts User. Minimum required fields: telegram or phone. 

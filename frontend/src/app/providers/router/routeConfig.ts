@@ -65,13 +65,6 @@ export const PageRoutes: AppPage[] = [
 		showInNavbar: true,
 		access: "public",
 	},
-	{
-		path: "/email-code",
-		label: "Код верификации",
-		component: EmailVerify,
-		showInNavbar: true,
-		access: "public"
-	}
 	// {
 	// 	path: "/projects/new",
 	// 	label: "Новый заказ",

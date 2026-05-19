@@ -4,7 +4,7 @@ export default function EmailVerifyGuard() {
 	const isAllowed = sessionStorage.getItem("emailVerifyAllowed") === "true";
 
 	if (!isAllowed) {
-		return <Navigate to="/register" replace />;
+		return <Navigate to="/sign-up" replace />;
 	}
 
 	return <Outlet />;

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -39,6 +40,11 @@ public class AuthService : IAuthService
 		if(string.IsNullOrWhiteSpace(user.PasswordHash) || string.IsNullOrWhiteSpace(user.Salt))
 		{
 			return AuthResult.Fail(invalidCredentialsMessage);
+		}
+
+		if(!user.isEmailConfirmed)
+		{
+			return AuthResult.Fail("Подтвердите email перед входом!");
 		}
 
 		bool isValidPassword = _passwordHashService.VerifyPassword(
@@ -84,66 +90,55 @@ public class AuthService : IAuthService
 			expiresAtUtc
 		);
 	}
-	public async Task<AuthResult> SignUpAsync(CreateUserRequest request, CancellationToken ct = default)
-	{
-		if(string.IsNullOrWhiteSpace(request.FullName))
-			return AuthResult.Fail("Full name is required");
+	public async Task<SignUpResult> SignUpAsync(
+    CreateUserRequest request,
+    IEmailSender emailSender,
+    CancellationToken ct = default)
+{
+    if (string.IsNullOrWhiteSpace(request.FullName))
+        return SignUpResult.Fail("Full name is required");
 
-		string email = request.Email.Trim().ToLowerInvariant();
+    string email = request.Email.Trim().ToLowerInvariant();
 
-		bool emailAlreadyExists = await _userService.CheckExistsUserByEmailAsync(email, ct);
+    bool emailAlreadyExists =
+        await _userService.CheckExistsUserByEmailAsync(email, ct);
 
-		if(emailAlreadyExists)
-		{
-			return AuthResult.Fail("Email already exists");
-		}
+    if (emailAlreadyExists)
+        return SignUpResult.Fail("Email already exists");
 
-		var passwordHashResult = _passwordHashService.HashPassword(request.Password);
+    var code = EmailCodeGenerator.GenerateCode();
+    var passwordHashResult = _passwordHashService.HashPassword(request.Password);
 
-		User newUser = new()
-		{
-			Email = email,
-			FullName = request.FullName,
-			Role = request.Role,
-			Contacts = request.Contacts,
-			CompanyName = request.CompanyName,
-			PasswordHash = passwordHashResult.Hash,
-			Salt = passwordHashResult.Salt,
-			CreatedAt = DateTime.UtcNow,
-			LastSeenAt = DateTime.UtcNow,	
-		};
+    User newUser = new()
+    {
+        Email = email,
+        FullName = request.FullName,
+        Role = request.Role,
+        Contacts = request.Contacts,
+        CompanyName = request.CompanyName,
+        PasswordHash = passwordHashResult.Hash,
+        Salt = passwordHashResult.Salt,
+        CreatedAt = DateTime.UtcNow,
+        LastSeenAt = DateTime.UtcNow,
 
-		await _userService.CreateUserAsnyc(newUser, ct);
-		await _userService.SaveChangesAsync(ct);
+        IsOnline = false,
+        isEmailConfirmed = false,
+        EmailVerificationCodeHash = EmailCodeHasher.Hash(code),
+        EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(15),
+        EmailVerificationAttempts = 0
+    };
 
+    await _userService.CreateUserAsnyc(newUser, ct);
+    await _userService.SaveChangesAsync(ct);
 
-		var expiresAtUtc = DateTime.UtcNow.AddMinutes(
-			_jwtOptions.AccessTokenExpirationMinutes
-		);
+    await emailSender.SendEmailAsync(
+        newUser.Email,
+        "Код подтверждения",
+        $"Ваш код подтверждения: {code}"
+    );
 
-		var accessToken = _jwtTokenService.GenerateAccessToken(
-			newUser,
-			expiresAtUtc
-		);
-
-		UserDto userDto = new(
-			newUser.Id,
-			newUser.Email,
-			newUser.FullName,
-			newUser.Role,
-			newUser.Contacts,
-			newUser.CompanyName,
-			newUser.CreatedAt,
-			newUser.LastSeenAt,
-			newUser.IsOnline
-		);
-
-		return AuthResult.Success(
-			userDto,
-			accessToken,
-			expiresAtUtc
-		);
-	}
+    return SignUpResult.Success();
+}
 	public async Task SignOutAsnyc(int userId, CancellationToken ct)
 	{
 		User? user = await _userService.GetByIdAsync(userId, ct);
@@ -181,5 +176,49 @@ public class AuthService : IAuthService
 		);
 
 		return UserResult.Success(userDto);
+	}
+
+	public async Task<EmailVerifyResult> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default)
+	{
+		User? user = await _userService.GetByEmailAsync(request.Email, ct);
+
+		if(user is null)
+		{
+			return EmailVerifyResult.Fail("Неверный код подтверждения");
+		}
+
+		if(user.isEmailConfirmed)
+		{
+			return EmailVerifyResult.Fail("Email уже подтвержден");
+		}
+
+		if(user.EmailVerificationCodeExpiresAtUtc is null || user.EmailVerificationCodeExpiresAtUtc < DateTime.UtcNow)
+		{
+			return EmailVerifyResult.Fail("Код истек");
+		}
+
+		if(user.EmailVerificationAttempts > 5)
+		{
+			return EmailVerifyResult.Fail("Слишком много попыток.Запросите новый код");
+		}
+
+		bool isCodeValid = EmailCodeHasher.Verify(request.Code, user.EmailVerificationCodeHash!);
+
+		if(!isCodeValid)
+		{
+			user.EmailVerificationAttempts++;
+			await _userService.SaveChangesAsync();
+
+			return EmailVerifyResult.Fail("Неверный код");
+		}
+
+		user.isEmailConfirmed = true;
+		user.EmailVerificationCodeHash = null;
+		user.EmailVerificationCodeExpiresAtUtc = null;
+		user.EmailVerificationAttempts = 0;
+
+		await _userService.SaveChangesAsync();
+		
+		return EmailVerifyResult.Success(user);
 	}
 }

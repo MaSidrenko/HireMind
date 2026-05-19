@@ -167,3 +167,6 @@
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.pdb
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/backend.genruntimeconfig.cache
 /home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/Debug/net10.0/ref/backend.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/BouncyCastle.Cryptography.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/MailKit.dll
+/home/wslArch/source/sourceVS/MyProj/HireMind/backend/bin/Debug/net10.0/MimeKit.dll

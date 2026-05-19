@@ -31,9 +31,9 @@ namespace MyApp.Namespace
         }
         
         [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp([FromBody] CreateUserRequest request, CancellationToken ct)
+        public async Task<IActionResult> SignUp([FromBody] CreateUserRequest request, CancellationToken ct, [FromServices] IEmailSender sender)
         {
-            AuthResult? result = await _authService.SignUpAsync(request, ct);
+            SignUpResult? result = await _authService.SignUpAsync(request,sender, ct);
               if(!result.IsSuccess)
             {
                 return Conflict(
@@ -43,11 +43,10 @@ namespace MyApp.Namespace
                     });
             }
 
-            AppendAccessTokenCookie(result.AccessToken!, result.ExpiresAtUtc);
 
             return Ok(new
             {
-                user = result.User
+                message = "Пользователь зарегистрирован. Код подтверждения отправлен на email."
             });
         }
         [HttpPost("sign-in")]
@@ -68,6 +67,29 @@ namespace MyApp.Namespace
             return Ok(new
             {
                user = result.User
+            });
+        }
+
+        [HttpPost("email-verify")]
+        public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request, CancellationToken ct)
+        {
+            EmailVerifyResult? result = await _authService.VerifyEmailAsync(request, ct);
+            if(result.ErrorMessage == "Email уже подтвержден")
+            {
+                return Ok(new
+                {
+                    message = result.ErrorMessage
+                });
+            }
+
+            if(!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
+
+            return Ok(new
+            {
+                message = "Email успешно подтвержден"
             });
         }
         [Authorize]
