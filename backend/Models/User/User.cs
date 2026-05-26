@@ -33,6 +33,7 @@ public sealed class User
 	/// Company Name for heir's
 	/// </summary>
 	public string? CompanyName { get; set; }
+	public List<string> Skills { get; set; } = new();
 	/// <summary>
 	/// When user sing in to us
 	/// </summary>

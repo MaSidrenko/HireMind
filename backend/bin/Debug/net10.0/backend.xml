@@ -61,6 +61,102 @@
         <member name="M:backend.Migrations.AddEmailVerify.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:backend.Migrations.AddOrders">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddOrders.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddOrders.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddOrders.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.UpdateOrder">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrder.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrder.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrder.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.DeleteFromOrderCompanyName">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.DeleteFromOrderCompanyName.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.DeleteFromOrderCompanyName.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.DeleteFromOrderCompanyName.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.OrderStatusAdded">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.OrderStatusAdded.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.OrderStatusAdded.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.OrderStatusAdded.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.UpdatedOrderModel">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedOrderModel.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedOrderModel.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedOrderModel.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.UpdatedWorkWithOrder">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedWorkWithOrder.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedWorkWithOrder.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdatedWorkWithOrder.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.ChangeContext">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.ChangeContext.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.ChangeContext.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.ChangeContext.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddUserSkillsToProfile">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserSkillsToProfile.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserSkillsToProfile.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddUserSkillsToProfile.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:backend.Contacts">
             <summary>
             Contacts User. Minimum required fields: telegram or phone. 
@@ -86,7 +182,7 @@
             CompanyName - company name if user is client
             </summary>
         </member>
-        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,System.String,backend.Role,backend.Contacts,System.String,System.DateTime,System.DateTime,System.Boolean)">
+        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,System.String,backend.Role,backend.Contacts,System.String,System.Collections.Generic.List{System.String},System.DateTime,System.DateTime,System.Boolean)">
             <summary>
             Record for user. Dto for frontend 
             Id - user id,
