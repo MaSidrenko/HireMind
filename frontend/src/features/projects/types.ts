@@ -1,15 +1,20 @@
 export type OrderStatus =
-	| "draft"
-	| "published"
-	| "paused"
-	| "in_progress"
-	| "completed"
-	| "cancelled"
-	| "archived";
+	| "Draft"
+	| "Published"
+	| "Paused"
+	| "In_Progress"
+	| "Completed"
+	| "Cancelled"
+	| "Archived";
 
 export type BudgetType = "fixed" | "hourly";
 export type Currency = "RUB" | "USD" | "EUR";
-export type WorkflowStage = "raw" | "clarification" | "brief" | "review" | "approved";
+export type WorkflowStage =
+	| "raw"
+	| "clarification"
+	| "brief"
+	| "review"
+	| "approved";
 export type ScopeBucket = "included" | "excluded" | "later";
 export type RiskLevel = "low" | "medium" | "high";
 export type ProposalStatus = "pending" | "accepted" | "declined" | "withdrawn";
@@ -111,10 +116,10 @@ export type CreateProjectInput = {
 	companyName: string;
 	category: string;
 	rawDescription: string;
-	budgetMin: number;
-	budgetMax: number;
+	minPrice: number;
+	maxPrice: number;
 	currency: Currency;
-	budgetType: BudgetType;
+	payment: BudgetType;
 	skills: string[];
 	aiSummary?: string;
 	briefSections?: BriefSections;

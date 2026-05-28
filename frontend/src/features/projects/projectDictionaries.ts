@@ -9,13 +9,13 @@ import type {
 } from "./types";
 
 export const statusLabels: Record<OrderStatus, string> = {
-	draft: "Черновик",
-	published: "Опубликован",
-	paused: "На паузе",
-	in_progress: "В работе",
-	completed: "Завершён",
-	cancelled: "Отменён",
-	archived: "Архив",
+	Draft: "Черновик",
+	Published: "Опубликован",
+	Paused: "На паузе",
+	In_Progress: "В работе",
+	Completed: "Завершён",
+	Cancelled: "Отменён",
+	Archived: "Архив",
 };
 
 export const workflowLabels: Record<WorkflowStage, string> = {

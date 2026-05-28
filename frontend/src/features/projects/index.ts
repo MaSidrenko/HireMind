@@ -23,6 +23,9 @@ export {
 	getProjectById,
 	createProjectRequest,
 	updateProjectRequest,
+	acceptProposalRequest,
+	withdrawProposalRequest,
+	updateOrderApprovalRequest,
 } from "./projectsApi";
 export type {
 	OrderStatus,

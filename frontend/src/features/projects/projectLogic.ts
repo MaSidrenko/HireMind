@@ -14,27 +14,39 @@ import type {
 } from "./types";
 
 const orderStatuses: OrderStatus[] = [
-	"draft",
-	"published",
-	"paused",
-	"in_progress",
-	"completed",
-	"cancelled",
-	"archived",
+	"Draft",
+	"Published",
+	"Paused",
+	"In_Progress",
+	"Completed",
+	"Cancelled",
+	"Archived",
 ];
 
-const workflowStages: WorkflowStage[] = ["raw", "clarification", "brief", "review", "approved"];
+const workflowStages: WorkflowStage[] = [
+	"raw",
+	"clarification",
+	"brief",
+	"review",
+	"approved",
+];
 const currencies: Currency[] = ["RUB", "USD", "EUR"];
 const budgetTypes: BudgetType[] = ["fixed", "hourly"];
 
-function pickValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+function pickValue<T extends string>(
+	value: unknown,
+	allowed: readonly T[],
+	fallback: T,
+): T {
 	return typeof value === "string" && allowed.includes(value as T)
 		? (value as T)
 		: fallback;
 }
 
 function safeNumber(value: unknown, fallback = 0) {
-	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+	return typeof value === "number" && Number.isFinite(value)
+		? value
+		: fallback;
 }
 
 function safeString(value: unknown, fallback = "") {
@@ -42,26 +54,38 @@ function safeString(value: unknown, fallback = "") {
 }
 
 function safeDate(value: unknown) {
-	return typeof value === "string" && value ? value : new Date().toISOString();
+	return typeof value === "string" && value
+		? value
+		: new Date().toISOString();
 }
 
 function ratio(done: number, total: number) {
 	return total > 0 ? done / total : 0;
 }
 
-export function makeBrief(title: string, raw: string, category: string): BriefSections {
+export function makeBrief(
+	title: string,
+	raw: string,
+	category: string,
+): BriefSections {
 	return {
 		goal: `Получить понятный результат по задаче: ${title}.`,
 		audience:
 			category === "Маркетинг"
 				? "Потенциальные клиенты и команда маркетинга."
 				: "Конечные пользователи, заказчик и исполнитель.",
-		screens: "Основной экран, детали, форма заявки, состояния загрузки и ошибки.",
-		features: "Просмотр, создание, редактирование, фильтрация и ключевые действия.",
-		content: "Тексты, изображения, доступы и материалы передаются до старта.",
+		screens:
+			"Основной экран, детали, форма заявки, состояния загрузки и ошибки.",
+		features:
+			"Просмотр, создание, редактирование, фильтрация и ключевые действия.",
+		content:
+			"Тексты, изображения, доступы и материалы передаются до старта.",
 		design: "Аккуратный рабочий интерфейс без лишней лендинговой декоративности.",
-		constraints: "Без сложных платежей, CRM, escrow и внутреннего чата в первой версии.",
-		openQuestions: raw.trim() ? `Исходный запрос: ${raw}` : "Нужно добавить исходное описание.",
+		constraints:
+			"Без сложных платежей, CRM, escrow и внутреннего чата в первой версии.",
+		openQuestions: raw.trim()
+			? `Исходный запрос: ${raw}`
+			: "Нужно добавить исходное описание.",
 	};
 }
 
@@ -98,7 +122,11 @@ export function makeQuestions(category: string): ClarificationQuestion[] {
 					question: "Есть ли брендбук или референсы?",
 					importance: "medium",
 					answer: "",
-					options: ["Есть брендбук", "Есть референсы", "Нужен стиль с нуля"],
+					options: [
+						"Есть брендбук",
+						"Есть референсы",
+						"Нужен стиль с нуля",
+					],
 				},
 			]
 		: questions;
@@ -106,18 +134,50 @@ export function makeQuestions(category: string): ClarificationQuestion[] {
 
 export function makeScope(): ScopeItem[] {
 	return [
-		{ id: 1, title: "Структурированный бриф", description: "Цели, функции, ограничения и вопросы.", bucket: "included" },
-		{ id: 2, title: "Основные экраны", description: "Рабочая desktop/mobile версия.", bucket: "included" },
-		{ id: 3, title: "Escrow и платежи", description: "Отдельный этап после MVP.", bucket: "excluded" },
-		{ id: 4, title: "Расширенная аналитика", description: "Можно добавить после проверки спроса.", bucket: "later" },
+		{
+			id: 1,
+			title: "Структурированный бриф",
+			description: "Цели, функции, ограничения и вопросы.",
+			bucket: "included",
+		},
+		{
+			id: 2,
+			title: "Основные экраны",
+			description: "Рабочая desktop/mobile версия.",
+			bucket: "included",
+		},
+		{
+			id: 3,
+			title: "Escrow и платежи",
+			description: "Отдельный этап после MVP.",
+			bucket: "excluded",
+		},
+		{
+			id: 4,
+			title: "Расширенная аналитика",
+			description: "Можно добавить после проверки спроса.",
+			bucket: "later",
+		},
 	];
 }
 
 export function makeDone(): DoneCriterion[] {
 	return [
-		{ id: 1, text: "Основной сценарий работает без ручных обходов.", checked: true },
-		{ id: 2, text: "Есть пустые, ошибочные и загрузочные состояния.", checked: false },
-		{ id: 3, text: "Интерфейс не ломается на мобильной ширине.", checked: false },
+		{
+			id: 1,
+			text: "Основной сценарий работает без ручных обходов.",
+			checked: true,
+		},
+		{
+			id: 2,
+			text: "Есть пустые, ошибочные и загрузочные состояния.",
+			checked: false,
+		},
+		{
+			id: 3,
+			text: "Интерфейс не ломается на мобильной ширине.",
+			checked: false,
+		},
 	];
 }
 
@@ -144,7 +204,9 @@ export function makeRisks(): RiskItem[] {
 
 export function calculateReadiness(order: ProjectOrder) {
 	const brief = ratio(
-		briefSections.filter(({ key }) => order.briefSections[key].trim().length > 20).length,
+		briefSections.filter(
+			({ key }) => order.briefSections[key].trim().length > 20,
+		).length,
 		briefSections.length,
 	);
 	const answers = ratio(
@@ -159,12 +221,18 @@ export function calculateReadiness(order: ProjectOrder) {
 		order.risks.filter((item) => item.resolved).length,
 		order.risks.length,
 	);
-	const approvals = (Number(order.approvals.client) + Number(order.approvals.freelancer)) / 2;
+	const approvals =
+		(Number(order.approvals.client) + Number(order.approvals.freelancer)) /
+		2;
 
-	return Math.round(brief * 30 + answers * 25 + done * 20 + risks * 10 + approvals * 15);
+	return Math.round(
+		brief * 30 + answers * 25 + done * 20 + risks * 10 + approvals * 15,
+	);
 }
 
-export function normalizeProjectOrder(order: Partial<ProjectOrder>): ProjectOrder {
+export function normalizeProjectOrder(
+	order: Partial<ProjectOrder>,
+): ProjectOrder {
 	const title = safeString(order.title, "Без названия");
 	const rawDescription = safeString(order.rawDescription);
 	const category = safeString(order.category, "Разработка");
@@ -181,14 +249,21 @@ export function normalizeProjectOrder(order: Partial<ProjectOrder>): ProjectOrde
 		hirerId: safeNumber(order.hirerId),
 		hirerName: safeString(order.hirerName, "Заказчик"),
 		selectedFreelancerId:
-			typeof order.selectedFreelancerId === "number" ? order.selectedFreelancerId : null,
+			typeof order.selectedFreelancerId === "number"
+				? order.selectedFreelancerId
+				: null,
 		selectedFreelancerName:
-			typeof order.selectedFreelancerName === "string" ? order.selectedFreelancerName : null,
+			typeof order.selectedFreelancerName === "string"
+				? order.selectedFreelancerName
+				: null,
 		title,
-		shortDescription: safeString(order.shortDescription, rawDescription.slice(0, 150)),
+		shortDescription: safeString(
+			order.shortDescription,
+			rawDescription.slice(0, 150),
+		),
 		rawDescription,
 		technicalSpecification: safeString(order.technicalSpecification),
-		status: pickValue(order.status, orderStatuses, "draft"),
+		status: pickValue(order.status, orderStatuses, "Draft"),
 		workflowStage: pickValue(order.workflowStage, workflowStages, "raw"),
 		category,
 		budgetMin: safeNumber(order.budgetMin),
@@ -198,7 +273,8 @@ export function normalizeProjectOrder(order: Partial<ProjectOrder>): ProjectOrde
 		skills: Array.isArray(order.skills) ? order.skills : [],
 		proposalsCount: proposals.length,
 		proposals,
-		publishedAt: typeof order.publishedAt === "string" ? order.publishedAt : null,
+		publishedAt:
+			typeof order.publishedAt === "string" ? order.publishedAt : null,
 		updatedAt: safeDate(order.updatedAt),
 		companyName: safeString(order.companyName),
 		aiGenerated: Boolean(order.aiGenerated),
@@ -208,7 +284,9 @@ export function normalizeProjectOrder(order: Partial<ProjectOrder>): ProjectOrde
 			? order.clarificationQuestions
 			: [],
 		scopeItems: Array.isArray(order.scopeItems) ? order.scopeItems : [],
-		doneCriteria: Array.isArray(order.doneCriteria) ? order.doneCriteria : [],
+		doneCriteria: Array.isArray(order.doneCriteria)
+			? order.doneCriteria
+			: [],
 		risks: Array.isArray(order.risks) ? order.risks : [],
 		approvals: {
 			client: Boolean(order.approvals?.client),
@@ -230,14 +308,15 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		title: input.title,
 		shortDescription: input.rawDescription.slice(0, 150),
 		rawDescription: input.rawDescription,
-		technicalSpecification: input.aiSummary || `AI-черновик ТЗ для "${input.title}".`,
-		status: "draft",
+		technicalSpecification:
+			input.aiSummary || `AI-черновик ТЗ для "${input.title}".`,
+		status: "Draft",
 		workflowStage: "clarification",
 		category: input.category,
-		budgetMin: input.budgetMin,
-		budgetMax: input.budgetMax,
+		budgetMin: input.minPrice,
+		budgetMax: input.maxPrice,
 		currency: input.currency,
-		budgetType: input.budgetType,
+		budgetType: input.payment,
 		skills: input.skills.length ? input.skills : ["Discovery"],
 		proposalsCount: 0,
 		proposals: [],
@@ -246,8 +325,11 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		companyName: input.companyName || "Новая компания",
 		aiGenerated: true,
 		readinessScore: 0,
-		briefSections: input.briefSections ?? makeBrief(input.title, input.rawDescription, input.category),
-		clarificationQuestions: input.clarificationQuestions ?? makeQuestions(input.category),
+		briefSections:
+			input.briefSections ??
+			makeBrief(input.title, input.rawDescription, input.category),
+		clarificationQuestions:
+			input.clarificationQuestions ?? makeQuestions(input.category),
 		scopeItems: makeScope(),
 		doneCriteria: makeDone(),
 		risks: input.risks ?? makeRisks(),

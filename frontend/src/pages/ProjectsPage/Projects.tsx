@@ -40,6 +40,7 @@ export default function Projects() {
 	const location = useLocation();
 	const params = useParams<{ projectId?: string }>();
 	const { user } = useAuth();
+	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const isCreatePage = location.pathname.endsWith("/new");
 	const parsedOrderId = params.projectId ? Number(params.projectId) : null;
 	const currentOrderId =
@@ -203,7 +204,7 @@ export default function Projects() {
 			<ProjectWorkspacePage
 				key={`${visibleOrder.id}-${visibleOrder.updatedAt}`}
 				order={visibleOrder}
-				canEdit={user?.role === "client" && visibleOrder.hirerId === user.id}
+				canEdit={normalizedRole === "client" && visibleOrder.hirerId === user?.id}
 				onBack={() => navigate("/projects")}
 				onChange={updateOrder}
 			/>

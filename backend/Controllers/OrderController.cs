@@ -10,17 +10,17 @@ namespace MyApp.Namespace;
 [ApiController]
 public class OrderController : ControllerBase
 {
-	private readonly AppDbContext _db;
+	private readonly IOrderService _orderService;
 
-	public OrderController(AppDbContext context)
+	public OrderController(IOrderService orderService)
 	{
-		_db = context;
+		_orderService = orderService;
 	}
 
 	[HttpGet("get-by-id/{id:int}")]
 	public async Task<IActionResult> GetById(int id, CancellationToken ct)
 	{
-		Order? order = await LoadOrderGraphAsync(id, ct, asNoTracking: true);
+		Order? order = await _orderService.GetByIdAsync(id, ct);
 
 		if (order is null)
 		{
@@ -36,55 +36,7 @@ public class OrderController : ControllerBase
 	[HttpGet("get-all")]
 	public async Task<IActionResult> GetOrders(CancellationToken ct)
 	{
-		List<OrderListItemDto> orders = await _db.Orders
-			.AsNoTracking()
-			.Select(order => new OrderListItemDto
-			{
-				Id = order.Id,
-				HirerId = order.CustomerId,
-				HirerName = order.Customer.FullName,
-				CompanyName = order.Customer.CompanyName,
-				SelectedFreelancerId = order.FreelancerId,
-				SelectedFreelancerName = order.Freelancer != null
-					? order.Freelancer.FullName
-					: null,
-				Title = order.Title,
-				ShortDescription = order.Description.Length > 150
-					? order.Description.Substring(0, 150)
-					: order.Description,
-				RawDescription = order.Description,
-				TechnicalSpecification = order.TechnicalSpecification,
-				Category = order.Category,
-				BudgetMin = order.MinPrice,
-				BudgetMax = order.MaxPrice,
-				Currency = order.Currency,
-				BudgetType = order.Payment,
-				Skills = order.Skills,
-				Status = order.Status,
-				WorkflowStage = order.WorkflowStage,
-				ProposalsCount = order.Proposals.Count,
-				Proposals = order.Proposals
-					.OrderByDescending(proposal => proposal.CreatedAt)
-					.Select(proposal => new ProjectProposalDto
-					{
-						Id = proposal.Id,
-						ProjectId = proposal.OrderId,
-						FreelancerId = proposal.FreelancerId,
-						FreelancerName = proposal.Freelancer.FullName,
-						Message = proposal.Message,
-						Price = proposal.Price,
-						Currency = proposal.Currency,
-						EstimatedDays = proposal.EstimatedDays,
-						Status = proposal.Status,
-						CreatedAt = proposal.CreatedAt
-					})
-					.ToList(),
-				PublishedAt = order.PublishedAt,
-				UpdatedAt = order.UpdatedAt,
-				AiGenerated = order.AiGenerated,
-				ReadinessScore = order.ReadinessScore
-			})
-			.ToListAsync(ct);
+		List<OrderListItemDto> orders = await _orderService.GetListAsync(ct);
 
 		return Ok(orders);
 	}
@@ -100,42 +52,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		User? customer = await _db.Users.FindAsync(new object[] { userId }, ct);
-
-		if (customer is null)
-		{
-			return Unauthorized();
-		}
-
-		if (request.BudgetMin < 0 || request.BudgetMax < 0 || request.BudgetMin > request.BudgetMax)
-		{
-			return BadRequest(new
-			{
-				message = "Некорректные значения цен."
-			});
-		}
-
-		Order order = new()
-		{
-			Title = request.Title ?? string.Empty,
-			Description = request.RawDescription ?? string.Empty,
-			Category = request.Category,
-			MinPrice = request.BudgetMin,
-			MaxPrice = request.BudgetMax,
-			Currency = request.Currency,
-			Payment = request.BudgetType,
-			Skills = request.Skills ?? new List<string>(),
-			CreatedAt = DateTime.UtcNow,
-			UpdatedAt = DateTime.UtcNow,
-			PublishedAt = DateTime.UtcNow,
-			Status = OrderStatus.Published,
-			CustomerId = userId
-		};
-
-		_db.Orders.Add(order);
-		await _db.SaveChangesAsync(ct);
-
-		Order? createdOrder = await LoadOrderGraphAsync(order.Id, ct, asNoTracking: true);
+		Order? createdOrder = await _orderService.CreateOrderAsync(request, userId, ct);
 		return Ok(ToDto(createdOrder!));
 	}
 
@@ -151,7 +68,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await LoadOrderGraphAsync(id, ct);
+		Order? order = await _orderService.UpdateOrderAsync(id, request, ct);
 
 		if (order is null)
 		{
@@ -174,103 +91,6 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		order.Title = request.Title ?? string.Empty;
-		order.Description = request.RawDescription ?? string.Empty;
-		order.TechnicalSpecification = request.TechnicalSpecification ?? string.Empty;
-		order.Category = request.Category;
-		order.MinPrice = request.BudgetMin;
-		order.MaxPrice = request.BudgetMax;
-		order.Currency = request.Currency;
-		order.Payment = request.BudgetType;
-		order.Skills = request.Skills ?? new List<string>();
-
-		OrderStatus oldStatus = order.Status;
-
-		order.Status = request.Status;
-		order.WorkflowStage = request.WorkflowStage;
-		order.AiGenerated = request.AiGenerated;
-		order.ReadinessScore = request.ReadinessScore;
-		order.ClientApproved = request.Approvals.Client;
-		order.FreelancerApproved = request.Approvals.Freelancer;
-		order.UpdatedAt = DateTime.UtcNow;
-
-		if (oldStatus != OrderStatus.Published && request.Status == OrderStatus.Published)
-		{
-			order.PublishedAt = DateTime.UtcNow;
-		}
-
-		if (request.CompanyName is not null)
-		{
-			order.Customer.CompanyName = request.CompanyName;
-		}
-
-		if (order.BriefSections is null || order.BriefSections.Id == 0)
-		{
-			order.BriefSections = new OrderBriefSections
-			{
-				OrderId = order.Id
-			};
-
-			_db.OrderBriefSections.Add(order.BriefSections);
-		}
-
-		order.BriefSections.Goal = request.BriefSections.Goal;
-		order.BriefSections.Audience = request.BriefSections.Audience;
-		order.BriefSections.Screens = request.BriefSections.Screens;
-		order.BriefSections.Features = request.BriefSections.Features;
-		order.BriefSections.Content = request.BriefSections.Content;
-		order.BriefSections.Design = request.BriefSections.Design;
-		order.BriefSections.Constraints = request.BriefSections.Constraints;
-		order.BriefSections.OpenQuestions = request.BriefSections.OpenQuestions;
-
-		_db.ClarificationQuestions.RemoveRange(order.ClarificationQuestions);
-		_db.ScopeItems.RemoveRange(order.ScopeItems);
-		_db.DoneCriteria.RemoveRange(order.DoneCriteria);
-		_db.Risks.RemoveRange(order.Risks);
-
-		order.ClarificationQuestions = request.ClarificationQuestions
-			.Select(question => new ClarificationQuestion
-			{
-				OrderId = order.Id,
-				Question = question.Question,
-				Importance = question.Importance,
-				Answer = question.Answer,
-				Options = question.Options ?? new List<string>()
-			})
-			.ToList();
-
-		order.ScopeItems = request.ScopeItems
-			.Select(scopeItem => new ScopeItem
-			{
-				OrderId = order.Id,
-				Title = scopeItem.Title,
-				Description = scopeItem.Description,
-				Bucket = scopeItem.Bucket
-			})
-			.ToList();
-
-		order.DoneCriteria = request.DoneCriteria
-			.Select(doneCriterion => new DoneCriterion
-			{
-				OrderId = order.Id,
-				Text = doneCriterion.Text,
-				Checked = doneCriterion.Checked
-			})
-			.ToList();
-
-		order.Risks = request.Risks
-			.Select(risk => new RiskItem
-			{
-				OrderId = order.Id,
-				Title = risk.Title,
-				Level = risk.Level,
-				Impact = risk.Impact,
-				Action = risk.Action,
-				Resolved = risk.Resolved
-			})
-			.ToList();
-
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
 	}
 
@@ -295,7 +115,7 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		Order? order = await LoadOrderGraphAsync(request.OrderId, ct);
+		Order? order = await _orderService.RespondToOrderAsync(userId, request, ct);
 
 		if (order is null)
 		{
@@ -326,32 +146,6 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		bool alreadyExists = order.Proposals.Any(p => p.FreelancerId == userId && p.Status != ProposalStatus.withdrawn);
-
-		if (alreadyExists)
-		{
-			return BadRequest(new
-			{
-				message = "Вы уже откликались на этот заказ."
-			});
-		}
-
-		Proposal proposal = new()
-		{
-			OrderId = request.OrderId,
-			FreelancerId = userId,
-			Message = request.Message.Trim(),
-			Price = request.Price,
-			Currency = order.Currency,
-			EstimatedDays = request.EstimatedDays,
-			Status = ProposalStatus.pending,
-			CreatedAt = DateTime.UtcNow
-		};
-
-		order.Proposals.Add(proposal);
-		order.UpdatedAt = DateTime.UtcNow;
-
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
 	}
 
@@ -364,19 +158,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Proposal? proposal = await _db.Proposals
-			.AsNoTracking()
-			.FirstOrDefaultAsync(item => item.Id == proposalId, ct);
-
-		if (proposal is null)
-		{
-			return NotFound(new
-			{
-				message = "Отклик не найден."
-			});
-		}
-
-		Order? order = await LoadOrderGraphAsync(proposal.OrderId, ct);
+		Order? order = await _orderService.AcceptProposalAsync(proposalId, ct);
 
 		if (order is null)
 		{
@@ -399,36 +181,6 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		Proposal? selectedProposal = order.Proposals.FirstOrDefault(item => item.Id == proposalId);
-
-		if (selectedProposal is null)
-		{
-			return NotFound(new
-			{
-				message = "Отклик не найден."
-			});
-		}
-
-		order.FreelancerId = selectedProposal.FreelancerId;
-		order.Freelancer = selectedProposal.Freelancer;
-		order.ClientApproved = false;
-		order.FreelancerApproved = false;
-		order.WorkflowStage = WorkflowStage.review;
-		order.UpdatedAt = DateTime.UtcNow;
-
-		foreach (Proposal item in order.Proposals)
-		{
-			if (item.Id == selectedProposal.Id)
-			{
-				item.Status = ProposalStatus.accepted;
-			}
-			else if (item.Status != ProposalStatus.withdrawn)
-			{
-				item.Status = ProposalStatus.declined;
-			}
-		}
-
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
 	}
 
@@ -441,47 +193,8 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Proposal? proposal = await _db.Proposals
-			.AsNoTracking()
-			.FirstOrDefaultAsync(item => item.Id == proposalId, ct);
+		Order? order = await _orderService.WithdrawProposalAsync(proposalId, userId, ct);
 
-		if (proposal is null)
-		{
-			return NotFound(new
-			{
-				message = "Отклик не найден."
-			});
-		}
-
-		Order? order = await LoadOrderGraphAsync(proposal.OrderId, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		Proposal? ownProposal = order.Proposals.FirstOrDefault(item => item.Id == proposalId);
-
-		if (ownProposal is null || ownProposal.FreelancerId != userId)
-		{
-			return Forbid();
-		}
-
-		if (ownProposal.Status != ProposalStatus.pending || order.FreelancerId is not null)
-		{
-			return BadRequest(new
-			{
-				message = "Этот отклик уже нельзя отозвать."
-			});
-		}
-
-		ownProposal.Status = ProposalStatus.withdrawn;
-		order.UpdatedAt = DateTime.UtcNow;
-
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
 	}
 
@@ -497,7 +210,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await LoadOrderGraphAsync(orderId, ct);
+		Order? order = await _orderService.UpdateClientApproval(orderId, request, ct);
 
 		if (order is null)
 		{
@@ -520,10 +233,8 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		order.ClientApproved = request.Approved;
 		ApplyApprovalState(order);
 
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
 	}
 
@@ -539,7 +250,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await LoadOrderGraphAsync(orderId, ct);
+		Order? order = await _orderService.UpdateFreelancerApprovalAsync(orderId, request, ct);
 
 		if (order is null)
 		{
@@ -554,36 +265,9 @@ public class OrderController : ControllerBase
 			return Forbid();
 		}
 
-		order.FreelancerApproved = request.Approved;
 		ApplyApprovalState(order);
 
-		await _db.SaveChangesAsync(ct);
 		return Ok(ToDto(order));
-	}
-
-	private async Task<Order?> LoadOrderGraphAsync(
-		int orderId,
-		CancellationToken ct,
-		bool asNoTracking = false)
-	{
-		IQueryable<Order> query = _db.Orders
-			.AsSplitQuery()
-			.Include(order => order.Customer)
-			.Include(order => order.Freelancer)
-			.Include(order => order.BriefSections)
-			.Include(order => order.ClarificationQuestions)
-			.Include(order => order.ScopeItems)
-			.Include(order => order.DoneCriteria)
-			.Include(order => order.Risks)
-			.Include(order => order.Proposals)
-				.ThenInclude(proposal => proposal.Freelancer);
-
-		if (asNoTracking)
-		{
-			query = query.AsNoTracking();
-		}
-
-		return await query.FirstOrDefaultAsync(order => order.Id == orderId, ct);
 	}
 
 	private bool TryGetUserId(out int userId)

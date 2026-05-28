@@ -31,13 +31,14 @@ export default function OrdersPage({
 	onOpen,
 }: OrdersPageProps) {
 	const { user } = useAuth();
+	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const [status, setStatus] = useState<"all" | OrderStatus>("all");
 	const [category, setCategory] = useState(initialCategory);
 	const [query, setQuery] = useState("");
 	const [priceFrom, setPriceFrom] = useState("");
 	const [priceTo, setPriceTo] = useState("");
 	const [sort, setSort] = useState<SortMode>("none");
-	const canCreate = user?.role === "client";
+	const canCreate = normalizedRole === "client";
 
 	const categoryOptions = useMemo(() => {
 		return Array.from(
