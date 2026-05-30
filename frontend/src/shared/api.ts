@@ -46,8 +46,11 @@ function getErrorMessage(data: unknown, fallback: string) {
 	return fallback;
 }
 
-export async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
-	  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+export async function apiRequest<T>(
+	path: string,
+	options: ApiOptions = {},
+): Promise<T> {
+	const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 	const headers = new Headers(options.headers);
 	const hasBody = typeof options.body !== "undefined";
 
@@ -70,6 +73,12 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
 	const data = await readResponse(response);
 
 	if (!response.ok) {
+		console.log("API ERROR:", {
+			url: `${API_BASE_URL}${normalizedPath}`,
+			status: response.status,
+			requestBody: options.body,
+			responseData: data,
+		});
 		throw new ApiError(
 			getErrorMessage(data, "Ошибка запроса к серверу"),
 			response.status,

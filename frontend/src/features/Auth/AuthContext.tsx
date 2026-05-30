@@ -7,12 +7,12 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { apiRequest } from "@/shared";
+import { apiRequest, isEmailValid } from "@/shared";
 import { signInRequest } from "@/features/SignIn";
 import { signUpRequest } from "@/features/SignUp";
 import type { SignUpPayload } from "@/features/SignUp";
 import { getMe } from "./getMe";
-import type { User } from "./getMe.types";
+import type { User, UserRole } from "./getMe.types";
 
 type AuthContextType = {
 	user: User | null;
@@ -28,7 +28,9 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 type ProfilePatch = {
+	email: string;
 	fullName: string;
+	role: UserRole;
 	contacts: {
 		telegram?: string;
 		phone?: string;
@@ -49,6 +51,16 @@ function unwrapUser(response: AuthResponse | null) {
 function ensureContact(contacts: { telegram?: string; phone?: string }) {
 	if (!contacts.telegram?.trim() && !contacts.phone?.trim()) {
 		throw new Error("Укажите Telegram или телефон");
+	}
+}
+
+function ensureEmail(email: string) {
+	if (!email.trim()) {
+		throw new Error("Введите email");
+	}
+
+	if (!isEmailValid(email.trim())) {
+		throw new Error("Введите корректный email");
 	}
 }
 
@@ -83,10 +95,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, []);
 
 	const updateProfile = useCallback(async (patch: ProfilePatch) => {
+		ensureEmail(patch.email);
 		ensureContact(patch.contacts);
 		const response = await apiRequest<AuthResponse>("/profile", {
 			method: "PUT",
-			body: patch,
+			body: {
+				...patch,
+				email: patch.email.trim().toLowerCase(),
+			},
 		});
 		const nextUser = unwrapUser(response) ?? (await getMe());
 		setUser(nextUser);

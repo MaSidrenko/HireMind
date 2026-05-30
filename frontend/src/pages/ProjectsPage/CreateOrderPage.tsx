@@ -150,10 +150,10 @@ export default function CreateOrderPage({
 				companyName: companyName.trim(),
 				category,
 				rawDescription: rawDescription.trim(),
-				budgetMin: min,
-				budgetMax: max,
+				minPrice: min,
+				maxPrice: max,
 				currency,
-				budgetType,
+				payment: budgetType,
 				skills: parseSkills(skills),
 				aiSummary: appliedAi?.summary,
 				briefSections: appliedAi?.briefSections,
@@ -197,7 +197,9 @@ export default function CreateOrderPage({
 							setAiApplied(false);
 						}}
 					>
-						<option value={categoryPlaceholder}>{categoryPlaceholder}</option>
+						<option value={categoryPlaceholder}>
+							{categoryPlaceholder}
+						</option>
 						{categories.map((item) => (
 							<option key={item} value={item}>
 								{item}
@@ -215,13 +217,17 @@ export default function CreateOrderPage({
 					<div className="create-form__row">
 						<input
 							value={budgetMin}
-							onChange={(event) => setBudgetMin(event.target.value)}
+							onChange={(event) =>
+								setBudgetMin(event.target.value)
+							}
 							placeholder="Цена от"
 							inputMode="numeric"
 						/>
 						<input
 							value={budgetMax}
-							onChange={(event) => setBudgetMax(event.target.value)}
+							onChange={(event) =>
+								setBudgetMax(event.target.value)
+							}
 							placeholder="Цена до"
 							inputMode="numeric"
 						/>
@@ -260,7 +266,9 @@ export default function CreateOrderPage({
 					<h2>Проверка запроса</h2>
 					<p>{aiSummary}</p>
 					{aiApplied ? (
-						<p className="detail-note">AI-бриф будет добавлен в заказ</p>
+						<p className="detail-note">
+							AI-бриф будет добавлен в заказ
+						</p>
 					) : null}
 					<button
 						type="button"
@@ -277,7 +285,9 @@ export default function CreateOrderPage({
 							onClick={applyAiResult}
 							disabled={aiApplied}
 						>
-							{aiApplied ? "AI-бриф применен" : "Применить AI-бриф"}
+							{aiApplied
+								? "AI-бриф применен"
+								: "Применить AI-бриф"}
 						</button>
 					) : null}
 				</aside>

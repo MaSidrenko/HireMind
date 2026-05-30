@@ -15,17 +15,13 @@ namespace MyApp.Namespace
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly AppDbContext _db;
-
         private readonly JwtOptions _jwtOptions;
         private readonly IAuthService _authService;
         public AuthController(
-            AppDbContext context, 
             IOptions<JwtOptions> jwtOptions,
             IAuthService authService
             )
         {
-            _db = context;
             _jwtOptions = jwtOptions.Value;
             _authService = authService;
         }

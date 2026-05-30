@@ -21,6 +21,12 @@ import {
 import { ApiError } from "@/shared";
 import { AiAssistantPanel } from "./components/AiAssistantPanel";
 import { StageBadge, StatusBadge } from "./components/StatusBadge";
+import {
+	acceptProposalRequest,
+	createProposalRequest,
+	updateOrderApprovalRequest,
+	withdrawProposalRequest,
+} from "@/features/projects/projectsApi";
 
 type ProjectWorkspacePageProps = {
 	order: ProjectOrder;
@@ -61,23 +67,32 @@ export default function ProjectWorkspacePage({
 	const [saving, setSaving] = useState(false);
 	const [saveMessage, setSaveMessage] = useState("");
 	const [formError, setFormError] = useState("");
-	const [proposalMessage, setProposalMessage] = useState("Здравствуйте! Готов обсудить задачу и взять проект в работу.");
-	const [proposalPrice, setProposalPrice] = useState(String(order.budgetMin || ""));
+	const [proposalMessage, setProposalMessage] = useState(
+		"Здравствуйте! Готов обсудить задачу и взять проект в работу.",
+	);
+	const [proposalPrice, setProposalPrice] = useState(
+		String(order.budgetMin || ""),
+	);
 	const [proposalDays, setProposalDays] = useState("14");
 
+	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const isOwner = canEdit;
-	const isFreelancer = user?.role === "freelancer";
+	const isFreelancer = normalizedRole === "freelancer";
 	const ownProposal = useMemo(
-		() => draft.proposals.find((proposal) => proposal.freelancerId === user?.id),
+		() =>
+			draft.proposals.find(
+				(proposal) => proposal.freelancerId === user?.id,
+			),
 		[draft.proposals, user?.id],
 	);
 	const selectedProposal = draft.proposals.find(
 		(proposal) => proposal.freelancerId === draft.selectedFreelancerId,
 	);
-	const isSelectedFreelancer = isFreelancer && draft.selectedFreelancerId === user?.id;
+	const isSelectedFreelancer =
+		isFreelancer && draft.selectedFreelancerId === user?.id;
 	const canPropose =
 		isFreelancer &&
-		draft.status === "published" &&
+		draft.status === "Published" &&
 		!draft.selectedFreelancerId &&
 		!ownProposal;
 
@@ -94,6 +109,13 @@ export default function ProjectWorkspacePage({
 		setFormError("");
 	};
 
+	const applyServerOrder = (nextOrder: ProjectOrder, message: string) => {
+		setDraft(prepareOrder(nextOrder));
+		setDirty(false);
+		setSaveMessage(message);
+		setFormError("");
+	};
+
 	const commit = async (nextOrder: ProjectOrder, message = "Сохранено") => {
 		setSaving(true);
 		setFormError("");
@@ -104,17 +126,23 @@ export default function ProjectWorkspacePage({
 			setDirty(false);
 			setSaveMessage(message);
 		} catch (error) {
-			setFormError(getErrorMessage(error, "Не удалось сохранить изменения"));
+			setFormError(
+				getErrorMessage(error, "Не удалось сохранить изменения"),
+			);
 		} finally {
 			setSaving(false);
 		}
 	};
 
 	const validateDraft = () => {
-		if (draft.title.trim().length < 5) return "Название должно быть длиннее 5 символов";
-		if (draft.rawDescription.trim().length < 30) return "Описание должно быть подробнее";
-		if (draft.budgetMin < 0 || draft.budgetMax < 0) return "Бюджет не может быть отрицательным";
-		if (draft.budgetMax < draft.budgetMin) return "Цена до не может быть меньше цены от";
+		if (draft.title.trim().length < 5)
+			return "Название должно быть длиннее 5 символов";
+		if (draft.rawDescription.trim().length < 30)
+			return "Описание должно быть подробнее";
+		if (draft.budgetMin < 0 || draft.budgetMax < 0)
+			return "Бюджет не может быть отрицательным";
+		if (draft.budgetMax < draft.budgetMin)
+			return "Цена до не может быть меньше цены от";
 		if (!draft.skills.length) return "Добавьте хотя бы один навык";
 		return "";
 	};
@@ -144,7 +172,10 @@ export default function ProjectWorkspacePage({
 
 	const saveSkills = (value: string) => {
 		setDraftPatch({
-			skills: value.split(",").map((skill) => skill.trim()).filter(Boolean),
+			skills: value
+				.split(",")
+				.map((skill) => skill.trim())
+				.filter(Boolean),
 		});
 	};
 
@@ -156,13 +187,19 @@ export default function ProjectWorkspacePage({
 	};
 
 	const setStatus = async (status: OrderStatus) => {
-		const publishedAt = status === "published" ? draft.publishedAt ?? new Date().toISOString() : draft.publishedAt;
+		const publishedAt =
+			status === "Published"
+				? (draft.publishedAt ?? new Date().toISOString())
+				: draft.publishedAt;
 		await commit(
 			prepareOrder({
 				...draft,
 				status,
 				publishedAt,
-				workflowStage: status === "in_progress" || status === "completed" ? "approved" : draft.workflowStage,
+				workflowStage:
+					status === "In_Progress" || status === "Completed"
+						? "approved"
+						: draft.workflowStage,
 				updatedAt: new Date().toISOString(),
 			}),
 			"Статус обновлён",
@@ -171,69 +208,111 @@ export default function ProjectWorkspacePage({
 
 	const selectProposal = async (proposal: ProjectProposal) => {
 		if (!isOwner) return;
-		await commit(
-			prepareOrder({
-				...draft,
-				selectedFreelancerId: proposal.freelancerId,
-				selectedFreelancerName: proposal.freelancerName,
-				proposals: draft.proposals.map((item) => ({
-					...item,
-					status: item.id === proposal.id ? "accepted" : "declined",
-				})),
-				approvals: { client: false, freelancer: false },
-				workflowStage: "review",
-				updatedAt: new Date().toISOString(),
-			}),
-			"Исполнитель выбран",
-		);
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await acceptProposalRequest(proposal.id);
+			applyServerOrder(nextOrder, "Исполнитель выбран");
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось выбрать исполнителя"),
+			);
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const submitProposal = async () => {
 		if (!user || !canPropose) return;
+
 		const price = Number(proposalPrice) || 0;
 		const estimatedDays = Number(proposalDays) || 0;
-		if (proposalMessage.trim().length < 20 || price <= 0 || estimatedDays <= 0) {
+
+		if (
+			proposalMessage.trim().length < 20 ||
+			price <= 0 ||
+			estimatedDays <= 0
+		) {
 			setFormError("Заполните сообщение, стоимость и срок отклика");
 			return;
 		}
 
-		const proposal: ProjectProposal = {
-			id: Date.now(),
-			projectId: draft.id,
-			freelancerId: user.id,
-			freelancerName: user.fullName,
-			message: proposalMessage,
-			price,
-			currency: draft.currency,
-			estimatedDays,
-			status: "pending",
-			createdAt: new Date().toISOString(),
-		};
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
 
-		await commit(
-			prepareOrder({
-				...draft,
-				proposals: [proposal, ...draft.proposals],
-				updatedAt: new Date().toISOString(),
-			}),
-			"Отклик отправлен",
-		);
+		try {
+			const nextProject = await createProposalRequest({
+				orderId: draft.id,
+				price,
+				message: proposalMessage,
+				estimatedDays,
+			});
+
+			setDraft(prepareOrder(nextProject));
+			setDirty(false);
+			setSaveMessage("Отклик отправлен");
+		} catch (error) {
+			setFormError(getErrorMessage(error, "Не удалось отправить отклик"));
+		} finally {
+			setSaving(false);
+		}
 	};
+
+	// const submitProposal = async () => {
+	// 	if (!user || !canPropose) return;
+	// 	const price = Number(proposalPrice) || 0;
+	// 	const estimatedDays = Number(proposalDays) || 0;
+	// 	if (
+	// 		proposalMessage.trim().length < 20 ||
+	// 		price <= 0 ||
+	// 		estimatedDays <= 0
+	// 	) {
+	// 		setFormError("Заполните сообщение, стоимость и срок отклика");
+	// 		return;
+	// 	}
+
+	// 	const proposal: ProjectProposal = {
+	// 		id: Date.now(),
+	// 		projectId: draft.id,
+	// 		freelancerId: user.id,
+	// 		freelancerName: user.fullName,
+	// 		message: proposalMessage,
+	// 		price,
+	// 		currency: draft.currency,
+	// 		estimatedDays,
+	// 		status: "pending",
+	// 		createdAt: new Date().toISOString(),
+	// 	};
+
+	// 	await commit(
+	// 		prepareOrder({
+	// 			...draft,
+	// 			proposals: [proposal, ...draft.proposals],
+	// 			updatedAt: new Date().toISOString(),
+	// 		}),
+	// 		"Отклик отправлен",
+	// 	);
+	// };
 
 	const withdrawProposal = async () => {
 		if (!ownProposal || ownProposal.status !== "pending") return;
-		await commit(
-			prepareOrder({
-				...draft,
-				proposals: draft.proposals.map((proposal) =>
-					proposal.id === ownProposal.id
-						? { ...proposal, status: "withdrawn" }
-						: proposal,
-				),
-				updatedAt: new Date().toISOString(),
-			}),
-			"Отклик отозван",
-		);
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await withdrawProposalRequest(ownProposal.id);
+			applyServerOrder(nextOrder, "Отклик отозван");
+		} catch (error) {
+			setFormError(getErrorMessage(error, "Не удалось отозвать отклик"));
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const toggleApproval = async (side: "client" | "freelancer") => {
@@ -241,19 +320,29 @@ export default function ProjectWorkspacePage({
 		if (side === "freelancer" && !isSelectedFreelancer) return;
 		if (!draft.selectedFreelancerId) return;
 
-		const approvals = { ...draft.approvals, [side]: !draft.approvals[side] };
-		const approved = approvals.client && approvals.freelancer;
-		await commit(
-			prepareOrder({
-				...draft,
-				approvals,
-				status: approved ? "in_progress" : draft.status === "in_progress" ? "published" : draft.status,
-				workflowStage: approved ? "approved" : "review",
-				publishedAt: draft.publishedAt ?? new Date().toISOString(),
-				updatedAt: new Date().toISOString(),
-			}),
-			approved ? "Заказ перешёл в работу" : "Подтверждение обновлено",
-		);
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await updateOrderApprovalRequest(
+				draft.id,
+				side,
+				!draft.approvals[side],
+			);
+			applyServerOrder(
+				nextOrder,
+				nextOrder.status === "In_Progress"
+					? "Заказ перешёл в работу"
+					: "Подтверждение обновлено",
+			);
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось обновить подтверждение"),
+			);
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const applyAiResult = (result: AiBriefResult) => {
@@ -279,7 +368,9 @@ export default function ProjectWorkspacePage({
 						<input
 							className="detail-title-input"
 							value={draft.title}
-							onChange={(event) => setDraftPatch({ title: event.target.value })}
+							onChange={(event) =>
+								setDraftPatch({ title: event.target.value })
+							}
 						/>
 					</label>
 				) : (
@@ -289,37 +380,77 @@ export default function ProjectWorkspacePage({
 				<div className="order-details-badges">
 					<StatusBadge status={draft.status} />
 					<StageBadge stage={draft.workflowStage} />
-					{draft.selectedFreelancerName ? <span className="hm-badge hm-badge--stage">{draft.selectedFreelancerName}</span> : null}
-					{!isOwner ? <span className="hm-badge hm-badge--stage">Только просмотр</span> : null}
+					{draft.selectedFreelancerName ? (
+						<span className="hm-badge hm-badge--stage">
+							{draft.selectedFreelancerName}
+						</span>
+					) : null}
+					{!isOwner ? (
+						<span className="hm-badge hm-badge--stage">
+							Только просмотр
+						</span>
+					) : null}
 				</div>
 			</section>
 
 			{isOwner ? (
 				<section className="order-actionbar">
-					{draft.status === "draft" ? <button type="button" className="hm-button" onClick={() => void setStatus("published")}>Опубликовать</button> : null}
-					{draft.status === "published" ? <button type="button" className="hm-button" onClick={() => void setStatus("paused")}>Поставить на паузу</button> : null}
-					{draft.status === "paused" ? <button type="button" className="hm-button" onClick={() => void setStatus("published")}>Вернуть в публикацию</button> : null}
-					{draft.status === "in_progress" ? <button type="button" className="hm-button" onClick={() => void setStatus("completed")}>Завершить</button> : null}
-					{draft.status !== "archived" ? <button type="button" className="hm-button hm-button--ghost" onClick={() => void setStatus("archived")}>В архив</button> : null}
-					{draft.status === "archived" ? <button type="button" className="hm-button" onClick={() => void setStatus("published")}>Восстановить</button> : null}
+					{draft.status === "Draft" ? (
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void setStatus("Published")}
+						>
+							Опубликовать
+						</button>
+					) : null}
+					{draft.status === "Published" ? (
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void setStatus("Paused")}
+						>
+							Поставить на паузу
+						</button>
+					) : null}
+					{draft.status === "Paused" ? (
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void setStatus("Published")}
+						>
+							Вернуть в публикацию
+						</button>
+					) : null}
+					{draft.status === "In_Progress" ? (
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void setStatus("Completed")}
+						>
+							Завершить
+						</button>
+					) : null}
+					{draft.status !== "Archived" ? (
+						<button
+							type="button"
+							className="hm-button hm-button--ghost"
+							onClick={() => void setStatus("Archived")}
+						>
+							В архив
+						</button>
+					) : null}
+					{draft.status === "Archived" ? (
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void setStatus("Published")}
+						>
+							Восстановить
+						</button>
+					) : null}
 				</section>
 			) : null}
-
-			{isOwner && dirty ? (
-				<section className="save-panel">
-					<span>Есть несохранённые изменения</span>
-					<div>
-						<button type="button" className="hm-button" onClick={() => void saveDraft()} disabled={saving}>
-							{saving ? "Сохраняем..." : "Сохранить"}
-						</button>
-						<button type="button" className="hm-button hm-button--ghost" onClick={cancelDraft} disabled={saving}>
-							Отменить
-						</button>
-					</div>
-				</section>
-			) : null}
-			{formError ? <p className="form-error">{formError}</p> : null}
-			{saveMessage ? <p className="form-success">{saveMessage}</p> : null}
 
 			<section className="order-description">
 				{isOwner ? (
@@ -327,13 +458,18 @@ export default function ProjectWorkspacePage({
 						<span>Описание заказа</span>
 						<textarea
 							value={draft.rawDescription}
-							onChange={(event) => updateDescription(event.target.value)}
+							onChange={(event) =>
+								updateDescription(event.target.value)
+							}
 						/>
 					</label>
 				) : (
 					<p>{draft.rawDescription || draft.shortDescription}</p>
 				)}
-				<span>Опубликован {formatDate(draft.publishedAt)} · обновлён {formatDate(draft.updatedAt)}</span>
+				<span>
+					Опубликован {formatDate(draft.publishedAt)} · обновлён{" "}
+					{formatDate(draft.updatedAt)}
+				</span>
 			</section>
 
 			<section className="order-info-grid">
@@ -343,13 +479,23 @@ export default function ProjectWorkspacePage({
 						<div className="budget-edit">
 							<input
 								value={draft.budgetMin || ""}
-								onChange={(event) => setDraftPatch({ budgetMin: Number(event.target.value) || 0 })}
+								onChange={(event) =>
+									setDraftPatch({
+										budgetMin:
+											Number(event.target.value) || 0,
+									})
+								}
 								placeholder="Цена от"
 								inputMode="numeric"
 							/>
 							<input
 								value={draft.budgetMax || ""}
-								onChange={(event) => setDraftPatch({ budgetMax: Number(event.target.value) || 0 })}
+								onChange={(event) =>
+									setDraftPatch({
+										budgetMax:
+											Number(event.target.value) || 0,
+									})
+								}
 								placeholder="Цена до"
 								inputMode="numeric"
 							/>
@@ -361,9 +507,18 @@ export default function ProjectWorkspacePage({
 				<div>
 					<span>Валюта</span>
 					{isOwner ? (
-						<select value={draft.currency} onChange={(event) => setDraftPatch({ currency: event.target.value as Currency })}>
+						<select
+							value={draft.currency}
+							onChange={(event) =>
+								setDraftPatch({
+									currency: event.target.value as Currency,
+								})
+							}
+						>
 							{currencies.map((currency) => (
-								<option key={currency} value={currency}>{currency}</option>
+								<option key={currency} value={currency}>
+									{currency}
+								</option>
 							))}
 						</select>
 					) : (
@@ -373,9 +528,19 @@ export default function ProjectWorkspacePage({
 				<div>
 					<span>Тип бюджета</span>
 					{isOwner ? (
-						<select value={draft.budgetType} onChange={(event) => setDraftPatch({ budgetType: event.target.value as BudgetType })}>
+						<select
+							value={draft.budgetType}
+							onChange={(event) =>
+								setDraftPatch({
+									budgetType: event.target
+										.value as BudgetType,
+								})
+							}
+						>
 							{budgetTypes.map((type) => (
-								<option key={type} value={type}>{budgetTypeLabels[type]}</option>
+								<option key={type} value={type}>
+									{budgetTypeLabels[type]}
+								</option>
 							))}
 						</select>
 					) : (
@@ -388,18 +553,21 @@ export default function ProjectWorkspacePage({
 				</div>
 				<div>
 					<span>Компания</span>
-					{isOwner ? (
-						<input value={draft.companyName} onChange={(event) => setDraftPatch({ companyName: event.target.value })} />
-					) : (
-						<strong>{draft.companyName}</strong>
-					)}
+					<strong>{draft.companyName}</strong>
 				</div>
 				<div>
 					<span>Категория</span>
 					{isOwner ? (
-						<select value={draft.category} onChange={(event) => setDraftPatch({ category: event.target.value })}>
+						<select
+							value={draft.category}
+							onChange={(event) =>
+								setDraftPatch({ category: event.target.value })
+							}
+						>
 							{categories.map((category) => (
-								<option key={category} value={category}>{category}</option>
+								<option key={category} value={category}>
+									{category}
+								</option>
 							))}
 						</select>
 					) : (
@@ -436,19 +604,38 @@ export default function ProjectWorkspacePage({
 				<h2>Отклики</h2>
 				{isOwner ? (
 					<div className="proposal-list">
-						{draft.proposals.length ? draft.proposals.map((proposal) => (
-							<article key={proposal.id} className="detail-item proposal-item">
-								<strong>{proposal.freelancerName}</strong>
-								<span>{proposalStatusLabels[proposal.status]}</span>
-								<p>{proposal.message}</p>
-								<p>{proposal.price} {proposal.currency} · {proposal.estimatedDays} дн.</p>
-								{proposal.status === "pending" && !draft.selectedFreelancerId ? (
-									<button type="button" className="hm-button" onClick={() => void selectProposal(proposal)}>
-										Выбрать исполнителя
-									</button>
-								) : null}
-							</article>
-						)) : <p className="detail-note">Пока нет откликов</p>}
+						{draft.proposals.length ? (
+							draft.proposals.map((proposal) => (
+								<article
+									key={proposal.id}
+									className="detail-item proposal-item"
+								>
+									<strong>{proposal.freelancerName}</strong>
+									<span>
+										{proposalStatusLabels[proposal.status]}
+									</span>
+									<p>{proposal.message}</p>
+									<p>
+										{proposal.price} {proposal.currency} ·{" "}
+										{proposal.estimatedDays} дн.
+									</p>
+									{proposal.status === "pending" &&
+									!draft.selectedFreelancerId ? (
+										<button
+											type="button"
+											className="hm-button"
+											onClick={() =>
+												void selectProposal(proposal)
+											}
+										>
+											Выбрать исполнителя
+										</button>
+									) : null}
+								</article>
+							))
+						) : (
+							<p className="detail-note">Пока нет откликов</p>
+						)}
 					</div>
 				) : null}
 
@@ -456,13 +643,37 @@ export default function ProjectWorkspacePage({
 					<div className="proposal-form">
 						<label className="detail-field">
 							<span>Сообщение заказчику</span>
-							<textarea value={proposalMessage} onChange={(event) => setProposalMessage(event.target.value)} />
+							<textarea
+								value={proposalMessage}
+								onChange={(event) =>
+									setProposalMessage(event.target.value)
+								}
+							/>
 						</label>
 						<div className="create-form__row">
-							<input value={proposalPrice} onChange={(event) => setProposalPrice(event.target.value)} placeholder="Стоимость" inputMode="numeric" />
-							<input value={proposalDays} onChange={(event) => setProposalDays(event.target.value)} placeholder="Срок в днях" inputMode="numeric" />
+							<input
+								value={proposalPrice}
+								onChange={(event) =>
+									setProposalPrice(event.target.value)
+								}
+								placeholder="Стоимость"
+								inputMode="numeric"
+							/>
+							<input
+								value={proposalDays}
+								onChange={(event) =>
+									setProposalDays(event.target.value)
+								}
+								placeholder="Срок в днях"
+								inputMode="numeric"
+							/>
 						</div>
-						<button type="button" className="hm-button" onClick={() => void submitProposal()} disabled={saving}>
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void submitProposal()}
+							disabled={saving}
+						>
 							Откликнуться
 						</button>
 					</div>
@@ -474,7 +685,11 @@ export default function ProjectWorkspacePage({
 						<span>{proposalStatusLabels[ownProposal.status]}</span>
 						<p>{ownProposal.message}</p>
 						{ownProposal.status === "pending" ? (
-							<button type="button" className="hm-button hm-button--ghost" onClick={() => void withdrawProposal()}>
+							<button
+								type="button"
+								className="hm-button hm-button--ghost"
+								onClick={() => void withdrawProposal()}
+							>
 								Отозвать отклик
 							</button>
 						) : null}
@@ -490,7 +705,9 @@ export default function ProjectWorkspacePage({
 						{isOwner ? (
 							<textarea
 								value={draft.briefSections[section.key]}
-								onChange={(event) => updateBrief(section.key, event.target.value)}
+								onChange={(event) =>
+									updateBrief(section.key, event.target.value)
+								}
 							/>
 						) : (
 							<p>{draft.briefSections[section.key]}</p>
@@ -511,11 +728,18 @@ export default function ProjectWorkspacePage({
 								placeholder="Ответ"
 								onChange={(event) =>
 									setDraftPatch({
-										clarificationQuestions: draft.clarificationQuestions.map((item) =>
-											item.id === question.id
-												? { ...item, answer: event.target.value }
-												: item,
-										),
+										clarificationQuestions:
+											draft.clarificationQuestions.map(
+												(item) =>
+													item.id === question.id
+														? {
+																...item,
+																answer: event
+																	.target
+																	.value,
+															}
+														: item,
+											),
 										workflowStage: "clarification",
 									})
 								}
@@ -529,18 +753,21 @@ export default function ProjectWorkspacePage({
 
 			<section className="order-section">
 				<h2>Scope</h2>
-				{(["included", "excluded", "later"] as ScopeBucket[]).map((bucket) => (
-					<div key={bucket} className="scope-line">
-						<h3>{scopeBucketLabels[bucket]}</h3>
-						{draft.scopeItems
-							.filter((item) => item.bucket === bucket)
-							.map((item) => (
-								<p key={item.id}>
-									<strong>{item.title}</strong> — {item.description}
-								</p>
-							))}
-					</div>
-				))}
+				{(["included", "excluded", "later"] as ScopeBucket[]).map(
+					(bucket) => (
+						<div key={bucket} className="scope-line">
+							<h3>{scopeBucketLabels[bucket]}</h3>
+							{draft.scopeItems
+								.filter((item) => item.bucket === bucket)
+								.map((item) => (
+									<p key={item.id}>
+										<strong>{item.title}</strong> —{" "}
+										{item.description}
+									</p>
+								))}
+						</div>
+					),
+				)}
 			</section>
 
 			<section className="order-section">
@@ -553,10 +780,14 @@ export default function ProjectWorkspacePage({
 							disabled={!isOwner}
 							onChange={() =>
 								setDraftPatch({
-									doneCriteria: draft.doneCriteria.map((item) =>
-										item.id === criterion.id
-											? { ...item, checked: !item.checked }
-											: item,
+									doneCriteria: draft.doneCriteria.map(
+										(item) =>
+											item.id === criterion.id
+												? {
+														...item,
+														checked: !item.checked,
+													}
+												: item,
 									),
 								})
 							}
@@ -584,29 +815,86 @@ export default function ProjectWorkspacePage({
 					<div className="approval-grid">
 						<article className="detail-item">
 							<strong>Заказчик</strong>
-							<p>{draft.approvals.client ? "Подтверждено" : "Ожидает подтверждения"}</p>
+							<p>
+								{draft.approvals.client
+									? "Подтверждено"
+									: "Ожидает подтверждения"}
+							</p>
 							{isOwner ? (
-								<button type="button" className="hm-button" onClick={() => void toggleApproval("client")} disabled={saving}>
-									{draft.approvals.client ? "Отменить" : "Подтвердить"}
+								<button
+									type="button"
+									className="hm-button"
+									onClick={() =>
+										void toggleApproval("client")
+									}
+									disabled={saving}
+								>
+									{draft.approvals.client
+										? "Отменить"
+										: "Подтвердить"}
 								</button>
 							) : null}
 						</article>
 						<article className="detail-item">
-							<strong>{selectedProposal?.freelancerName ?? "Фрилансер"}</strong>
-							<p>{draft.approvals.freelancer ? "Подтверждено" : "Ожидает подтверждения"}</p>
+							<strong>
+								{selectedProposal?.freelancerName ??
+									"Фрилансер"}
+							</strong>
+							<p>
+								{draft.approvals.freelancer
+									? "Подтверждено"
+									: "Ожидает подтверждения"}
+							</p>
 							{isSelectedFreelancer ? (
-								<button type="button" className="hm-button" onClick={() => void toggleApproval("freelancer")} disabled={saving}>
-									{draft.approvals.freelancer ? "Отменить" : "Подтвердить"}
+								<button
+									type="button"
+									className="hm-button"
+									onClick={() =>
+										void toggleApproval("freelancer")
+									}
+									disabled={saving}
+								>
+									{draft.approvals.freelancer
+										? "Отменить"
+										: "Подтвердить"}
 								</button>
 							) : (
-								<span className="detail-note">Подтверждает выбранный фрилансер</span>
+								<span className="detail-note">
+									Подтверждает выбранный фрилансер
+								</span>
 							)}
 						</article>
 					</div>
 				</section>
 			) : null}
-
-			{isOwner ? <AiAssistantPanel order={draft} onApply={applyAiResult} /> : null}
+			{isOwner && dirty ? (
+				<section className="save-panel">
+					<span>Есть несохранённые изменения</span>
+					<div>
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void saveDraft()}
+							disabled={saving}
+						>
+							{saving ? "Сохраняем..." : "Сохранить"}
+						</button>
+						<button
+							type="button"
+							className="hm-button hm-button--ghost"
+							onClick={cancelDraft}
+							disabled={saving}
+						>
+							Отменить
+						</button>
+					</div>
+				</section>
+			) : null}
+			{formError ? <p className="form-error">{formError}</p> : null}
+			{saveMessage ? <p className="form-success">{saveMessage}</p> : null}
+			{isOwner ? (
+				<AiAssistantPanel order={draft} onApply={applyAiResult} />
+			) : null}
 		</main>
 	);
 }

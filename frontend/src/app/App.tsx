@@ -11,6 +11,7 @@ import EmailVerifyGuard from "@/pages/EmailVerifyPage/lib/EmailVerifyGuard";
 
 function App() {
 	const { isAuthenticated, loading, user } = useAuth();
+	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	if (loading) {
 		return (
 			<PageState
@@ -27,9 +28,9 @@ function App() {
 		if (route.access === "public") return true;
 		if (route.access === "private") return isAuthenticated;
 		if (route.access === "Client")
-			return isAuthenticated && user?.role === "Client";
+			return isAuthenticated && normalizedRole === "client";
 		if (route.access === "Freelancer")
-			return isAuthenticated && user?.role === "Freelancer";
+			return isAuthenticated && normalizedRole === "freelancer";
 		if (route.access === "guest") return !isAuthenticated;
 
 		return false;

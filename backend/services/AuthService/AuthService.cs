@@ -79,6 +79,7 @@ public class AuthService : IAuthService
 			user.Role,
 			user.Contacts,
 			user.CompanyName,
+			user.Skills,
 			user.CreatedAt,	
 			user.LastSeenAt,
 			user.IsOnline
@@ -170,6 +171,7 @@ public class AuthService : IAuthService
 			user.Role,
 			user.Contacts,
 			user.CompanyName,
+			user.Skills,
 			user.CreatedAt,
 			user.LastSeenAt,
 			user.IsOnline

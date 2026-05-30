@@ -15,6 +15,7 @@ public sealed record UserDto (
 	Role Role,
 	Contacts? Contacts,
 	string? CompanyName,
+	List<string> Skills,
 	DateTime CreatedAt,
 	DateTime LastSeenAt,
 	bool IsOnline
