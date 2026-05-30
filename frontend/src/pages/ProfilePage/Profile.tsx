@@ -12,6 +12,7 @@ import "./Profile.css";
 import { useEffect, useState } from "react";
 import SkillsAutocomplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
 import { NavLink } from "react-router-dom";
+import { getAcceptedProject } from "@/features/projects/projectsApi";
 
 type ProfileStats = {
 	label: string;
@@ -115,7 +116,7 @@ export default function Profile() {
 			setOrdersError(null);
 
 			try {
-				const items = await getProjects();
+				const items = await getAcceptedProject();
 				if (active) {
 					setOrders(items);
 				}

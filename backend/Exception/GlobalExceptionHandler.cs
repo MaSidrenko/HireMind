@@ -20,6 +20,10 @@ public class GlobalExceptionHandler : IExceptionHandler
 			FreelancerAlreadySelectedException => StatusCodes.Status409Conflict,
 			FreelancerNotSelectedException => StatusCodes.Status409Conflict,
 			OrderNotPublishedException => StatusCodes.Status409Conflict,
+			EmptyContactsException => StatusCodes.Status400BadRequest,
+			InvalidEmailException => StatusCodes.Status400BadRequest,
+			EmailExsistsException => StatusCodes.Status400BadRequest,
+			NullCompanyException => StatusCodes.Status400BadRequest,
 			_ => StatusCodes.Status500InternalServerError
 		};
 
@@ -33,6 +37,10 @@ public class GlobalExceptionHandler : IExceptionHandler
 			FreelancerAlreadySelectedException => "Freelancer already selected",
 			FreelancerNotSelectedException => "Freelancer not selected",
 			OrderNotPublishedException => "Order not published",
+			EmptyContactsException => "Empty Contacts",
+			InvalidEmailException => "Invalid Email",
+			EmailExsistsException => "Email already exists",
+			NullCompanyException => "Null company",
 			_ => "Internal server error"
 		};
 

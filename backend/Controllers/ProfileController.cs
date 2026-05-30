@@ -12,11 +12,11 @@ namespace MyApp.Namespace;
 [Authorize]
 public class ProfileController : ControllerBase
 {
-	private readonly AppDbContext _db;
+	private readonly IProfileSerivce _profileService;
 
-	public ProfileController(AppDbContext db)
+	public ProfileController(IProfileSerivce profileSerivce)
 	{
-		_db = db;
+		_profileService = profileSerivce;
 	}
 
 	[HttpPut]
@@ -29,89 +29,7 @@ public class ProfileController : ControllerBase
 			return Unauthorized();
 		}
 
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
-
-		if (user is null)
-		{
-			return Unauthorized();
-		}
-
-		if (string.IsNullOrWhiteSpace(request.FullName))
-		{
-			return BadRequest(new
-			{
-				message = "Укажите имя пользователя."
-			});
-		}
-
-		if (string.IsNullOrWhiteSpace(request.Contacts?.Telegram)
-			&& string.IsNullOrWhiteSpace(request.Contacts?.Phone))
-		{
-			return BadRequest(new
-			{
-				message = "Укажите Telegram или телефон."
-			});
-		}
-
-		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
-
-		if (!new EmailAddressAttribute().IsValid(normalizedEmail))
-		{
-			return BadRequest(new
-			{
-				message = "Введите корректный email."
-			});
-		}
-
-		bool emailTaken = await _db.Users.AnyAsync(
-			item => item.Id != userId && item.Email == normalizedEmail,
-			ct);
-
-		if (emailTaken)
-		{
-			return Conflict(new
-			{
-				message = "Email уже используется."
-			});
-		}
-
-		if (request.Role == Role.Admin)
-		{
-			return BadRequest(new
-			{
-				message = "Недопустимая роль пользователя."
-			});
-		}
-
-		if (request.Role == Role.Client && string.IsNullOrWhiteSpace(request.CompanyName))
-		{
-			return BadRequest(new
-			{
-				message = "Введите название компании."
-			});
-		}
-
-		user.Email = normalizedEmail;
-		user.FullName = request.FullName.Trim();
-		user.Role = request.Role;
-		user.Contacts = new Contacts
-		{
-			Telegram = request.Contacts.Telegram?.Trim(),
-			Phone = request.Contacts.Phone?.Trim(),
-		};
-
-		if (request.Role == Role.Client)
-		{
-			user.CompanyName = request.CompanyName?.Trim();
-			user.Skills = new List<string>();
-		}
-		else
-		{
-			user.CompanyName = null;
-			user.Skills = NormalizeSkills(request.Skills);
-		}
-
-		await _db.SaveChangesAsync(ct);
+		User? user = await _profileService.UpdateProfileAsync(request, userId, ct);
 
 		return Ok(new
 		{
@@ -130,16 +48,7 @@ public class ProfileController : ControllerBase
 			return Unauthorized();
 		}
 
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
-
-		if (user is null)
-		{
-			return Unauthorized();
-		}
-
-		user.Skills = NormalizeSkills(request.Skills);
-
-		await _db.SaveChangesAsync(ct);
+		User? user = await _profileService.UpdateSkillsAsync(request, userId, ct);
 
 		return Ok(new
 		{
@@ -151,17 +60,6 @@ public class ProfileController : ControllerBase
 	{
 		string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 		return int.TryParse(userIdValue, out userId);
-	}
-
-	private static List<string> NormalizeSkills(IEnumerable<string>? skills)
-	{
-		return skills?
-			.Select(skill => skill.Trim())
-			.Where(skill => !string.IsNullOrWhiteSpace(skill))
-			.Distinct(StringComparer.OrdinalIgnoreCase)
-			.Take(20)
-			.ToList()
-			?? new List<string>();
 	}
 
 	private static UserDto ToDto(User user)

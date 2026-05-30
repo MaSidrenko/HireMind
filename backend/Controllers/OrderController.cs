@@ -22,14 +22,6 @@ public class OrderController : ControllerBase
 	{
 		Order? order = await _orderService.GetByIdAsync(id, ct);
 
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
 		return Ok(ToDto(order));
 	}
 
@@ -37,6 +29,13 @@ public class OrderController : ControllerBase
 	public async Task<IActionResult> GetOrders(CancellationToken ct)
 	{
 		List<OrderListItemDto> orders = await _orderService.GetListAsync(ct);
+
+		return Ok(orders);
+	}
+	[HttpGet("get-accepted-projects")]
+	public async Task<IActionResult> GetAccteptedProjectList(CancellationToken ct)
+	{
+		List<OrderListItemDto> orders = await _orderService.GetAccteptedProjectListAsync(ct);
 
 		return Ok(orders);
 	}
@@ -52,8 +51,8 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? createdOrder = await _orderService.CreateOrderAsync(request, userId, ct);
-		return Ok(ToDto(createdOrder!));
+		Order createdOrder = await _orderService.CreateOrderAsync(request, userId, ct);
+		return Ok(ToDto(createdOrder));
 	}
 
 	[Authorize(Roles = "Client")]
@@ -68,21 +67,6 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await _orderService.UpdateOrderAsync(id, request, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		if (order.CustomerId != userId)
-		{
-			return Forbid();
-		}
-
 		if (request.BudgetMin < 0 || request.BudgetMax < 0 || request.BudgetMin > request.BudgetMax)
 		{
 			return BadRequest(new
@@ -90,6 +74,7 @@ public class OrderController : ControllerBase
 				message = "Некорректные значения цен."
 			});
 		}
+		Order order = await _orderService.UpdateOrderAsync(id, userId, request, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -115,36 +100,7 @@ public class OrderController : ControllerBase
 			});
 		}
 
-		Order? order = await _orderService.RespondToOrderAsync(userId, request, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		if (order.CustomerId == userId)
-		{
-			return Forbid();
-		}
-
-		if (order.Status != OrderStatus.Published)
-		{
-			return BadRequest(new
-			{
-				message = "Невозможно откликнуться на заказ, который не опубликован."
-			});
-		}
-
-		if (order.FreelancerId is not null)
-		{
-			return BadRequest(new
-			{
-				message = "Невозможно откликнуться на заказ, который уже имеет исполнителя."
-			});
-		}
+		Order order = await _orderService.RespondToOrderAsync(userId, request, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -158,28 +114,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await _orderService.AcceptProposalAsync(proposalId, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		if (order.CustomerId != userId)
-		{
-			return Forbid();
-		}
-
-		if (order.FreelancerId is not null)
-		{
-			return BadRequest(new
-			{
-				message = "Исполнитель уже выбран."
-			});
-		}
+		Order order = await _orderService.AcceptProposalAsync(proposalId,userId, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -193,7 +128,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await _orderService.WithdrawProposalAsync(proposalId, userId, ct);
+		Order order = await _orderService.WithdrawProposalAsync(proposalId, userId, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -210,30 +145,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await _orderService.UpdateClientApproval(orderId, request, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		if (order.CustomerId != userId)
-		{
-			return Forbid();
-		}
-
-		if (order.FreelancerId is null)
-		{
-			return BadRequest(new
-			{
-				message = "Сначала выберите исполнителя."
-			});
-		}
-
-		ApplyApprovalState(order);
+		Order order = await _orderService.UpdateClientApproval(orderId, userId, request, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -250,22 +162,7 @@ public class OrderController : ControllerBase
 			return Unauthorized();
 		}
 
-		Order? order = await _orderService.UpdateFreelancerApprovalAsync(orderId, request, ct);
-
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ не найден."
-			});
-		}
-
-		if (order.FreelancerId != userId)
-		{
-			return Forbid();
-		}
-
-		ApplyApprovalState(order);
+		Order order = await _orderService.UpdateFreelancerApprovalAsync(orderId, userId, request, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -275,27 +172,6 @@ public class OrderController : ControllerBase
 		string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 		return int.TryParse(userIdValue, out userId);
 	}
-
-	private static void ApplyApprovalState(Order order)
-	{
-		if (order.ClientApproved && order.FreelancerApproved)
-		{
-			order.Status = OrderStatus.In_Progress;
-			order.WorkflowStage = WorkflowStage.approved;
-		}
-		else
-		{
-			if (order.Status == OrderStatus.In_Progress)
-			{
-				order.Status = OrderStatus.Published;
-			}
-
-			order.WorkflowStage = WorkflowStage.review;
-		}
-
-		order.UpdatedAt = DateTime.UtcNow;
-	}
-
 	private static OrderListItemDto ToDto(Order order)
 	{
 		string description = order.Description ?? string.Empty;

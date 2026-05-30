@@ -7,6 +7,11 @@ export async function getProjects() {
 	return projects.map(normalizeProjectOrder);
 }
 
+export async function getAcceptedProject() {
+	const projects = await apiRequest<Partial<ProjectOrder>[]>("Order/get-accepted-projects");
+	return projects.map(normalizeProjectOrder);
+}
+
 export async function getProjectById(id: number) {
 	const project = await apiRequest<Partial<ProjectOrder>>(
 		`/Order/get-by-id/${id}`,

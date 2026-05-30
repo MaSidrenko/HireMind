@@ -13,7 +13,7 @@ public class OrderService : IOrderService
 		_db = context;
 	}
 
-	public async Task<Order?> AcceptProposalAsync(int proposalId, CancellationToken ct)
+	public async Task<Order> AcceptProposalAsync(int proposalId,int userId, CancellationToken ct)
 	{
 		Proposal? proposal = await _db.Proposals
 				.AsNoTracking()
@@ -21,16 +21,25 @@ public class OrderService : IOrderService
 
 		if(proposal is null)
 		{
-			throw new Exception("Proposal not found.");
+			throw new ProposalNotFoundException(proposalId);
 		}
 
 		Order? order = await LoadOrderGraphAsync(proposal.OrderId, ct);
 
-		Proposal? selectedProposal = order?.Proposals.FirstOrDefault(p => p.Id == proposalId);
+		if (order is null)
+			throw new OrderNotFoundException(proposal.OrderId);
+
+		if (order.CustomerId != userId)
+			throw new ForbiddenProposalOperationException();
+
+		if (order.FreelancerId is not null)
+			throw new FreelancerAlreadySelectedException();
+
+		Proposal? selectedProposal = order.Proposals.FirstOrDefault(p => p.Id == proposalId);
 
 		if(selectedProposal is null)
 		{
-			throw new Exception("Proposal not found in order.");
+			throw new ProposalNotFoundException(proposalId);
 		}
 
 		order.FreelancerId = selectedProposal.FreelancerId;
@@ -57,13 +66,13 @@ public class OrderService : IOrderService
 
 	}
 
-	public async Task<Order?> CreateOrderAsync(CreateOrderRequest request, int userID, CancellationToken ct)
+	public async Task<Order> CreateOrderAsync(CreateOrderRequest request, int userID, CancellationToken ct)
 	{
 		User? customer = await _db.Users.FindAsync(new object[] { userID }, ct);
 
 		if(customer is null)
 		{
-			throw new Exception("User not found.");
+			throw new UserNotFoundException(userID);
 		}
 
 
@@ -96,10 +105,69 @@ public class OrderService : IOrderService
 	{
 		Order? order = await LoadOrderGraphAsync(id, ct, asNoTracking: true);
 
+		if (order is null)
+		{
+			throw new OrderNotFoundException(id);
+		}
+
 		return order;
 	}
 
 	public async Task<List<OrderListItemDto>> GetListAsync(CancellationToken ct)
+	{
+		List<OrderListItemDto> orders = await _db.Orders
+			.AsNoTracking()
+			.Select(order => new OrderListItemDto
+			{
+				Id = order.Id,
+				HirerId = order.CustomerId,
+				HirerName = order.Customer.FullName,
+				CompanyName = order.Customer.CompanyName,
+				SelectedFreelancerId = order.FreelancerId,
+				SelectedFreelancerName = order.Freelancer != null 
+					? order.Freelancer.FullName 
+					: null,
+				Title = order.Title,
+				ShortDescription = order.Description.Length > 150 
+					? order.Description.Substring(0, 150) 
+					: order.Description,
+				RawDescription = order.Description,
+				TechnicalSpecification = order.TechnicalSpecification,
+				Category = order.Category,
+				BudgetMin = order.MinPrice,
+				BudgetMax = order.MaxPrice,
+				Skills = order.Skills,
+				Status = order.Status,
+				WorkflowStage = order.WorkflowStage,
+				ProposalsCount = order.Proposals.Count,
+				Proposals = order.Proposals
+						.OrderByDescending(proposal => proposal.CreatedAt)
+						.Select(Proposal => new ProjectProposalDto
+						{
+							Id = Proposal.Id,
+							ProjectId = Proposal.OrderId,
+							FreelancerId = Proposal.FreelancerId,
+							FreelancerName = Proposal.Freelancer.FullName,
+							Message = Proposal.Message,
+							Price = Proposal.Price,
+							Currency = Proposal.Currency,
+							EstimatedDays = Proposal.EstimatedDays,
+							Status = Proposal.Status,
+							CreatedAt = Proposal.CreatedAt
+						})
+						.ToList(),
+					PublishedAt = order.PublishedAt,
+					UpdatedAt = order.UpdatedAt,
+					AiGenerated = order.AiGenerated,
+					ReadinessScore = order.ReadinessScore
+			})
+			.Where(o => o.Status != OrderStatus.Completed)
+			.ToListAsync(ct);
+
+			return orders;
+	}
+
+	public async Task<List<OrderListItemDto>> GetAccteptedProjectListAsync(CancellationToken ct)
 	{
 		List<OrderListItemDto> orders = await _db.Orders
 			.AsNoTracking()
@@ -174,16 +242,26 @@ public class OrderService : IOrderService
 		return await query.FirstOrDefaultAsync(order => order.Id == orderId, ct);
 	}
 
-	public async Task<Order?> RespondToOrderAsync(int userId, CreateProposalRequest request, CancellationToken ct)
+	public async Task<Order> RespondToOrderAsync(int userId, CreateProposalRequest request, CancellationToken ct)
 	{
 		Order? order = await LoadOrderGraphAsync(request.OrderId, ct);
+
+		if(order is null)
+			throw new OrderNotFoundException(request.OrderId);
+
+		if(order.CustomerId == userId)
+			throw new ForbiddenProposalOperationException();
+
+		if(order.Status != OrderStatus.Published)
+			throw new OrderNotPublishedException();
+
+		if(order.FreelancerId is not null)
+			throw new FreelancerAlreadySelectedException();
 
 		bool alreadyExists = order.Proposals.Any(p => p.FreelancerId == userId && p.Status != ProposalStatus.withdrawn);
 
 		if (alreadyExists)
-		{
-			throw new Exception("Вы уже отправляли предложение для этого заказа.");
-		}
+			throw new ProposalAlreadyExistsException(request.OrderId, userId);
 
 		Proposal proposal = new()
 		{
@@ -205,38 +283,85 @@ public class OrderService : IOrderService
 
 	}
 
-	public async Task<Order?> UpdateClientApproval(int orderId, UpdateApprovalRequest request, CancellationToken ct)
+	public async Task<Order> UpdateClientApproval(
+		int orderId,
+		int userId,
+		UpdateApprovalRequest request,
+		CancellationToken ct)
 	{
 		Order? order = await LoadOrderGraphAsync(orderId, ct);
+
+		if (order is null)
+		{
+			throw new OrderNotFoundException(orderId);
+		}
+
+		if (order.CustomerId != userId)
+		{
+			throw new ForbiddenProposalOperationException();
+		}
+
+		if (order.FreelancerId is null)
+		{
+			throw new FreelancerNotSelectedException();
+		}
 
 		order.ClientApproved = request.Approved;
 
+		ApplyApprovalState(order);
+
+		await _db.SaveChangesAsync(ct);
+
 		return order;
 	}
-
-	public async Task<Order?> UpdateFreelancerApprovalAsync(int orderId, UpdateApprovalRequest request, CancellationToken ct)
+	public async Task<Order> UpdateFreelancerApprovalAsync(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct)
 	{
 		Order? order = await LoadOrderGraphAsync(orderId, ct);
+
+		if (order is null)
+		{
+			throw new OrderNotFoundException(orderId);
+		}
+
+		if (order.FreelancerId != userId)
+		{
+			throw new ForbiddenProposalOperationException();
+		}
+
+		if (order.FreelancerId is null)
+		{
+			throw new FreelancerNotSelectedException();
+		}
 
 		order.FreelancerApproved = request.Approved;
 
+		ApplyApprovalState(order);
+
 		await _db.SaveChangesAsync(ct);
+
 		return order;
 	}
 
-	public async Task<Order?> UpdateOrderAsync(int orderId, UpdateOrderRequest request, CancellationToken ct)
+	public async Task<Order> UpdateOrderAsync(int orderId, int userId, UpdateOrderRequest request, CancellationToken ct)
 	{
 		Order? order = await LoadOrderGraphAsync(orderId, ct);
 
-		order?.Title = request.Title ?? string.Empty;
-		order?.Description = request.RawDescription ?? string.Empty;
-		order?.TechnicalSpecification = request.TechnicalSpecification ?? string.Empty;
-		order?.Category = request.Category;
-		order?.MinPrice = request.BudgetMin;
-		order?.MaxPrice = request.BudgetMax;
-		order?.Currency = request.Currency;
-		order?.Payment = request.BudgetType;
-		order?.Skills = request.Skills ?? new List<string>();
+		if(order is null)
+			throw new OrderNotFoundException(orderId);
+
+		if(order.CustomerId != userId)
+			throw new ForbiddenProposalOperationException();
+
+
+		order.Title = request.Title ?? string.Empty;
+		order.Description = request.RawDescription ?? string.Empty;
+		order.TechnicalSpecification = request.TechnicalSpecification ?? string.Empty;
+		order.Category = request.Category;
+		order.MinPrice = request.BudgetMin;
+		order.MaxPrice = request.BudgetMax;
+		order.Currency = request.Currency;
+		order.Payment = request.BudgetType;
+		order.Skills = request.Skills ?? new List<string>();
 
 		OrderStatus oldStatus = order.Status;
 
@@ -322,34 +447,52 @@ public class OrderService : IOrderService
 		return order;
 	}
 
-	public async Task<Order?> WithdrawProposalAsync(int proposalId, int userId, CancellationToken ct)
+	public async Task<Order> WithdrawProposalAsync(int proposalId, int userId, CancellationToken ct)
 	{
 		Proposal? proposal = await _db.Proposals
 					.AsNoTracking()
 					.FirstOrDefaultAsync(p => p.Id == proposalId, ct);
 
 		if(proposal is null)
-		{
-			throw new Exception("Proposal not found.");
-		}
+			throw new ProposalNotFoundException(proposalId);
+
 		Order? order = await LoadOrderGraphAsync(proposal.OrderId, ct);
 
 		if(order is null)
-		{
-			throw new Exception("Заказ не найден");
-		}
+			throw new OrderNotFoundException(proposal.OrderId);
 
 		Proposal? ownProposal = order.Proposals.FirstOrDefault(item => item.Id == proposalId);
 
-		if(ownProposal is null || ownProposal.FreelancerId != userId)
-		{
-			throw new Exception();
-		}
+		if(ownProposal is null)
+			throw new ProposalNotFoundException(proposalId);
+
+		if(ownProposal.FreelancerId != userId)
+			throw new ForbiddenProposalOperationException();
 
 		ownProposal.Status = ProposalStatus.withdrawn;
 		order.UpdatedAt = DateTime.UtcNow;
 
 		await _db.SaveChangesAsync(ct);
 		return order;
+	}
+
+	private static void ApplyApprovalState(Order order)
+	{
+		if (order.ClientApproved && order.FreelancerApproved)
+		{
+			order.Status = OrderStatus.In_Progress;
+			order.WorkflowStage = WorkflowStage.approved;
+		}
+		else
+		{
+			if (order.Status == OrderStatus.In_Progress)
+			{
+				order.Status = OrderStatus.Published;
+			}
+
+			order.WorkflowStage = WorkflowStage.review;
+		}
+
+		order.UpdatedAt = DateTime.UtcNow;
 	}
 }
