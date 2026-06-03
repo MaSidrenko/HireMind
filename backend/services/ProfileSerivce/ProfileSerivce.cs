@@ -56,6 +56,14 @@ public class ProfileSerivce : IProfileSerivce
 		{
 			user.CompanyName = null;
 			user.Skills = NormalizeSkills(request.Skills);
+			if (request.HourlyRate.HasValue)
+			{
+				user.HourlyRate = request.HourlyRate.Value;
+			}
+			if (request.Currency.HasValue)
+			{
+				user.Currency = request.Currency.Value;
+			}
 		}
 
 		await _db.SaveChangesAsync(ct);

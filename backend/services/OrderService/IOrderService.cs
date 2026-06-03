@@ -2,7 +2,7 @@
 
 public interface IOrderService
 {
-	public Task<Order?> GetByIdAsync(int id, CancellationToken ct);
+	public Task<Order> GetByIdAsync(int id, CancellationToken ct);
 	public Task<List<OrderListItemDto>> GetListAsync(CancellationToken ct);
 	public Task<List<OrderListItemDto>> GetAccteptedProjectListAsync(CancellationToken ct);
 	public Task<Order> CreateOrderAsync(CreateOrderRequest request, int userID, CancellationToken ct);
@@ -12,5 +12,6 @@ public interface IOrderService
 	public Task<Order> WithdrawProposalAsync(int proposalId,int userId, CancellationToken ct);
 	Task<Order> UpdateClientApproval(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct);
 	public Task<Order> UpdateFreelancerApprovalAsync(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct);
+	public Task<Order> RateOrderAsync(int orderId, int userId, UpdateOrderRatingRequest request, CancellationToken ct);
 	public Task<Order?> LoadOrderGraphAsync(int orderId, CancellationToken ct, bool asNoTracking = false);
 }

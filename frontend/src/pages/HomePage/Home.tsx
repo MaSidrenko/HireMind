@@ -18,7 +18,7 @@ export default function Home() {
 	if (loading) {
 		return <div>Загрузка...</div>;
 	}
-
+	// TODO: сделать стрелку проматывания вверх
 	return (
 		<div>
 			<div className="hero">

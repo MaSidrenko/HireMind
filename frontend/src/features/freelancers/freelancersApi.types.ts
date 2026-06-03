@@ -1,8 +1,8 @@
 export type Freelancer = {
 	id: number;
 	fullName: string;
-	headline: string;
-	bio: string;
+	// headline: string;
+	// bio: string;
 	rating: number;
 	hourlyRate: number;
 	currency: "RUB" | "USD" | "EUR";

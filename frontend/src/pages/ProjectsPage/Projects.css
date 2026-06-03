@@ -110,7 +110,8 @@
 .detail-item p,
 .scope-line p,
 .detail-check,
-.ai-panel p {
+.ai-panel p,
+.rating-summary span {
 	margin: 0;
 	color: rgba(232, 230, 225, 0.68);
 	line-height: 1.55;
@@ -183,6 +184,42 @@
 	padding: 0;
 	border: none;
 	color: #ffb764;
+}
+
+.rating-panel {
+	display: grid;
+	gap: 16px;
+}
+
+.rating-row,
+.rating-summary {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.rating-chip {
+	min-width: 48px;
+	padding: 10px 14px;
+	border: 1px solid rgba(250, 151, 44, 0.28);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.04);
+	color: #f1eee8;
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.rating-chip--active {
+	border-color: #fa972c;
+	background: rgba(250, 151, 44, 0.18);
+	color: #ffcf96;
+}
+
+.rating-chip:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
 }
 
 .hm-badge {

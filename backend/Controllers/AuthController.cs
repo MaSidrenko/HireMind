@@ -11,7 +11,7 @@ namespace MyApp.Namespace
     /// <summary>
     /// Auth controller for handling authentication requests.
     /// </summary>
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {

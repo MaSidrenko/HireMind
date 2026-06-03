@@ -22,18 +22,25 @@ export type Contacts = {
 	phone?: string;
 };
 
+export type UserCurrency = "RUB" | "USD" | "EUR";
+
 type BaseUser = {
 	id: number;
 	fullName: string;
 	email: string;
 	contacts: Contacts;
 	isOnline: boolean;
+	isTelegramConnected?: boolean;
 	avatarUrl?: string;
+	rating: number;
 };
 
 export type FreelancerUser = BaseUser & {
 	role: "Freelancer";
 	skills: string[];
+	hourlyRate: number | null;
+	currency: UserCurrency | null;
+	completedOrders: number | null;
 };
 
 export type ClientUser = BaseUser & {

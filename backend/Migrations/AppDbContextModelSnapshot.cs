@@ -56,6 +56,35 @@ namespace backend.Migrations
                     b.ToTable("ClarificationQuestions");
                 });
 
+            modelBuilder.Entity("backend.Contact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FreelancerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Contacts");
+                });
+
             modelBuilder.Entity("backend.DoneCriterion", b =>
                 {
                     b.Property<int>("Id")
@@ -98,6 +127,12 @@ namespace backend.Migrations
                     b.Property<bool>("ClientApproved")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("ClientRatingByFreelancer")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -118,6 +153,9 @@ namespace backend.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<int?>("FreelancerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FreelancerRatingByClient")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("MaxPrice")
@@ -323,6 +361,38 @@ namespace backend.Migrations
                     b.ToTable("ScopeItems");
                 });
 
+            modelBuilder.Entity("backend.TelegramLinkToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TelegramLinkTokens");
+                });
+
             modelBuilder.Entity("backend.User", b =>
                 {
                     b.Property<int>("Id")
@@ -334,8 +404,14 @@ namespace backend.Migrations
                     b.Property<string>("CompanyName")
                         .HasColumnType("text");
 
+                    b.Property<int>("CompletedOrders")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -354,7 +430,13 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("HourlyRate")
+                        .HasColumnType("numeric");
+
                     b.Property<bool>("IsOnline")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsTelegramConnected")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastSeenAt")
@@ -362,6 +444,9 @@ namespace backend.Migrations
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
+
+                    b.Property<double>("Rating")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
@@ -372,6 +457,12 @@ namespace backend.Migrations
                     b.PrimitiveCollection<List<string>>("Skills")
                         .IsRequired()
                         .HasColumnType("text[]");
+
+                    b.Property<long?>("TelegramChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("TelegramUsername")
+                        .HasColumnType("text");
 
                     b.Property<bool>("isEmailConfirmed")
                         .HasColumnType("boolean");

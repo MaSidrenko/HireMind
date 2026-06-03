@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Npgsql;
+using Telegram.Bot;
 
 Env.TraversePath().Load();
 
@@ -95,6 +96,26 @@ var connectionStringBuilder = new NpgsqlConnectionStringBuilder
                 ?? throw new InvalidOperationException("POSTGRES_PASSWORD is missing")
 };
 
+var telegramBotOptions = new TelegramBotOptions
+{
+    BotToken = ResolveTelegramSetting(
+        builder.Configuration,
+        "Telegram:BotToken",
+        "Telegram:Bot_Token",
+        "TELEGRAM_BOT_TOKEN",
+        "Telegram__BotToken",
+        "Telegram__Bot_Token"
+    ) ?? string.Empty,
+    BotUsername = ResolveTelegramSetting(
+        builder.Configuration,
+        "Telegram:BotUsername",
+        "Telegram:Bot_Username",
+        "TELEGRAM_BOT_USERNAME",
+        "Telegram__BotUsername",
+        "Telegram__Bot_Username"
+    ) ?? string.Empty
+};
+
 builder.Services.AddDbContext<AppDbContext>(options => 
     options.UseNpgsql(connectionStringBuilder.ConnectionString));
 
@@ -105,6 +126,29 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProfileSerivce, ProfileSerivce>();
+builder.Services.AddScoped<IFreelancerService, FreelancerService>();
+builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
+builder.Services.AddScoped<ITelegramNotificationService, NullTelegramNotificationService>();
+builder.Services.AddSingleton(telegramBotOptions);
+
+if (!string.IsNullOrWhiteSpace(telegramBotOptions.BotToken))
+{
+    builder.Services.AddHttpClient("TelegramBotApi", httpClient =>
+    {
+        httpClient.Timeout = TimeSpan.FromSeconds(45);
+    });
+
+    builder.Services.AddSingleton<ITelegramBotClient>(serviceProvider =>
+    {
+        IHttpClientFactory httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        HttpClient httpClient = httpClientFactory.CreateClient("TelegramBotApi");
+
+        return new TelegramBotClient(telegramBotOptions.BotToken, httpClient);
+    });
+    builder.Services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
+    builder.Services.AddSingleton<TelegramUpdateHandler>();
+    builder.Services.AddHostedService<TelegramPollingService>();
+}
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -184,4 +228,22 @@ static void ValidateJwtOptions(JwtOptions options)
 
     if (options.AccessTokenExpirationMinutes <= 0)
         throw new InvalidOperationException("JWT expiration must be greater than zero.");
+}
+
+static string? ResolveTelegramSetting(IConfiguration configuration, params string[] keys)
+{
+    foreach (string key in keys)
+    {
+        string? value = configuration[key];
+
+        if (!string.IsNullOrWhiteSpace(value))
+            return value;
+
+        value = Environment.GetEnvironmentVariable(key);
+
+        if (!string.IsNullOrWhiteSpace(value))
+            return value;
+    }
+
+    return null;
 }

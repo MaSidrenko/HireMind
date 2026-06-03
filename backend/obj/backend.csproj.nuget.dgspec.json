@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj": {}
+    "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj": {}
   },
   "projects": {
-    "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj": {
+    "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj",
+        "projectUniqueName": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj",
         "projectName": "backend",
-        "projectPath": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj",
+        "projectPath": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj",
         "packagesPath": "/home/wslArch/.nuget/packages/",
-        "outputPath": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/",
+        "outputPath": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/wslArch/.nuget/NuGet/NuGet.Config"
@@ -77,6 +77,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[10.1.7, )"
+            },
+            "Telegram.Bot": {
+              "target": "Package",
+              "version": "[22.10.0.1, )"
             }
           },
           "imports": [

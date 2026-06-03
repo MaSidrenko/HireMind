@@ -207,3 +207,15 @@ export async function updateOrderApprovalRequest(
 
 	return normalizeProjectOrder(result);
 }
+
+export async function rateOrderRequest(orderId: number, score: number) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/rating`,
+		{
+			method: "PUT",
+			body: { score },
+		},
+	);
+
+	return normalizeProjectOrder(result);
+}

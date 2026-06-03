@@ -83,12 +83,12 @@ export default function OrdersPage({
 			<section className="orders-filterbar">
 				<select value={status} onChange={(event) => setStatus(event.target.value as "all" | OrderStatus)}>
 					<option value="all">Все проекты</option>
-					<option value="draft">Черновики</option>
-					<option value="published">Опубликованные</option>
-					<option value="paused">На паузе</option>
-					<option value="in_progress">В работе</option>
-					<option value="completed">Завершённые</option>
-					<option value="archived">Архив</option>
+					<option value="Draft">Черновики</option>
+					<option value="Published">Опубликованные</option>
+					<option value="Paused">На паузе</option>
+					<option value="In_Progress">В работе</option>
+					<option value="Completed">Завершённые</option>
+					<option value="Archived">Архив</option>
 				</select>
 				<select value={category} onChange={(event) => setCategory(event.target.value)}>
 					<option value="all">Все категории</option>

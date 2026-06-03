@@ -3,26 +3,29 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loadEnv } from "vite";
-import { noDeprecation } from "process";
 import basicSsl from '@vitejs/plugin-basic-ssl'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
-	return {
-		plugins: [react(), basicSsl()],
-		server: {
-			https: true,
+	const apiBaseUrl = (env.VITE_API_BASE_URL || "/api/v1").replace(/\/+$/, "");
+	const proxyTarget = env.API_PROXY_TARGET;
+		return {
+			plugins: [react(), basicSsl()],
+			server: {
+				https: {},
 			port: 5173,
 			strictPort: true,
-			proxy: {
-				"/api": {
-					target: env.API_PROXY_TARGET,
-					changeOrigin: true,
-					secure: false
+			proxy: proxyTarget
+				? {
+					[apiBaseUrl]: {
+						target: proxyTarget,
+						changeOrigin: true,
+						secure: false
+					}
 				}
-			}
+				: undefined
 		},
 		resolve: {
 			alias: {

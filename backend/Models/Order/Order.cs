@@ -33,10 +33,13 @@ public class Order
 
 	public bool ClientApproved { get; set; } = false;
 	public bool FreelancerApproved { get; set; } = false;
+	public int? ClientRatingByFreelancer { get; set; }
+	public int? FreelancerRatingByClient { get; set; }
 
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 	public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 	public DateTime? PublishedAt { get; set; }
+	public DateTime? CompletedAt { get; set; }
 	public DateTime? DeadLineAt { get; set; }
 
 	public OrderBriefSections? BriefSections { get; set; }

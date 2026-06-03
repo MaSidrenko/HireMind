@@ -98,10 +98,10 @@ public class OrderService : IOrderService
 
 		Order? createdOrder = await LoadOrderGraphAsync(order.Id, ct);
 
-		return createdOrder;
+		return createdOrder ?? throw new OrderNotFoundException(order.Id);
 	}
 
-	public async Task<Order?> GetByIdAsync(int id, CancellationToken ct)
+	public async Task<Order> GetByIdAsync(int id, CancellationToken ct)
 	{
 		Order? order = await LoadOrderGraphAsync(id, ct, asNoTracking: true);
 
@@ -123,9 +123,13 @@ public class OrderService : IOrderService
 				HirerId = order.CustomerId,
 				HirerName = order.Customer.FullName,
 				CompanyName = order.Customer.CompanyName,
+				HirerRating = order.Customer.Rating,
 				SelectedFreelancerId = order.FreelancerId,
 				SelectedFreelancerName = order.Freelancer != null 
 					? order.Freelancer.FullName 
+					: null,
+				SelectedFreelancerRating = order.Freelancer != null
+					? order.Freelancer.Rating
 					: null,
 				Title = order.Title,
 				ShortDescription = order.Description.Length > 150 
@@ -136,6 +140,8 @@ public class OrderService : IOrderService
 				Category = order.Category,
 				BudgetMin = order.MinPrice,
 				BudgetMax = order.MaxPrice,
+				Currency = order.Currency,
+				BudgetType = order.Payment,
 				Skills = order.Skills,
 				Status = order.Status,
 				WorkflowStage = order.WorkflowStage,
@@ -147,7 +153,9 @@ public class OrderService : IOrderService
 							Id = Proposal.Id,
 							ProjectId = Proposal.OrderId,
 							FreelancerId = Proposal.FreelancerId,
-							FreelancerName = Proposal.Freelancer.FullName,
+							FreelancerName = Proposal.Freelancer != null
+								? Proposal.Freelancer.FullName
+								: string.Empty,
 							Message = Proposal.Message,
 							Price = Proposal.Price,
 							Currency = Proposal.Currency,
@@ -157,9 +165,12 @@ public class OrderService : IOrderService
 						})
 						.ToList(),
 					PublishedAt = order.PublishedAt,
+					CompletedAt = order.CompletedAt,
 					UpdatedAt = order.UpdatedAt,
 					AiGenerated = order.AiGenerated,
-					ReadinessScore = order.ReadinessScore
+					ReadinessScore = order.ReadinessScore,
+					ClientRatingByFreelancer = order.ClientRatingByFreelancer,
+					FreelancerRatingByClient = order.FreelancerRatingByClient
 			})
 			.Where(o => o.Status != OrderStatus.Completed)
 			.ToListAsync(ct);
@@ -177,9 +188,13 @@ public class OrderService : IOrderService
 				HirerId = order.CustomerId,
 				HirerName = order.Customer.FullName,
 				CompanyName = order.Customer.CompanyName,
+				HirerRating = order.Customer.Rating,
 				SelectedFreelancerId = order.FreelancerId,
 				SelectedFreelancerName = order.Freelancer != null 
 					? order.Freelancer.FullName 
+					: null,
+				SelectedFreelancerRating = order.Freelancer != null
+					? order.Freelancer.Rating
 					: null,
 				Title = order.Title,
 				ShortDescription = order.Description.Length > 150 
@@ -190,6 +205,8 @@ public class OrderService : IOrderService
 				Category = order.Category,
 				BudgetMin = order.MinPrice,
 				BudgetMax = order.MaxPrice,
+				Currency = order.Currency,
+				BudgetType = order.Payment,
 				Skills = order.Skills,
 				Status = order.Status,
 				WorkflowStage = order.WorkflowStage,
@@ -201,7 +218,9 @@ public class OrderService : IOrderService
 							Id = Proposal.Id,
 							ProjectId = Proposal.OrderId,
 							FreelancerId = Proposal.FreelancerId,
-							FreelancerName = Proposal.Freelancer.FullName,
+							FreelancerName = Proposal.Freelancer != null
+								? Proposal.Freelancer.FullName
+								: string.Empty,
 							Message = Proposal.Message,
 							Price = Proposal.Price,
 							Currency = Proposal.Currency,
@@ -211,9 +230,12 @@ public class OrderService : IOrderService
 						})
 						.ToList(),
 					PublishedAt = order.PublishedAt,
+					CompletedAt = order.CompletedAt,
 					UpdatedAt = order.UpdatedAt,
 					AiGenerated = order.AiGenerated,
-					ReadinessScore = order.ReadinessScore
+					ReadinessScore = order.ReadinessScore,
+					ClientRatingByFreelancer = order.ClientRatingByFreelancer,
+					FreelancerRatingByClient = order.FreelancerRatingByClient
 			})
 			.ToListAsync(ct);
 
@@ -364,6 +386,16 @@ public class OrderService : IOrderService
 		order.Skills = request.Skills ?? new List<string>();
 
 		OrderStatus oldStatus = order.Status;
+		bool wasCompletedBeforeUpdate = HasCompletedState(order);
+		bool isLeavingCompletedState = wasCompletedBeforeUpdate
+			&& request.Status != OrderStatus.Completed
+			&& request.Status != OrderStatus.Archived;
+		bool shouldClearClientRating = isLeavingCompletedState
+			&& order.ClientRatingByFreelancer.HasValue;
+		bool shouldClearFreelancerRating = isLeavingCompletedState
+			&& order.FreelancerRatingByClient.HasValue;
+		bool shouldRecalculateCompletedOrders = order.FreelancerId.HasValue
+			&& (wasCompletedBeforeUpdate || request.Status == OrderStatus.Completed);
 
 		order.Status = request.Status;
 		order.WorkflowStage = request.WorkflowStage;
@@ -375,6 +407,15 @@ public class OrderService : IOrderService
 
 		if(oldStatus != OrderStatus.Published && request.Status == OrderStatus.Published)
 			order.PublishedAt = DateTime.UtcNow;
+
+		ApplyCompletedState(order, wasCompletedBeforeUpdate, request.Status);
+
+		if (isLeavingCompletedState)
+		{
+			order.CompletedAt = null;
+			order.ClientRatingByFreelancer = null;
+			order.FreelancerRatingByClient = null;
+		}
 
 
 		if(request.CompanyName is not null)		
@@ -444,6 +485,82 @@ public class OrderService : IOrderService
 
 		await _db.SaveChangesAsync(ct);
 
+		if (shouldRecalculateCompletedOrders && order.FreelancerId.HasValue)
+		{
+			await RecalculateFreelancerCompletedOrdersAsync(order.FreelancerId.Value, ct);
+		}
+
+		if (shouldClearClientRating)
+		{
+			await RecalculateClientRatingAsync(order.CustomerId, ct);
+		}
+
+		if (shouldClearFreelancerRating && order.FreelancerId.HasValue)
+		{
+			await RecalculateFreelancerRatingAsync(order.FreelancerId.Value, ct);
+		}
+
+		if (shouldClearClientRating || shouldClearFreelancerRating)
+		{
+			await _db.SaveChangesAsync(ct);
+		}
+
+		return order;
+	}
+
+	public async Task<Order> RateOrderAsync(int orderId, int userId, UpdateOrderRatingRequest request, CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderId, ct);
+
+		if (order is null)
+		{
+			throw new OrderNotFoundException(orderId);
+		}
+
+		if (order.FreelancerId is null)
+		{
+			throw new FreelancerNotSelectedException();
+		}
+
+		if (!HasCompletedState(order))
+		{
+			throw new OrderRatingUnavailableException();
+		}
+
+		if (order.CompletedAt is null)
+		{
+			order.CompletedAt = DateTime.UtcNow;
+		}
+
+		if (order.CustomerId == userId)
+		{
+			order.FreelancerRatingByClient = request.Score;
+		}
+		else if (order.FreelancerId == userId)
+		{
+			order.ClientRatingByFreelancer = request.Score;
+		}
+		else
+		{
+			throw new ForbiddenProposalOperationException();
+		}
+
+		order.UpdatedAt = DateTime.UtcNow;
+
+		await _db.SaveChangesAsync(ct);
+		await RecalculateFreelancerCompletedOrdersAsync(order.FreelancerId.Value, ct);
+
+		if (order.CustomerId == userId)
+		{
+			await RecalculateFreelancerRatingAsync(order.FreelancerId.Value, ct);
+		}
+		else
+		{
+			await RecalculateClientRatingAsync(order.CustomerId, ct);
+		}
+
+		await _db.SaveChangesAsync(ct);
+
 		return order;
 	}
 
@@ -494,5 +611,73 @@ public class OrderService : IOrderService
 		}
 
 		order.UpdatedAt = DateTime.UtcNow;
+	}
+
+	private static bool HasCompletedState(Order order)
+	{
+		return order.Status == OrderStatus.Completed || order.CompletedAt is not null;
+	}
+
+	private static void ApplyCompletedState(Order order, bool wasCompletedBeforeUpdate, OrderStatus newStatus)
+	{
+		if (newStatus == OrderStatus.Completed && order.CompletedAt is null)
+		{
+			order.CompletedAt = DateTime.UtcNow;
+		}
+	}
+
+	private async Task RecalculateClientRatingAsync(int clientId, CancellationToken ct)
+	{
+		User? client = await _db.Users.FirstOrDefaultAsync(user => user.Id == clientId, ct);
+
+		if (client is null)
+		{
+			throw new UserNotFoundException(clientId);
+		}
+
+		double[] ratings = await _db.Orders
+			.AsNoTracking()
+			.Where(order => order.CustomerId == clientId && order.ClientRatingByFreelancer.HasValue)
+			.Select(order => (double)order.ClientRatingByFreelancer!.Value)
+			.ToArrayAsync(ct);
+
+		client.Rating = ratings.Length == 0 ? 0 : Math.Round(ratings.Average(), 2);
+	}
+
+	private async Task RecalculateFreelancerRatingAsync(int freelancerId, CancellationToken ct)
+	{
+		User? freelancer = await _db.Users.FirstOrDefaultAsync(user => user.Id == freelancerId, ct);
+
+		if (freelancer is null)
+		{
+			throw new UserNotFoundException(freelancerId);
+		}
+
+		double[] ratings = await _db.Orders
+			.AsNoTracking()
+			.Where(order => order.FreelancerId == freelancerId && order.FreelancerRatingByClient.HasValue)
+			.Select(order => (double)order.FreelancerRatingByClient!.Value)
+			.ToArrayAsync(ct);
+
+		freelancer.Rating = ratings.Length == 0 ? 0 : Math.Round(ratings.Average(), 2);
+	}
+
+	private async Task RecalculateFreelancerCompletedOrdersAsync(int freelancerId, CancellationToken ct)
+	{
+		User? freelancer = await _db.Users.FirstOrDefaultAsync(user => user.Id == freelancerId, ct);
+
+		if (freelancer is null)
+		{
+			throw new UserNotFoundException(freelancerId);
+		}
+
+		int completedOrders = await _db.Orders
+			.AsNoTracking()
+			.CountAsync(
+				order => order.FreelancerId == freelancerId
+					&& (order.Status == OrderStatus.Completed || order.CompletedAt.HasValue),
+				ct);
+
+		freelancer.CompletedOrders = completedOrders;
 	}
 }
