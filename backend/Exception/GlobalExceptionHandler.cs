@@ -13,6 +13,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 			int statusCode = exception switch 
 			{
 				OrderNotFoundException => StatusCodes.Status404NotFound,
+				OrderAccessDeniedException => StatusCodes.Status404NotFound,
 				ProposalNotFoundException => StatusCodes.Status404NotFound,
 					UserNotFoundException => StatusCodes.Status404NotFound,
 					ContactRequestAlreadyExistsException => StatusCodes.Status400BadRequest,
@@ -27,12 +28,15 @@ public class GlobalExceptionHandler : IExceptionHandler
 			InvalidEmailException => StatusCodes.Status400BadRequest,
 			EmailExsistsException => StatusCodes.Status400BadRequest,
 			NullCompanyException => StatusCodes.Status400BadRequest,
+			AiRequestFailedException => StatusCodes.Status502BadGateway,
+			AiInvalidResponseException => StatusCodes.Status502BadGateway,
 			_ => StatusCodes.Status500InternalServerError
 		};
 
 			string title = exception switch
 			{
 				OrderNotFoundException => "Order not found",
+				OrderAccessDeniedException => "Order not accessible",
 				ProposalNotFoundException => "Proposal not found",
 					UserNotFoundException => "User not found",
 					ContactRequestAlreadyExistsException => "Contact request already exists",
@@ -47,6 +51,8 @@ public class GlobalExceptionHandler : IExceptionHandler
 			InvalidEmailException => "Invalid Email",
 			EmailExsistsException => "Email already exists",
 			NullCompanyException => "Null company",
+			AiRequestFailedException => "AI provider request failed",
+			AiInvalidResponseException => "AI provider response is invalid",
 			_ => "Internal server error"
 		};
 

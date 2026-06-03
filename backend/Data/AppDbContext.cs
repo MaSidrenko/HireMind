@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
 
 	public DbSet<Order> Orders => Set<Order>();
 	public DbSet<Proposal> Proposals => Set<Proposal>();
+	public DbSet<AiConversation> AiConversations => Set<AiConversation>();
+	public DbSet<AiMessage> AiMessages => Set<AiMessage>();
 
 	public DbSet<OrderBriefSections> OrderBriefSections => Set<OrderBriefSections>();
 	public DbSet<ClarificationQuestion> ClarificationQuestions => Set<ClarificationQuestion>();
@@ -68,6 +70,30 @@ public class AppDbContext : DbContext
 			.WithOne(proposal => proposal.Order)
 			.HasForeignKey(proposal => proposal.OrderId)
 			.OnDelete(DeleteBehavior.Cascade);
+
+		modelBuilder.Entity<Order>()
+			.HasMany(order => order.AiConversations)
+			.WithOne(conversation => conversation.Order)
+			.HasForeignKey(conversation => conversation.OrderId)
+			.OnDelete(DeleteBehavior.Cascade);
+
+		modelBuilder.Entity<AiConversation>()
+			.HasOne(conversation => conversation.CreatedByUser)
+			.WithMany()
+			.HasForeignKey(conversation => conversation.CreatedByUserId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		modelBuilder.Entity<AiConversation>()
+			.HasMany(conversation => conversation.Messages)
+			.WithOne(message => message.Conversation)
+			.HasForeignKey(message => message.ConversationId)
+			.OnDelete(DeleteBehavior.Cascade);
+
+		modelBuilder.Entity<AiMessage>()
+			.HasOne(message => message.AuthorUser)
+			.WithMany()
+			.HasForeignKey(message => message.AuthorUserId)
+			.OnDelete(DeleteBehavior.SetNull);
 
 	}
 }

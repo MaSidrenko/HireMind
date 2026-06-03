@@ -48,6 +48,7 @@ public class Order
 	public List<ScopeItem> ScopeItems { get; set; } = new();
 	public List<DoneCriterion> DoneCriteria { get; set; } = new();
 	public List<RiskItem> Risks { get; set; } = new();
+	public List<AiConversation> AiConversations { get; set; } = new();
 
 	public List<Proposal> Proposals { get; set; } = new();
 }
