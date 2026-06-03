@@ -222,23 +222,41 @@ export default function Profile() {
 		.map((part) => part.charAt(0).toUpperCase())
 		.join("");
 
-	const acceptedOrders = orders.filter((order) =>
-		order.proposals.some(
-			(proposal) =>
-				proposal.freelancerId === user.id &&
-				proposal.status === "accepted",
-		),
+	const isCompletedOrder = (order: ProjectOrder) =>
+		order.status === "Completed" || order.completedAt !== null;
+
+	const freelancerOrders = orders.filter(
+		(order) => order.selectedFreelancerId === user.id,
 	);
 
-	const completedOrders = orders.filter(
+	const acceptedOrders = freelancerOrders.filter(
 		(order) =>
-			order.selectedFreelancerId === user.id &&
-			(order.status === "Completed" || order.completedAt !== null),
+			!isCompletedOrder(order) &&
+			order.status !== "Cancelled" &&
+			order.status !== "Archived" &&
+			order.proposals.some(
+				(proposal) =>
+					proposal.freelancerId === user.id &&
+					proposal.status === "accepted",
+			),
+	);
+
+	const unratedCompletedOrders = freelancerOrders.filter(
+		(order) =>
+			isCompletedOrder(order) && order.clientRatingByFreelancer === null,
+	);
+
+	const completedOrders = freelancerOrders.filter(
+		(order) =>
+			isCompletedOrder(order) && order.clientRatingByFreelancer !== null,
 	);
 	const freelancerCompletedOrders =
 		isFreelancer && "completedOrders" in user && user.completedOrders !== null
-			? Math.max(user.completedOrders, completedOrders.length)
-			: completedOrders.length;
+			? Math.max(
+					user.completedOrders,
+					completedOrders.length + unratedCompletedOrders.length,
+				)
+			: completedOrders.length + unratedCompletedOrders.length;
 
 	const clientActiveOrders = orders.filter(
 		(order) =>
@@ -477,7 +495,7 @@ export default function Profile() {
 	const renderOrderList = (
 		items: ProjectOrder[],
 		emptyText: string,
-		mode: "accepted" | "completed" | "client",
+		mode: "accepted" | "completed" | "client" | "pending-rating",
 	) => {
 		if (ordersLoading) {
 			return <p className="profile-list__empty">Загружаем список...</p>;
@@ -524,6 +542,12 @@ export default function Profile() {
 								) : null}
 								{mode === "client" ? (
 									<span>{item.proposalsCount} откликов</span>
+								) : null}
+								{mode === "pending-rating" ? (
+									<span>Нужно оценить заказчика</span>
+								) : null}
+								{mode === "completed" ? (
+									<span>Оценка оставлена</span>
 								) : null}
 							</div>
 						</NavLink>
@@ -944,6 +968,23 @@ export default function Profile() {
 							acceptedOrders,
 							"Пока нет заказов с принятым откликом.",
 							"accepted",
+						)}
+					</div>
+				) : null}
+
+				{isFreelancer ? (
+					<div className="profile-card profile-card--side">
+						<div className="profile-card__header">
+							<h2>Ждут вашу оценку</h2>
+							<p>
+								Завершённые проекты, где вы ещё не оценили
+								заказчика.
+							</p>
+						</div>
+						{renderOrderList(
+							unratedCompletedOrders,
+							"Сейчас нет завершённых заказов без вашей оценки.",
+							"pending-rating",
 						)}
 					</div>
 				) : null}

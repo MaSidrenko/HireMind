@@ -7,10 +7,14 @@ namespace backend;
 public class OrderService : IOrderService
 {
 	private readonly AppDbContext _db;
+	private readonly IEmailSender _emailSender;
+	private readonly ITelegramNotificationService _telegramNotificationService;
 
-	public OrderService(AppDbContext context)
+	public OrderService(AppDbContext context, IEmailSender emailSender, ITelegramNotificationService telegramNotificationService)
 	{
 		_db = context;
+		_emailSender = emailSender;
+		_telegramNotificationService = telegramNotificationService;
 	}
 
 	public async Task<Order> AcceptProposalAsync(int proposalId,int userId, CancellationToken ct)
@@ -61,6 +65,82 @@ public class OrderService : IOrderService
 		}
 
 		await _db.SaveChangesAsync(ct);
+
+		User selectedFreelancer = order.Freelancer ?? throw new UserNotFoundException(selectedProposal.FreelancerId);
+		string selectedSubject = BuildOrderNotificationSubject(order.Title);
+		string selectedMessage = BuildOrderNotificationMessage(
+			order.Title,
+			"Ваш отклик принят заказчиком.",
+			BuildUserDetailsText(order.Customer)
+		);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				selectedFreelancer.Email,
+				selectedSubject,
+				selectedMessage
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine($"Failed to send email: {ex.Message}");
+		}
+		try
+		{
+			if(selectedFreelancer.IsTelegramConnected && selectedFreelancer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					selectedFreelancer.TelegramChatId.Value,
+					$"{selectedSubject}\n{selectedMessage}"
+				);
+			}
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.ToString());
+		}
+
+		foreach(Proposal item in order.Proposals)
+		{
+			if(item.Id == selectedProposal.Id || item.Status != ProposalStatus.declined || item.Freelancer is null)
+				continue;
+
+			try
+			{
+				string declinedSubject = BuildOrderNotificationSubject(order.Title);
+				string declinedMessage = BuildOrderNotificationMessage(
+					order.Title,
+					"Заказчик выбрал другого исполнителя."
+				);
+
+				await _emailSender.SendEmailAsync(
+					item.Freelancer.Email,
+					declinedSubject,
+					declinedMessage
+				);
+			} catch(Exception ex)
+			{
+				System.Console.WriteLine($"Failed to send email: {ex.Message}");
+			}
+			try
+			{
+				if(item.Freelancer.IsTelegramConnected && item.Freelancer.TelegramChatId != null)
+				{
+					string declinedSubject = BuildOrderNotificationSubject(order.Title);
+					string declinedMessage = BuildOrderNotificationMessage(
+						order.Title,
+						"Заказчик выбрал другого исполнителя."
+					);
+
+					await _telegramNotificationService.SendContactNotificationAsync(
+						item.Freelancer.TelegramChatId.Value,
+						$"{declinedSubject}\n{declinedMessage}"
+					);
+				}
+			} catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.ToString());
+			}
+		}
 
 		return order;
 
@@ -299,10 +379,42 @@ public class OrderService : IOrderService
 
 		order.Proposals.Add(proposal);
 		order.UpdatedAt = DateTime.UtcNow;
-
+	
 		await _db.SaveChangesAsync(ct);
-		return order;
+		User freelancer = await _db.Users.Where(u => u.Id == userId).FirstOrDefaultAsync(ct)
+			?? throw new UserNotFoundException(userId);
+		string proposalSubject = BuildOrderNotificationSubject(order.Title);
+		string proposalMessage = BuildOrderNotificationMessage(
+			order.Title,
+			"Поступил новый отклик от исполнителя.",
+			BuildUserDetailsText(freelancer, includeSkills: true)
+		);
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Customer.Email,
+				proposalSubject,
+				proposalMessage
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine($"Failed to send email: {ex.Message}");
+		}
+		try
+		{
+			if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Customer.TelegramChatId.Value,
+					$"{proposalSubject}\n{proposalMessage}"
+				);
+			}
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.ToString());
+		}
 
+		return order;
 	}
 
 	public async Task<Order> UpdateClientApproval(
@@ -328,11 +440,110 @@ public class OrderService : IOrderService
 			throw new FreelancerNotSelectedException();
 		}
 
+		OrderStatus oldStatus = order.Status;
 		order.ClientApproved = request.Approved;
 
 		ApplyApprovalState(order);
 
 		await _db.SaveChangesAsync(ct);
+
+		bool movedToWorkNow = oldStatus != OrderStatus.In_Progress
+			&& order.Status == OrderStatus.In_Progress;
+		string emailSubject = BuildOrderNotificationSubject(order.Title);
+		string notificationText = request.Approved
+			? BuildOrderNotificationMessage(order.Title, "Заказчик подтвердил согласование.")
+			: BuildOrderNotificationMessage(order.Title, "Заказчик отменил согласование.");
+
+		if (!movedToWorkNow && order.Freelancer is not null)
+		{
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Freelancer.Email,
+					emailSubject,
+					notificationText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Freelancer.TelegramChatId.Value,
+						$"{emailSubject}\n{notificationText}"
+
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		}
+
+		if(movedToWorkNow && order.Freelancer is not null)
+		{
+			string startSubject = BuildOrderNotificationSubject(order.Title);
+			string startText = BuildOrderNotificationMessage(
+				order.Title,
+				"Проект переведён в работу. Обе стороны подтвердили согласование."
+			);
+
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Customer.Email,
+					startSubject,
+					startText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Customer.TelegramChatId.Value,
+						$"{startSubject}\n{startText}"
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Freelancer.Email,
+					startSubject,
+					startText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Freelancer.TelegramChatId.Value,
+						$"{startSubject}\n{startText}"
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		}
 
 		return order;
 	}
@@ -355,11 +566,111 @@ public class OrderService : IOrderService
 			throw new FreelancerNotSelectedException();
 		}
 
+		OrderStatus oldStatus = order.Status;
 		order.FreelancerApproved = request.Approved;
 
 		ApplyApprovalState(order);
 
 		await _db.SaveChangesAsync(ct);
+
+		bool movedToWorkNow = oldStatus != OrderStatus.In_Progress
+			&& order.Status == OrderStatus.In_Progress;
+		string emailSubject = BuildOrderNotificationSubject(order.Title);
+		if(order.Freelancer is not null && !movedToWorkNow)
+		{
+			string notificationText = request.Approved
+				? BuildOrderNotificationMessage(order.Title, "Исполнитель подтвердил согласование.")
+				: BuildOrderNotificationMessage(order.Title, "Исполнитель отменил согласование.");
+
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Customer.Email,
+					emailSubject,
+					notificationText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Customer.TelegramChatId.Value,
+						$"{emailSubject}\n{notificationText}"
+
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		}
+
+		if(movedToWorkNow && order.Freelancer is not null)
+		{
+			string startSubject = BuildOrderNotificationSubject(order.Title);
+			string startText = BuildOrderNotificationMessage(
+				order.Title,
+				"Проект переведён в работу. Обе стороны подтвердили согласование."
+			);
+
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Customer.Email,
+					startSubject,
+					startText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Customer.TelegramChatId.Value,
+						$"{startSubject}\n{startText}"
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Freelancer.Email,
+					startSubject,
+					startText
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Freelancer.TelegramChatId.Value,
+						$"{startSubject}\n{startText}"
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		}
+
 
 		return order;
 	}
@@ -505,6 +816,72 @@ public class OrderService : IOrderService
 			await _db.SaveChangesAsync(ct);
 		}
 
+		if(oldStatus != order.Status && order.FreelancerId.HasValue && order.Freelancer is not null)
+		{
+			string? emailSubject = null;
+			string? notificationText = null;
+
+			if(order.Status == OrderStatus.Paused)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик поставил проект на паузу.");
+			}
+			else if(order.Status == OrderStatus.Completed)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отметил проект как завершённый.");
+			}
+			else if(order.Status == OrderStatus.Cancelled)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отменил проект.");
+			}
+			else if(order.Status == OrderStatus.Archived)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отправил проект в архив.");
+			}
+			else if(order.Status == OrderStatus.Published && oldStatus == OrderStatus.Paused)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик снял проект с паузы.");
+			}
+			else if(order.Status == OrderStatus.Published && oldStatus == OrderStatus.Archived)
+			{
+				emailSubject = BuildOrderNotificationSubject(order.Title);
+				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик вернул проект из архива.");
+			}
+
+			if(emailSubject is not null && notificationText is not null)
+			{
+				try
+				{
+					await _emailSender.SendEmailAsync(
+						order.Freelancer.Email,
+						emailSubject,
+						notificationText
+					);
+				} catch (Exception ex)
+				{
+					System.Console.WriteLine(ex.Message);
+				}
+
+				try
+				{
+					if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+					{
+						await _telegramNotificationService.SendContactNotificationAsync(
+							order.Freelancer.TelegramChatId.Value,
+							$"{emailSubject}\n{notificationText}"
+						);
+					}
+				}catch(Exception ex)
+				{
+					System.Console.WriteLine(ex.Message);
+				}
+			}
+		}
+
 		return order;
 	}
 
@@ -531,9 +908,11 @@ public class OrderService : IOrderService
 		{
 			order.CompletedAt = DateTime.UtcNow;
 		}
-
+		
+		bool isHirer = false;
 		if (order.CustomerId == userId)
 		{
+			isHirer = true;
 			order.FreelancerRatingByClient = request.Score;
 		}
 		else if (order.FreelancerId == userId)
@@ -560,6 +939,78 @@ public class OrderService : IOrderService
 		}
 
 		await _db.SaveChangesAsync(ct);
+		string ratingSubject = BuildOrderNotificationSubject(order.Title);
+		if(isHirer)
+		{		
+			try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Freelancer.Email,
+					ratingSubject,
+					BuildOrderNotificationMessage(
+						order.Title,
+						$"Заказчик поставил вам оценку: {order.FreelancerRatingByClient}."
+					)
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Freelancer.TelegramChatId.Value,
+						$"{ratingSubject}\n" +
+						BuildOrderNotificationMessage(
+							order.Title,
+							$"Заказчик поставил вам оценку: {order.FreelancerRatingByClient}."
+						)
+
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		} else
+		{
+			try
+			{
+					await _emailSender.SendEmailAsync(
+						order.Customer.Email,
+						ratingSubject,
+						BuildOrderNotificationMessage(
+							order.Title,
+							$"Исполнитель поставил вам оценку: {order.ClientRatingByFreelancer}."
+						)
+					);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Customer.TelegramChatId.Value,
+						$"{ratingSubject}\n" +
+						BuildOrderNotificationMessage(
+							order.Title,
+							$"Исполнитель поставил вам оценку: {order.ClientRatingByFreelancer}."
+						)
+
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+		}
 
 		return order;
 	}
@@ -586,10 +1037,48 @@ public class OrderService : IOrderService
 		if(ownProposal.FreelancerId != userId)
 			throw new ForbiddenProposalOperationException();
 
+		if (ownProposal.Status == ProposalStatus.accepted)
+			throw new ProposalWithdrawalUnavailableException();
+
 		ownProposal.Status = ProposalStatus.withdrawn;
 		order.UpdatedAt = DateTime.UtcNow;
 
 		await _db.SaveChangesAsync(ct);
+		User proposalFreelancer = ownProposal.Freelancer ?? throw new UserNotFoundException(ownProposal.FreelancerId);
+		string withdrawSubject = BuildOrderNotificationSubject(order.Title);
+		string withdrawMessage = BuildOrderNotificationMessage(
+			order.Title,
+			"Исполнитель отозвал свой отклик.",
+			BuildUserDetailsText(proposalFreelancer, includeSkills: true)
+		);
+		
+		try
+			{
+				await _emailSender.SendEmailAsync(
+					order.Customer.Email,
+					withdrawSubject,
+					withdrawMessage
+				);
+			} catch (Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
+			try
+			{
+				if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				{
+					await _telegramNotificationService.SendContactNotificationAsync(
+						order.Customer.TelegramChatId.Value,
+						$"{withdrawSubject}\n{withdrawMessage}"
+
+					);
+				}
+			}catch(Exception ex)
+			{
+				System.Console.WriteLine(ex.Message);
+			}
+
 		return order;
 	}
 
@@ -616,6 +1105,45 @@ public class OrderService : IOrderService
 	private static bool HasCompletedState(Order order)
 	{
 		return order.Status == OrderStatus.Completed || order.CompletedAt is not null;
+	}
+
+	private static string BuildOrderNotificationSubject(string orderTitle)
+	{
+		return $"Уведомление по проекту: {orderTitle}";
+	}
+
+	private static string BuildOrderNotificationMessage(string orderTitle, string eventText, string? details = null)
+	{
+		string message = $"Проект: {orderTitle}\nСобытие: {eventText}";
+
+		if (!string.IsNullOrWhiteSpace(details))
+		{
+			message += $"\n{details}";
+		}
+
+		return message;
+	}
+
+	private static string BuildUserDetailsText(User user, bool includeSkills = false)
+	{
+		string text = $"Имя: {user.FullName}\nEmail: {user.Email}";
+
+		if (!string.IsNullOrWhiteSpace(user.Contacts?.Telegram))
+		{
+			text += $"\nTelegram: {user.Contacts.Telegram}";
+		}
+
+		if (!string.IsNullOrWhiteSpace(user.Contacts?.Phone))
+		{
+			text += $"\nТелефон: {user.Contacts.Phone}";
+		}
+
+		if (includeSkills && user.Skills.Count > 0)
+		{
+			text += $"\nНавыки: {string.Join(", ", user.Skills)}";
+		}
+
+		return text;
 	}
 
 	private static void ApplyCompletedState(Order order, bool wasCompletedBeforeUpdate, OrderStatus newStatus)
