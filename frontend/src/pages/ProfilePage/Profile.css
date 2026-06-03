@@ -287,6 +287,11 @@
 	grid-column: span 4;
 }
 
+.profile-card--side {
+	align-self: start;
+	min-width: 0;
+}
+
 .profile-card--skills {
 	grid-column: span 8;
 	align-self: start;
@@ -572,6 +577,7 @@
 .profile-order-card {
 	display: grid;
 	gap: 10px;
+	min-width: 0;
 	padding: 20px 22px;
 	border: 1px solid rgba(250, 151, 44, 0.14);
 	border-radius: 18px;
@@ -604,6 +610,20 @@
 	margin: 0;
 	color: rgba(232, 230, 225, 0.68);
 	line-height: 1.6;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.profile-order-card__head strong,
+.profile-order-card__head span,
+.profile-order-card__meta span {
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.profile-order-card__head strong {
+	flex: 1 1 220px;
+	min-width: 0;
 }
 
 .profile-order-card__meta span:last-child {
