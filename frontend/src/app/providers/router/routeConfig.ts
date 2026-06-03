@@ -6,7 +6,6 @@ import {
 	Profile,
 	Projects,
 	Freelancers,
-	EmailVerify,
 } from "@/pages/index";
 export const PageRoutes: AppPage[] = [
 	{

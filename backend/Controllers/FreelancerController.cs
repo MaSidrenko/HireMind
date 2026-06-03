@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MyApp.Namespace
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     [ApiController]
     [Authorize(Roles = "Client")]
     public class FreelancerController : ControllerBase

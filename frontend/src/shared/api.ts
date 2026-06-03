@@ -1,5 +1,4 @@
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
-const API_BASE_URL = "/api";
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/+$/, "");
 
 type ApiOptions = Omit<RequestInit, "body"> & {
 	body?: unknown;

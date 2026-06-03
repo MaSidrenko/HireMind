@@ -1,1 +1,102 @@
+# OS artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor / IDE
+.vs/
+.idea/
+*.ntvs*
+*.njsproj
+*.suo
+*.user
+*.userosscache
+*.rsuser
+*.sln.docstates
+*.swp
+*.swo
+*~
+.vscode/*
+**/.vscode/*
+!.vscode/extensions.json
+!**/.vscode/extensions.json
+
+# Secrets and local environment
 .env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.*.Local.json
+secrets.json
+*.secrets.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Logs and temp files
+*.log
+logs/
+tmp/
+temp/
+
+# .NET / C# / ASP.NET
+**/[Bb]in/
+**/[Oo]bj/
+artifacts/
+TestResults/
+BenchmarkDotNet.Artifacts/
+*.coverage
+*.coveragexml
+coverage*.xml
+coverlet*.json
+*.nupkg
+
+# Frontend / React / TypeScript / Vite
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/blob-report/
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.pnpm-store/
+.yarn/
+**/dist-ssr/
+**/playwright/.cache/
+**/playwright/.auth/
+
+# Docker
+.docker/
+docker-compose.local.yml
+docker-compose.override.local.yml
+
+# PostgreSQL / local database volumes
+pgdata/
+postgres-data/
+postgres_data/
+db-data/
+db_data/
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+*.orig
+
+# My Files (TODO: Don`t forgot delete it`s)
+PROJECT_TODO.md
