@@ -126,7 +126,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IProfileSerivce, ProfileSerivce>();
+builder.Services.AddScoped<IFreelancerService, FreelancerService>();
 builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
+builder.Services.AddScoped<ITelegramNotificationService, NullTelegramNotificationService>();
 builder.Services.AddSingleton(telegramBotOptions);
 
 if (!string.IsNullOrWhiteSpace(telegramBotOptions.BotToken))

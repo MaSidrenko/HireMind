@@ -10,14 +10,15 @@ public class GlobalExceptionHandler : IExceptionHandler
 			Exception exception, 
 			CancellationToken cancellationToken)
 	{
-		int statusCode = exception switch 
-		{
-			OrderNotFoundException => StatusCodes.Status404NotFound,
-			ProposalNotFoundException => StatusCodes.Status404NotFound,
-			UserNotFoundException => StatusCodes.Status404NotFound,
-			ProposalAlreadyExistsException => StatusCodes.Status409Conflict,
-			ForbiddenProposalOperationException => StatusCodes.Status403Forbidden,
-			FreelancerAlreadySelectedException => StatusCodes.Status409Conflict,
+			int statusCode = exception switch 
+			{
+				OrderNotFoundException => StatusCodes.Status404NotFound,
+				ProposalNotFoundException => StatusCodes.Status404NotFound,
+				UserNotFoundException => StatusCodes.Status404NotFound,
+				ContactRequestAlreadyExistsException => StatusCodes.Status400BadRequest,
+				ProposalAlreadyExistsException => StatusCodes.Status409Conflict,
+				ForbiddenProposalOperationException => StatusCodes.Status403Forbidden,
+				FreelancerAlreadySelectedException => StatusCodes.Status409Conflict,
 			FreelancerNotSelectedException => StatusCodes.Status409Conflict,
 			OrderNotPublishedException => StatusCodes.Status409Conflict,
 			OrderRatingUnavailableException => StatusCodes.Status409Conflict,
@@ -28,14 +29,15 @@ public class GlobalExceptionHandler : IExceptionHandler
 			_ => StatusCodes.Status500InternalServerError
 		};
 
-		string title = exception switch
-		{
-			OrderNotFoundException => "Order not found",
-			ProposalNotFoundException => "Proposal not found",
-			UserNotFoundException => "User not found",
-			ProposalAlreadyExistsException => "Proposal already exists",
-			ForbiddenProposalOperationException => "Forbidden",
-			FreelancerAlreadySelectedException => "Freelancer already selected",
+			string title = exception switch
+			{
+				OrderNotFoundException => "Order not found",
+				ProposalNotFoundException => "Proposal not found",
+				UserNotFoundException => "User not found",
+				ContactRequestAlreadyExistsException => "Contact request already exists",
+				ProposalAlreadyExistsException => "Proposal already exists",
+				ForbiddenProposalOperationException => "Forbidden",
+				FreelancerAlreadySelectedException => "Freelancer already selected",
 			FreelancerNotSelectedException => "Freelancer not selected",
 			OrderNotPublishedException => "Order not published",
 			OrderRatingUnavailableException => "Order rating unavailable",
