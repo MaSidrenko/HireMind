@@ -26,6 +26,7 @@ export {
 	acceptProposalRequest,
 	withdrawProposalRequest,
 	updateOrderApprovalRequest,
+	rateOrderRequest,
 } from "./projectsApi";
 export type {
 	OrderStatus,

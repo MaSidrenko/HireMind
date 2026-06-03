@@ -20,7 +20,7 @@ public class OrderController : ControllerBase
 	[HttpGet("get-by-id/{id:int}")]
 	public async Task<IActionResult> GetById(int id, CancellationToken ct)
 	{
-		Order? order = await _orderService.GetByIdAsync(id, ct);
+		Order order = await _orderService.GetByIdAsync(id, ct);
 
 		return Ok(ToDto(order));
 	}
@@ -167,6 +167,31 @@ public class OrderController : ControllerBase
 		return Ok(ToDto(order));
 	}
 
+	[Authorize]
+	[HttpPut("{orderId:int}/rating")]
+	public async Task<IActionResult> RateOrder(
+		int orderId,
+		[FromBody] UpdateOrderRatingRequest request,
+		CancellationToken ct)
+	{
+		if (!TryGetUserId(out int userId))
+		{
+			return Unauthorized();
+		}
+
+		if (request.Score is < 1 or > 5)
+		{
+			return BadRequest(new
+			{
+				message = "Оценка должна быть от 1 до 5."
+			});
+		}
+
+		Order order = await _orderService.RateOrderAsync(orderId, userId, request, ct);
+
+		return Ok(ToDto(order));
+	}
+
 	private bool TryGetUserId(out int userId)
 	{
 		string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -174,7 +199,14 @@ public class OrderController : ControllerBase
 	}
 	private static OrderListItemDto ToDto(Order order)
 	{
+		ArgumentNullException.ThrowIfNull(order);
+
 		string description = order.Description ?? string.Empty;
+		List<Proposal> proposals = order.Proposals ?? new();
+		List<ClarificationQuestion> clarificationQuestions = order.ClarificationQuestions ?? new();
+		List<ScopeItem> scopeItems = order.ScopeItems ?? new();
+		List<DoneCriterion> doneCriteria = order.DoneCriteria ?? new();
+		List<RiskItem> risks = order.Risks ?? new();
 
 		return new OrderListItemDto
 		{
@@ -182,8 +214,10 @@ public class OrderController : ControllerBase
 			HirerId = order.CustomerId,
 			HirerName = order.Customer?.FullName ?? string.Empty,
 			CompanyName = order.Customer?.CompanyName ?? string.Empty,
+			HirerRating = order.Customer?.Rating ?? 0,
 			SelectedFreelancerId = order.FreelancerId,
 			SelectedFreelancerName = order.Freelancer?.FullName,
+			SelectedFreelancerRating = order.Freelancer?.Rating,
 			Title = order.Title,
 			ShortDescription = description.Length > 150
 				? description.Substring(0, 150)
@@ -198,8 +232,8 @@ public class OrderController : ControllerBase
 			Skills = order.Skills ?? new List<string>(),
 			Status = order.Status,
 			WorkflowStage = order.WorkflowStage,
-			ProposalsCount = order.Proposals?.Count ?? 0,
-			Proposals = order.Proposals
+			ProposalsCount = proposals.Count,
+			Proposals = proposals
 				.OrderByDescending(proposal => proposal.CreatedAt)
 				.Select(proposal => new ProjectProposalDto
 				{
@@ -216,6 +250,7 @@ public class OrderController : ControllerBase
 				})
 				.ToList(),
 			PublishedAt = order.PublishedAt,
+			CompletedAt = order.CompletedAt,
 			UpdatedAt = order.UpdatedAt,
 			AiGenerated = order.AiGenerated,
 			ReadinessScore = order.ReadinessScore,
@@ -230,7 +265,7 @@ public class OrderController : ControllerBase
 				Constraints = order.BriefSections?.Constraints ?? string.Empty,
 				OpenQuestions = order.BriefSections?.OpenQuestions ?? string.Empty
 			},
-			ClarificationQuestions = order.ClarificationQuestions
+			ClarificationQuestions = clarificationQuestions
 				.Select(question => new ClarificationQuestionDto
 				{
 					Id = question.Id,
@@ -240,7 +275,7 @@ public class OrderController : ControllerBase
 					Options = question.Options ?? new List<string>()
 				})
 				.ToList(),
-			ScopeItems = order.ScopeItems
+			ScopeItems = scopeItems
 				.Select(scopeItem => new ScopeItemDto
 				{
 					Id = scopeItem.Id,
@@ -249,7 +284,7 @@ public class OrderController : ControllerBase
 					Bucket = scopeItem.Bucket
 				})
 				.ToList(),
-			DoneCriteria = order.DoneCriteria
+			DoneCriteria = doneCriteria
 				.Select(doneCriterion => new DoneCriterionDto
 				{
 					Id = doneCriterion.Id,
@@ -257,7 +292,7 @@ public class OrderController : ControllerBase
 					Checked = doneCriterion.Checked
 				})
 				.ToList(),
-			Risks = order.Risks
+			Risks = risks
 				.Select(risk => new RiskItemDto
 				{
 					Id = risk.Id,
@@ -272,7 +307,9 @@ public class OrderController : ControllerBase
 			{
 				Client = order.ClientApproved,
 				Freelancer = order.FreelancerApproved
-			}
+			},
+			ClientRatingByFreelancer = order.ClientRatingByFreelancer,
+			FreelancerRatingByClient = order.FreelancerRatingByClient
 		};
 	}
 }

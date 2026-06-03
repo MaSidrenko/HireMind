@@ -1,13 +1,13 @@
 import {
 	formatBudget,
-	getProjects,
 	proposalStatusLabels,
 	statusLabels,
 	updateProfileSkills,
 	useAuth,
+	type Currency,
 	type ProjectOrder,
 } from "@/features";
-import { isEmailValid, isPhoneValid } from "@/shared";
+import { apiRequest, isEmailValid, isPhoneValid } from "@/shared";
 import "./Profile.css";
 import { useEffect, useState } from "react";
 import SkillsAutocomplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
@@ -20,6 +20,11 @@ type ProfileStats = {
 	description: string;
 };
 
+type TelegramConnectLinkResponse = {
+	connectUrl: string;
+	expiresAtUtc: string;
+};
+
 type EditableRole = "Freelancer" | "Client";
 
 type ProfileFormState = {
@@ -29,7 +34,11 @@ type ProfileFormState = {
 	telegram: string;
 	phone: string;
 	companyName: string;
+	hourlyRate: string;
+	currency: Currency;
 };
+
+const profileCurrencies: Currency[] = ["RUB", "USD", "EUR"];
 
 const freelancerSkillsOptions = [
 	"Frontend Development",
@@ -64,6 +73,12 @@ function makeFormState(
 		telegram: user.contacts?.telegram ?? "",
 		phone: user.contacts?.phone ?? "",
 		companyName: "companyName" in user ? user.companyName ?? "" : "",
+		hourlyRate:
+			"hourlyRate" in user && user.hourlyRate !== null
+				? String(user.hourlyRate)
+				: "",
+		currency:
+			"currency" in user && user.currency !== null ? user.currency : "RUB",
 	};
 }
 
@@ -79,6 +94,8 @@ export default function Profile() {
 		telegram: "",
 		phone: "",
 		companyName: "",
+		hourlyRate: "",
+		currency: "RUB",
 	});
 	const [isEditing, setIsEditing] = useState(false);
 	const [profileError, setProfileError] = useState<string | null>(null);
@@ -87,6 +104,11 @@ export default function Profile() {
 	const [orders, setOrders] = useState<ProjectOrder[]>([]);
 	const [ordersLoading, setOrdersLoading] = useState(false);
 	const [ordersError, setOrdersError] = useState<string | null>(null);
+	const [telegramError, setTelegramError] = useState<string | null>(null);
+	const [telegramInfo, setTelegramInfo] = useState<string | null>(null);
+	const [isConnectingTelegram, setIsConnectingTelegram] = useState(false);
+	const [isWaitingForTelegram, setIsWaitingForTelegram] = useState(false);
+	const isTelegramConnected = user?.isTelegramConnected ?? false;
 
 	useEffect(() => {
 		if (!user) {
@@ -98,6 +120,8 @@ export default function Profile() {
 				telegram: "",
 				phone: "",
 				companyName: "",
+				hourlyRate: "",
+				currency: "RUB",
 			});
 			return;
 		}
@@ -105,6 +129,41 @@ export default function Profile() {
 		setProfileForm(makeFormState(user));
 		setSelectedSkills("skills" in user ? user.skills ?? [] : []);
 	}, [user]);
+
+	useEffect(() => {
+		if (!isWaitingForTelegram || isTelegramConnected) {
+			return;
+		}
+
+		const refreshInterval = window.setInterval(() => {
+			void refreshAuth();
+		}, 5000);
+
+		const timeout = window.setTimeout(() => {
+			setIsWaitingForTelegram(false);
+			setTelegramInfo(
+				"Ссылка на подключение уже выдана. Если вы нажали Start в боте, просто обновите страницу или попробуйте снова.",
+			);
+		}, 120000);
+
+		return () => {
+			window.clearInterval(refreshInterval);
+			window.clearTimeout(timeout);
+		};
+	}, [isTelegramConnected, isWaitingForTelegram, refreshAuth]);
+
+	useEffect(() => {
+		if (!isTelegramConnected) {
+			return;
+		}
+
+		if (isWaitingForTelegram) {
+			setIsWaitingForTelegram(false);
+		}
+
+		setTelegramError(null);
+		setTelegramInfo("Telegram подключён. Следующие уведомления будут приходить в бота.");
+	}, [isTelegramConnected, isWaitingForTelegram]);
 
 	useEffect(() => {
 		if (!user) return;
@@ -149,9 +208,13 @@ export default function Profile() {
 	const previewIsFreelancer = previewRole === "Freelancer";
 	const roleLabel = isClient ? "Заказчик" : "Исполнитель";
 	const contacts = user.contacts ?? {};
+	const userRating = Number.isFinite(user.rating) ? user.rating : 0;
+	const freelancerHourlyRate =
+		isFreelancer && "hourlyRate" in user ? user.hourlyRate : null;
+	const freelancerCurrency =
+		isFreelancer && "currency" in user ? user.currency : null;
 	const displayName =
 		user.fullName?.trim() || user.email?.split("@")[0] || "Пользователь";
-
 	const initials = displayName
 		.split(/\s+/)
 		.filter(Boolean)
@@ -170,8 +233,12 @@ export default function Profile() {
 	const completedOrders = orders.filter(
 		(order) =>
 			order.selectedFreelancerId === user.id &&
-			order.status === "Completed",
+			(order.status === "Completed" || order.completedAt !== null),
 	);
+	const freelancerCompletedOrders =
+		isFreelancer && "completedOrders" in user && user.completedOrders !== null
+			? Math.max(user.completedOrders, completedOrders.length)
+			: completedOrders.length;
 
 	const clientActiveOrders = orders.filter(
 		(order) =>
@@ -253,6 +320,18 @@ export default function Profile() {
 			return;
 		}
 
+		if (profileForm.role === "Freelancer") {
+			const hourlyRate =
+				profileForm.hourlyRate.trim() === ""
+					? 0
+					: Number(profileForm.hourlyRate);
+
+			if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+				setProfileError("Введите корректную почасовую ставку");
+				return;
+			}
+		}
+
 		setIsSavingProfile(true);
 		setProfileError(null);
 		setProfileSuccess(null);
@@ -272,6 +351,14 @@ export default function Profile() {
 						: undefined,
 				skills:
 					profileForm.role === "Freelancer" ? selectedSkills : [],
+				hourlyRate:
+					profileForm.role === "Freelancer"
+						? Number(profileForm.hourlyRate || 0)
+						: undefined,
+				currency:
+					profileForm.role === "Freelancer"
+						? profileForm.currency
+						: undefined,
 			});
 			setIsEditing(false);
 			setProfileSuccess("Профиль обновлён");
@@ -287,7 +374,55 @@ export default function Profile() {
 		}
 	};
 
+	const handleTelegramConnect = async () => {
+		if (isConnectingTelegram) {
+			return;
+		}
+
+		setIsConnectingTelegram(true);
+		setTelegramError(null);
+		setTelegramInfo(null);
+
+		try {
+			const response = await apiRequest<TelegramConnectLinkResponse>(
+				"/profile/telegram/connect-link",
+				{
+					method: "POST",
+				},
+			);
+
+			const popup = window.open(
+				response.connectUrl,
+				"_blank",
+				"noopener,noreferrer",
+			);
+
+			if (!popup) {
+				window.location.assign(response.connectUrl);
+			}
+
+			setIsWaitingForTelegram(true);
+			setTelegramInfo(
+				"Бот открыт. Нажмите Start в Telegram, а мы периодически обновим статус подключения здесь.",
+			);
+		} catch (error) {
+			console.error(error);
+			setTelegramError(
+				error instanceof Error
+					? error.message
+					: "Не удалось создать ссылку для подключения Telegram",
+			);
+		} finally {
+			setIsConnectingTelegram(false);
+		}
+	};
+
 	const profileStats: ProfileStats[] = [
+		{
+			label: "Рейтинг",
+			value: `${userRating.toFixed(1)} / 5`,
+			description: "Средняя оценка по завершённым заказам на платформе.",
+		},
 		{
 			label: "Статус",
 			value: user.isOnline ? "В сети" : "Не в сети",
@@ -312,12 +447,12 @@ export default function Profile() {
 		{
 			label: isFreelancer ? "Завершённые заказы" : "Контакты",
 			value: isFreelancer
-				? String(completedOrders.length)
+				? String(freelancerCompletedOrders)
 				: contacts.telegram || contacts.phone
 					? "Заполнены"
 					: "Ожидают заполнения",
 			description: isFreelancer
-				? "Количество заказов, доведённых до статуса завершения."
+				? "Количество заказов, которые были завершены исполнителем."
 				: "Чем больше данных, тем легче связаться с вами.",
 		},
 	];
@@ -427,6 +562,10 @@ export default function Profile() {
 							<strong>{roleLabel}</strong>
 						</div>
 						<div className="profile-highlight__row">
+							<span>Рейтинг</span>
+							<strong>{userRating.toFixed(1)} / 5</strong>
+						</div>
+						<div className="profile-highlight__row">
 							<span>Контакты</span>
 							<strong>
 								{contacts.telegram || contacts.phone
@@ -434,12 +573,35 @@ export default function Profile() {
 									: "Не указаны"}
 							</strong>
 						</div>
+						<div className="profile-highlight__row">
+							<span>Telegram-бот</span>
+							<strong>
+								{isTelegramConnected
+									? "Подключён"
+									: "Не подключён"}
+							</strong>
+						</div>
 						{isClient ? (
 							<div className="profile-highlight__row">
 								<span>Компания</span>
 								<strong>{profileForm.companyName || "Не указана"}</strong>
 							</div>
-						) : null}
+						) : (
+							<>
+								<div className="profile-highlight__row">
+									<span>Ставка</span>
+									<strong>
+										{typeof freelancerHourlyRate === "number"
+											? `${freelancerHourlyRate} ${freelancerCurrency ?? "RUB"}/ч`
+											: "Не указана"}
+									</strong>
+								</div>
+								<div className="profile-highlight__row">
+									<span>Сделанные заказы</span>
+									<strong>{freelancerCompletedOrders}</strong>
+								</div>
+							</>
+						)}
 						<button
 							type="button"
 							className="profile-edit-toggle"
@@ -489,6 +651,46 @@ export default function Profile() {
 							<span>Телефон</span>
 							<strong>{contacts.phone || "Не указан"}</strong>
 						</div>
+					</div>
+
+					<div className="profile-telegram-connect">
+						<div className="profile-telegram-connect__status">
+							<span>Статус Telegram</span>
+							<strong
+								className={
+									isTelegramConnected
+										? "profile-telegram-badge profile-telegram-badge--connected"
+										: "profile-telegram-badge"
+								}
+							>
+								{isTelegramConnected ? "Подключён" : "Ожидает подключения"}
+							</strong>
+						</div>
+						<button
+							type="button"
+							className="profile-telegram-connect__button"
+							disabled={isConnectingTelegram}
+							onClick={() => void handleTelegramConnect()}
+						>
+							{isConnectingTelegram
+								? "Готовим ссылку..."
+								: isWaitingForTelegram
+									? "Ожидаем подтверждение..."
+									: isTelegramConnected
+										? "Переподключить Telegram"
+										: "Подключить Telegram"}
+						</button>
+						<p className="profile-telegram-connect__hint">
+							Чтобы получать уведомления в Telegram, нужно будет
+							написать боту и нажать Start. Ссылку на бота
+							мы откроем автоматически после нажатия кнопки.
+						</p>
+						{telegramInfo ? (
+							<p className="profile-list__success">{telegramInfo}</p>
+						) : null}
+						{telegramError ? (
+							<p className="profile-list__error">{telegramError}</p>
+						) : null}
 					</div>
 				</div>
 
@@ -617,7 +819,43 @@ export default function Profile() {
 											}
 										/>
 									</label>
-								) : null}
+								) : (
+									<>
+										<label>
+											<span>Почасовая ставка</span>
+											<input
+												value={profileForm.hourlyRate}
+												disabled={isSavingProfile}
+												inputMode="decimal"
+												onChange={(event) =>
+													setProfileForm((current) => ({
+														...current,
+														hourlyRate: event.target.value,
+													}))
+												}
+											/>
+										</label>
+										<label>
+											<span>Валюта</span>
+											<select
+												value={profileForm.currency}
+												disabled={isSavingProfile}
+												onChange={(event) =>
+													setProfileForm((current) => ({
+														...current,
+														currency: event.target.value as Currency,
+													}))
+												}
+											>
+												{profileCurrencies.map((currency) => (
+													<option key={currency} value={currency}>
+														{currency}
+													</option>
+												))}
+											</select>
+										</label>
+									</>
+								)}
 							</div>
 							<div className="profile-edit-actions">
 								<button

@@ -49,6 +49,10 @@ function safeNumber(value: unknown, fallback = 0) {
 		: fallback;
 }
 
+function safeNullableNumber(value: unknown) {
+	return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 function safeString(value: unknown, fallback = "") {
 	return typeof value === "string" ? value : fallback;
 }
@@ -248,6 +252,7 @@ export function normalizeProjectOrder(
 		id: safeNumber(order.id),
 		hirerId: safeNumber(order.hirerId),
 		hirerName: safeString(order.hirerName, "Заказчик"),
+		hirerRating: safeNumber(order.hirerRating),
 		selectedFreelancerId:
 			typeof order.selectedFreelancerId === "number"
 				? order.selectedFreelancerId
@@ -256,6 +261,9 @@ export function normalizeProjectOrder(
 			typeof order.selectedFreelancerName === "string"
 				? order.selectedFreelancerName
 				: null,
+		selectedFreelancerRating: safeNullableNumber(
+			order.selectedFreelancerRating,
+		),
 		title,
 		shortDescription: safeString(
 			order.shortDescription,
@@ -275,6 +283,8 @@ export function normalizeProjectOrder(
 		proposals,
 		publishedAt:
 			typeof order.publishedAt === "string" ? order.publishedAt : null,
+		completedAt:
+			typeof order.completedAt === "string" ? order.completedAt : null,
 		updatedAt: safeDate(order.updatedAt),
 		companyName: safeString(order.companyName),
 		aiGenerated: Boolean(order.aiGenerated),
@@ -292,6 +302,12 @@ export function normalizeProjectOrder(
 			client: Boolean(order.approvals?.client),
 			freelancer: Boolean(order.approvals?.freelancer),
 		},
+		clientRatingByFreelancer: safeNullableNumber(
+			order.clientRatingByFreelancer,
+		),
+		freelancerRatingByClient: safeNullableNumber(
+			order.freelancerRatingByClient,
+		),
 	};
 
 	return { ...normalized, readinessScore: calculateReadiness(normalized) };
@@ -321,6 +337,7 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		proposalsCount: 0,
 		proposals: [],
 		publishedAt: null,
+		completedAt: null,
 		updatedAt: now,
 		companyName: input.companyName || "Новая компания",
 		aiGenerated: true,
@@ -334,6 +351,10 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		doneCriteria: makeDone(),
 		risks: input.risks ?? makeRisks(),
 		approvals: { client: false, freelancer: false },
+		hirerRating: 0,
+		selectedFreelancerRating: null,
+		clientRatingByFreelancer: null,
+		freelancerRatingByClient: null,
 	};
 
 	return { ...order, readinessScore: calculateReadiness(order) };

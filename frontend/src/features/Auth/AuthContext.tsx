@@ -12,7 +12,7 @@ import { signInRequest } from "@/features/SignIn";
 import { signUpRequest } from "@/features/SignUp";
 import type { SignUpPayload } from "@/features/SignUp";
 import { getMe } from "./getMe";
-import type { User, UserRole } from "./getMe.types";
+import type { User, UserCurrency, UserRole } from "./getMe.types";
 
 type AuthContextType = {
 	user: User | null;
@@ -38,6 +38,8 @@ type ProfilePatch = {
 	avatarUrl?: string;
 	companyName?: string;
 	skills?: string[];
+	hourlyRate?: number;
+	currency?: UserCurrency;
 };
 
 type AuthResponse = User | { user: User };
@@ -97,6 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const updateProfile = useCallback(async (patch: ProfilePatch) => {
 		ensureEmail(patch.email);
 		ensureContact(patch.contacts);
+		if (typeof patch.hourlyRate === "number" && patch.hourlyRate < 0) {
+			throw new Error("Почасовая ставка не может быть отрицательной");
+		}
 		const response = await apiRequest<AuthResponse>("/profile", {
 			method: "PUT",
 			body: {

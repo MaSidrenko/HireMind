@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	briefSections,
 	budgetTypeLabels,
@@ -24,6 +24,7 @@ import { StageBadge, StatusBadge } from "./components/StatusBadge";
 import {
 	acceptProposalRequest,
 	createProposalRequest,
+	rateOrderRequest,
 	updateOrderApprovalRequest,
 	withdrawProposalRequest,
 } from "@/features/projects/projectsApi";
@@ -74,10 +75,12 @@ export default function ProjectWorkspacePage({
 		String(order.budgetMin || ""),
 	);
 	const [proposalDays, setProposalDays] = useState("14");
+	const [ratingScore, setRatingScore] = useState("5");
 
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const isOwner = canEdit;
 	const isFreelancer = normalizedRole === "freelancer";
+	const isClientParticipant = draft.hirerId === user?.id;
 	const ownProposal = useMemo(
 		() =>
 			draft.proposals.find(
@@ -90,11 +93,42 @@ export default function ProjectWorkspacePage({
 	);
 	const isSelectedFreelancer =
 		isFreelancer && draft.selectedFreelancerId === user?.id;
+	const isOrderParticipantFreelancer = draft.selectedFreelancerId === user?.id;
+	const isCompletedOrder =
+		draft.status === "Completed" || draft.completedAt !== null;
 	const canPropose =
 		isFreelancer &&
 		draft.status === "Published" &&
 		!draft.selectedFreelancerId &&
 		!ownProposal;
+	const canRateOrder = Boolean(
+		isCompletedOrder &&
+		draft.selectedFreelancerId &&
+		(isClientParticipant || isOrderParticipantFreelancer),
+	);
+	const existingOwnRating = isClientParticipant
+		? draft.freelancerRatingByClient
+		: isOrderParticipantFreelancer
+			? draft.clientRatingByFreelancer
+			: null;
+	const ratingTargetName = isClientParticipant
+		? selectedProposal?.freelancerName ??
+			draft.selectedFreelancerName ??
+			"исполнителя"
+		: draft.hirerName;
+	const ratingTargetValue = isClientParticipant
+		? draft.selectedFreelancerRating ?? 0
+		: draft.hirerRating;
+	const safeHirerRating = Number.isFinite(draft.hirerRating)
+		? draft.hirerRating
+		: 0;
+	const safeRatingTargetValue = Number.isFinite(ratingTargetValue)
+		? ratingTargetValue
+		: 0;
+
+	useEffect(() => {
+		setRatingScore(String(existingOwnRating ?? 5));
+	}, [existingOwnRating]);
 
 	const setDraftPatch = (patch: Partial<ProjectOrder>) => {
 		setDraft((current) =>
@@ -187,19 +221,36 @@ export default function ProjectWorkspacePage({
 	};
 
 	const setStatus = async (status: OrderStatus) => {
+		const isLeavingCompleted =
+			isCompletedOrder &&
+			status !== "Completed" &&
+			status !== "Archived";
 		const publishedAt =
 			status === "Published"
 				? (draft.publishedAt ?? new Date().toISOString())
 				: draft.publishedAt;
+		const completedAt =
+			status === "Completed"
+				? (draft.completedAt ?? new Date().toISOString())
+				: isLeavingCompleted
+					? null
+					: draft.completedAt;
 		await commit(
 			prepareOrder({
 				...draft,
 				status,
 				publishedAt,
+				completedAt,
 				workflowStage:
 					status === "In_Progress" || status === "Completed"
 						? "approved"
 						: draft.workflowStage,
+				clientRatingByFreelancer: isLeavingCompleted
+					? null
+					: draft.clientRatingByFreelancer,
+				freelancerRatingByClient: isLeavingCompleted
+					? null
+					: draft.freelancerRatingByClient,
 				updatedAt: new Date().toISOString(),
 			}),
 			"Статус обновлён",
@@ -353,6 +404,32 @@ export default function ProjectWorkspacePage({
 			aiGenerated: true,
 			workflowStage: "brief",
 		});
+	};
+
+	const submitRating = async () => {
+		if (!canRateOrder) {
+			return;
+		}
+
+		const score = Number(ratingScore);
+
+		if (!Number.isInteger(score) || score < 1 || score > 5) {
+			setFormError("Выберите оценку от 1 до 5");
+			return;
+		}
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await rateOrderRequest(draft.id, score);
+			applyServerOrder(nextOrder, "Оценка сохранена");
+		} catch (error) {
+			setFormError(getErrorMessage(error, "Не удалось сохранить оценку"));
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	return (
@@ -550,6 +627,10 @@ export default function ProjectWorkspacePage({
 				<div>
 					<span>Заказчик</span>
 					<strong>{draft.hirerName}</strong>
+				</div>
+				<div>
+					<span>Рейтинг заказчика</span>
+					<strong>{safeHirerRating.toFixed(1)} / 5</strong>
 				</div>
 				<div>
 					<span>Компания</span>
@@ -864,6 +945,56 @@ export default function ProjectWorkspacePage({
 								</span>
 							)}
 						</article>
+					</div>
+				</section>
+			) : null}
+			{canRateOrder ? (
+				<section className="order-section">
+					<h2>Оценка сотрудничества</h2>
+					<div className="detail-item rating-panel">
+						<strong>
+							{isClientParticipant
+								? "Оцените исполнителя"
+								: "Оцените заказчика"}
+						</strong>
+						<p>
+							{ratingTargetName} · текущий рейтинг{" "}
+							{safeRatingTargetValue.toFixed(1)} / 5
+						</p>
+						<div className="rating-row" role="radiogroup" aria-label="Оценка">
+							{[1, 2, 3, 4, 5].map((value) => (
+								<button
+									key={value}
+									type="button"
+									className={
+										Number(ratingScore) === value
+											? "rating-chip rating-chip--active"
+											: "rating-chip"
+									}
+									onClick={() => setRatingScore(String(value))}
+									disabled={saving}
+								>
+									{value}
+								</button>
+							))}
+						</div>
+						<div className="rating-summary">
+							<span>
+								{existingOwnRating !== null
+									? `Ваша оценка: ${existingOwnRating} / 5`
+									: "Оценка пока не выставлена"}
+							</span>
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void submitRating()}
+								disabled={saving}
+							>
+								{existingOwnRating !== null
+									? "Обновить оценку"
+									: "Подтвердить оценку"}
+							</button>
+						</div>
 					</div>
 				</section>
 			) : null}

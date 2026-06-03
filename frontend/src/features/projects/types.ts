@@ -77,8 +77,10 @@ export type ProjectOrder = {
 	id: number;
 	hirerId: number;
 	hirerName: string;
+	hirerRating: number;
 	selectedFreelancerId: number | null;
 	selectedFreelancerName: string | null;
+	selectedFreelancerRating: number | null;
 	title: string;
 	shortDescription: string;
 	rawDescription: string;
@@ -94,6 +96,7 @@ export type ProjectOrder = {
 	proposalsCount: number;
 	proposals: ProjectProposal[];
 	publishedAt: string | null;
+	completedAt: string | null;
 	updatedAt: string;
 	companyName: string;
 	aiGenerated: boolean;
@@ -107,6 +110,8 @@ export type ProjectOrder = {
 		client: boolean;
 		freelancer: boolean;
 	};
+	clientRatingByFreelancer: number | null;
+	freelancerRatingByClient: number | null;
 };
 
 export type CreateProjectInput = {

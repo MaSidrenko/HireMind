@@ -111,6 +111,12 @@
 	transform: translateY(2px);
 }
 
+.sign-up-note {
+	color: rgba(232, 230, 225, 0.72);
+	font-size: 16px;
+	line-height: 1.5;
+}
+
 .line-form-sign-up {
 	display: flex;
 	gap: 16px;
@@ -167,5 +173,9 @@
 	.box-sign-up label.role-row {
 		align-items: stretch;
 		flex-direction: column;
+	}
+
+	.sign-up-note {
+		font-size: 14px;
 	}
 }

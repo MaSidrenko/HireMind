@@ -8,4 +8,6 @@ public class UpdateProfileRequest
 	public Contacts Contacts { get; set; } = new();
 	public string? CompanyName { get; set; }
 	public List<string>? Skills { get; set; }
+	public decimal? HourlyRate { get; set; }
+	public Currency? Currency { get; set; }
 }

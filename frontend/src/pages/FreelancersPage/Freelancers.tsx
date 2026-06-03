@@ -69,12 +69,12 @@ export default function Freelancers() {
 		setSending(true);
 		setError("");
 		try {
-			const request = await sendContactRequest({
-				freelancerId: selected.id,
-				message,
-				status: "sent",
-				createdAt: new Date().toISOString()
-			});
+			const request = await sendContactRequest(
+				selected.id,
+				message
+				// status: "sent",
+				// createdAt: new Date().toISOString()
+			);
 			setRequests((items) => [request, ...items.filter((item) => item.id !== request.id)]);
 
 		} catch (error) {
@@ -134,8 +134,8 @@ export default function Freelancers() {
 								<div>
 									<span className={freelancer.isOnline ? "online-dot" : "online-dot offline"}/>
 									<h2>{freelancer.fullName}</h2>
-									<strong>{freelancer.headline}</strong>
-									<p>{freelancer.bio}</p>
+									{/* <strong>{freelancer.headline}</strong>
+									<p>{freelancer.bio}</p> */}
 									<div className="freelancer-skills">
 										{freelancer.skills.map((item) => <span key={item}>{item}</span>)}
 									</div>

@@ -254,6 +254,11 @@ export default function SignUp() {
 					{errors.phone && (
 						<span className="field-error">{errors.phone}</span>
 					)}
+					<span className="sign-up-note">
+						Telegram можно будет подключить для автоматических
+						уведомлений. Для этого после регистрации нужно будет
+						написать боту и нажать Start.
+					</span>
 				</label>
 				<input
 					type="submit"

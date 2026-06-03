@@ -1255,6 +1255,19 @@
         "build": {
           "buildTransitive/net8.0/_._": {}
         }
+      },
+      "Telegram.Bot/22.10.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/Telegram.Bot.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/Telegram.Bot.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
       }
     }
   },
@@ -3832,6 +3845,25 @@
         "system.security.cryptography.protecteddata.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "Telegram.Bot/22.10.0.1": {
+      "sha512": "/1Wn3WOkf1U0/dH+DOLcD/ZtFKtgIR5pO5N1TiSf132U3dTxfJlJMr2J+L60ooDfT8tu0deQNH/0WnHfkyUKyg==",
+      "type": "package",
+      "path": "telegram.bot/22.10.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net6.0/Telegram.Bot.dll",
+        "lib/net6.0/Telegram.Bot.pdb",
+        "lib/net6.0/Telegram.Bot.xml",
+        "lib/netstandard2.0/Telegram.Bot.dll",
+        "lib/netstandard2.0/Telegram.Bot.pdb",
+        "lib/netstandard2.0/Telegram.Bot.xml",
+        "package-icon.png",
+        "telegram.bot.22.10.0.1.nupkg.sha512",
+        "telegram.bot.nuspec"
+      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -3843,7 +3875,8 @@
       "Microsoft.EntityFrameworkCore.Design >= 10.0.8",
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.8",
       "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.1",
-      "Swashbuckle.AspNetCore >= 10.1.7"
+      "Swashbuckle.AspNetCore >= 10.1.7",
+      "Telegram.Bot >= 22.10.0.1"
     ]
   },
   "packageFolders": {
@@ -3852,11 +3885,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj",
+      "projectUniqueName": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj",
       "projectName": "backend",
-      "projectPath": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/backend.csproj",
+      "projectPath": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/backend.csproj",
       "packagesPath": "/home/wslArch/.nuget/packages/",
-      "outputPath": "/home/wslArch/source/sourceVS/MyProj/HireMind/backend/obj/",
+      "outputPath": "/home/wslArch/source/sourceVS/MyProj/HireMind3/backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/wslArch/.nuget/NuGet/NuGet.Config"
@@ -3922,6 +3955,10 @@
           "Swashbuckle.AspNetCore": {
             "target": "Package",
             "version": "[10.1.7, )"
+          },
+          "Telegram.Bot": {
+            "target": "Package",
+            "version": "[22.10.0.1, )"
           }
         },
         "imports": [

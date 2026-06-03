@@ -57,7 +57,7 @@ public sealed class TelegramUpdateHandler
 		}
 
 		using IServiceScope scope = _scopeFactory.CreateScope();
-		ITelegramService telegramService = scope.ServiceProvider.GetRequiredService<ITelegramService>();
+		ITelegramLinkService telegramService = scope.ServiceProvider.GetRequiredService<ITelegramLinkService>();
 
 		TelegramLinkConsumeResult result = await telegramService.ConsumeLinkTokenAsync(
 			rawToken,

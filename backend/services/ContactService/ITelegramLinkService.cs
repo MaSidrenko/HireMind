@@ -1,6 +1,6 @@
 ﻿namespace backend;
 
-public interface ITelegramService
+public interface ITelegramLinkService
 {
 	public Task<TelegramLinkCreateResult> CreateLinkTokenForUserAsync(int userId);
 	public Task<TelegramLinkValidationResult> ValidateLinkTokenAsync(string rawToken);

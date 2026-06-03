@@ -13,10 +13,12 @@ namespace MyApp.Namespace;
 public class ProfileController : ControllerBase
 {
 	private readonly IProfileSerivce _profileService;
+	private readonly ITelegramLinkService _telegramService;
 
-	public ProfileController(IProfileSerivce profileSerivce)
+	public ProfileController(IProfileSerivce profileSerivce, ITelegramLinkService telegramService)
 	{
 		_profileService = profileSerivce;
+		_telegramService = telegramService;
 	}
 
 	[HttpPut]
@@ -24,6 +26,14 @@ public class ProfileController : ControllerBase
 		[FromBody] UpdateProfileRequest request,
 		CancellationToken ct)
 	{
+		if (request.HourlyRate is < 0)
+		{
+			return BadRequest(new
+			{
+				message = "Почасовая ставка не может быть отрицательной."
+			});
+		}
+
 		if (!TryGetUserId(out int userId))
 		{
 			return Unauthorized();
@@ -56,6 +66,31 @@ public class ProfileController : ControllerBase
 		});
 	}
 
+	[HttpPost("telegram/connect-link")]
+	public async Task<IActionResult> CreateTelegramConnectLink()
+	{
+		if (!TryGetUserId(out int userId))
+		{
+			return Unauthorized();
+		}
+
+		TelegramLinkCreateResult result = await _telegramService.CreateLinkTokenForUserAsync(userId);
+
+		if (!result.IsSuccess || string.IsNullOrWhiteSpace(result.ConnectUrl) || result.ExpiresAtUtc is null)
+		{
+			return BadRequest(new
+			{
+				message = result.ErrorMessage ?? "Не удалось создать ссылку для подключения Telegram"
+			});
+		}
+
+		return Ok(new
+		{
+			connectUrl = result.ConnectUrl,
+			expiresAtUtc = result.ExpiresAtUtc
+		});
+	}
+
 	private bool TryGetUserId(out int userId)
 	{
 		string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -69,12 +104,17 @@ public class ProfileController : ControllerBase
 			user.Email,
 			user.FullName,
 			user.Role,
+			user.Rating,
 			user.Contacts,
 			user.CompanyName,
 			user.Skills,
+			user.Role == Role.Freelancer ? user.HourlyRate : null,
+			user.Role == Role.Freelancer ? user.Currency : null,
+			user.Role == Role.Freelancer ? user.CompletedOrders : null,
 			user.CreatedAt,
 			user.LastSeenAt,
-			user.IsOnline
+			user.IsOnline,
+			user.IsTelegramConnected
 		);
 	}
 }

@@ -1,9 +1,13 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 
 namespace backend;
 
 public sealed class TelegramPollingService : BackgroundService
 {
+	private const int PollingTimeoutSeconds = 30;
+	private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(3);
+
 	private readonly ITelegramBotClient _botClient;
 	private readonly TelegramUpdateHandler _updateHandler;
 	private readonly ILogger<TelegramPollingService> _logger;
@@ -28,7 +32,7 @@ public sealed class TelegramPollingService : BackgroundService
 			{
 				var updates = await _botClient.GetUpdates(
 					offset: offset,
-					timeout: 30,
+					timeout: PollingTimeoutSeconds,
 					cancellationToken: stoppingToken
 				);
 
@@ -38,6 +42,15 @@ public sealed class TelegramPollingService : BackgroundService
 					await _updateHandler.HandleAsync(update, stoppingToken);
 				}
 			}
+			catch (RequestException ex) when (ContainsTimeout(ex))
+			{
+				_logger.LogWarning(
+					ex,
+					"Telegram polling request timed out while waiting for Bot API. Retrying in {DelaySeconds} seconds.",
+					RetryDelay.TotalSeconds
+				);
+				await Task.Delay(RetryDelay, stoppingToken);
+			}
 			catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
 			{
 				break;
@@ -45,8 +58,21 @@ public sealed class TelegramPollingService : BackgroundService
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Telegram polling failed");
-				await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
+				await Task.Delay(RetryDelay, stoppingToken);
 			}
 		}
+	}
+
+	private static bool ContainsTimeout(Exception exception)
+	{
+		for (Exception? current = exception; current is not null; current = current.InnerException)
+		{
+			if (current is TimeoutException or TaskCanceledException)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

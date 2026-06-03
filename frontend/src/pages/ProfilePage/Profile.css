@@ -168,6 +168,82 @@
 	text-align: right;
 }
 
+.profile-telegram-connect {
+	margin-top: 22px;
+	padding: 20px;
+	border: 1px solid rgba(250, 151, 44, 0.14);
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-telegram-connect__status {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 14px;
+}
+
+.profile-telegram-connect__status span {
+	color: rgba(232, 230, 225, 0.68);
+	font-size: 15px;
+}
+
+.profile-telegram-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 8px 12px;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 183, 100, 0.28);
+	background: rgba(255, 183, 100, 0.1);
+	color: #ffcf98;
+	font-size: 13px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.profile-telegram-badge--connected {
+	border-color: rgba(126, 224, 129, 0.35);
+	background: rgba(126, 224, 129, 0.12);
+	color: #bff6c1;
+}
+
+.profile-telegram-connect__button {
+	width: 100%;
+	padding: 14px 16px;
+	border: 1px solid rgba(250, 151, 44, 0.38);
+	border-radius: 12px;
+	background: transparent;
+	color: #f1eee8;
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+	transition:
+		color 0.25s ease,
+		border-color 0.25s ease,
+		background-color 0.25s ease;
+}
+
+.profile-telegram-connect__button:hover:not(:disabled) {
+	color: #fa972c;
+	border-color: #fa972c;
+}
+
+.profile-telegram-connect__button:disabled {
+	color: rgba(232, 230, 225, 0.52);
+	border-color: rgba(250, 151, 44, 0.24);
+	background: rgba(255, 255, 255, 0.04);
+	cursor: wait;
+}
+
+.profile-telegram-connect__hint {
+	margin: 14px 0 0;
+	color: rgba(232, 230, 225, 0.7);
+	font-size: 14px;
+	line-height: 1.6;
+}
+
 .profile-edit-toggle,
 .profile-edit-actions button {
 	width: 100%;
@@ -566,6 +642,7 @@
 	.profile-identity,
 	.profile-highlight__row,
 	.profile-info-row,
+	.profile-telegram-connect__status,
 	.profile-action {
 		flex-direction: column;
 		align-items: flex-start;

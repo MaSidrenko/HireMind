@@ -157,6 +157,102 @@
         <member name="M:backend.Migrations.AddUserSkillsToProfile.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:backend.Migrations.AddedRatingToUser">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedRatingToUser.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedRatingToUser.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedRatingToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddedCurrencyAndHourlyRateToUser">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCurrencyAndHourlyRateToUser.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCurrencyAndHourlyRateToUser.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCurrencyAndHourlyRateToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddCompletedOrdersAndOrderRatings">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddCompletedOrdersAndOrderRatings.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddCompletedOrdersAndOrderRatings.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddCompletedOrdersAndOrderRatings.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddedCompltedOrdersToUser">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCompltedOrdersToUser.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCompltedOrdersToUser.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedCompltedOrdersToUser.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddedToDBContactsModel">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedToDBContactsModel.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedToDBContactsModel.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedToDBContactsModel.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddTelegramConnectionStatus">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramConnectionStatus.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramConnectionStatus.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramConnectionStatus.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddTelegramChatBindingFields">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramChatBindingFields.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramChatBindingFields.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddTelegramChatBindingFields.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Migrations.AddedTelegramLinkTokenToDB">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedTelegramLinkTokenToDB.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedTelegramLinkTokenToDB.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.AddedTelegramLinkTokenToDB.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:backend.Contacts">
             <summary>
             Contacts User. Minimum required fields: telegram or phone. 
@@ -182,7 +278,7 @@
             CompanyName - company name if user is client
             </summary>
         </member>
-        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,System.String,backend.Role,backend.Contacts,System.String,System.Collections.Generic.List{System.String},System.DateTime,System.DateTime,System.Boolean)">
+        <member name="M:backend.UserDto.#ctor(System.Int32,System.String,System.String,backend.Role,System.Double,backend.Contacts,System.String,System.Collections.Generic.List{System.String},System.Nullable{System.Decimal},System.Nullable{backend.Currency},System.Nullable{System.Int32},System.DateTime,System.DateTime,System.Boolean,System.Boolean)">
             <summary>
             Record for user. Dto for frontend 
             Id - user id,
@@ -235,6 +331,21 @@
         <member name="P:backend.User.Contacts">
             <summary>
             Contacts User. Minimum required fields: telegram or phone. 
+            </summary>
+        </member>
+        <member name="P:backend.User.IsTelegramConnected">
+            <summary>
+            Shows whether the user has linked Telegram notifications to the account.
+            </summary>
+        </member>
+        <member name="P:backend.User.TelegramChatId">
+            <summary>
+            Telegram chat id used by the bot to send direct notifications.
+            </summary>
+        </member>
+        <member name="P:backend.User.TelegramUsername">
+            <summary>
+            Telegram username captured at the moment of successful linking.
             </summary>
         </member>
         <member name="P:backend.User.CompanyName">

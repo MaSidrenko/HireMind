@@ -34,6 +34,7 @@ export {
 	acceptProposalRequest,
 	withdrawProposalRequest,
 	updateOrderApprovalRequest,
+	rateOrderRequest,
 	type OrderStatus,
 	type BudgetType,
 	type Currency,

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend;
 
-public class TelegramService : ITelegramService
+public class TelegramLinkService : ITelegramLinkService
 {
 	private const int TokenSizeInBytes = 32;
 	private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(15);
@@ -12,7 +12,7 @@ public class TelegramService : ITelegramService
 	private readonly AppDbContext _db;
 	private readonly TelegramBotOptions _botOptions;
 
-	public TelegramService(AppDbContext db, TelegramBotOptions botOptions)
+	public TelegramLinkService(AppDbContext db, TelegramBotOptions botOptions)
 	{
 		_db = db;
 		_botOptions = botOptions;

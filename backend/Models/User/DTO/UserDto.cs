@@ -13,10 +13,15 @@ public sealed record UserDto (
 	string Email,
 	string FullName,
 	Role Role,
+	double Rating,
 	Contacts? Contacts,
 	string? CompanyName,
 	List<string> Skills,
+	decimal? HourlyRate,
+	Currency? Currency,
+	int? CompletedOrders,
 	DateTime CreatedAt,
 	DateTime LastSeenAt,
-	bool IsOnline
+	bool IsOnline,
+	bool IsTelegramConnected
 );

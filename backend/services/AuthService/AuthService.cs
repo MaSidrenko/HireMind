@@ -77,12 +77,17 @@ public class AuthService : IAuthService
 			user.Email,
 			user.FullName,
 			user.Role,
+			user.Rating,
 			user.Contacts,
 			user.CompanyName,
 			user.Skills,
+			user.Role == Role.Freelancer ? user.HourlyRate : null,
+			user.Role == Role.Freelancer ? user.Currency : null,
+			user.Role == Role.Freelancer ? user.CompletedOrders : null,
 			user.CreatedAt,	
 			user.LastSeenAt,
-			user.IsOnline
+			user.IsOnline,
+			user.IsTelegramConnected
 		);
 
 		return AuthResult.Success(
@@ -117,6 +122,7 @@ public class AuthService : IAuthService
         Role = request.Role,
         Contacts = request.Contacts,
         CompanyName = request.CompanyName,
+        Currency = Currency.RUB,
         PasswordHash = passwordHashResult.Hash,
         Salt = passwordHashResult.Salt,
         CreatedAt = DateTime.UtcNow,
@@ -169,12 +175,17 @@ public class AuthService : IAuthService
 			user.Email,
 			user.FullName,
 			user.Role,
+			user.Rating,
 			user.Contacts,
 			user.CompanyName,
 			user.Skills,
+			user.Role == Role.Freelancer ? user.HourlyRate : null,
+			user.Role == Role.Freelancer ? user.Currency : null,
+			user.Role == Role.Freelancer ? user.CompletedOrders : null,
 			user.CreatedAt,
 			user.LastSeenAt,
-			user.IsOnline
+			user.IsOnline,
+			user.IsTelegramConnected
 		);
 
 		return UserResult.Success(userDto);

@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
 	public DbSet<ScopeItem> ScopeItems => Set<ScopeItem>();
 	public DbSet<DoneCriterion> DoneCriteria => Set<DoneCriterion>();
 	public DbSet<RiskItem> Risks => Set<RiskItem>();
+	public DbSet<Contact> Contacts => Set<Contact>();
+	public DbSet<TelegramLinkToken> TelegramLinkTokens => Set<TelegramLinkToken>();
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
@@ -66,5 +68,6 @@ public class AppDbContext : DbContext
 			.WithOne(proposal => proposal.Order)
 			.HasForeignKey(proposal => proposal.OrderId)
 			.OnDelete(DeleteBehavior.Cascade);
+
 	}
 }
