@@ -43,10 +43,15 @@
 .field-block textarea,
 .mini-card textarea,
 .detail-field input,
+.detail-field select,
 .detail-field textarea,
 .order-info-grid input,
 .order-info-grid select,
+.proposal-form input,
+.detail-item input,
+.detail-item select,
 .detail-item textarea,
+.detail-check--editable input:not([type="checkbox"]),
 .ai-panel textarea {
 	box-sizing: border-box;
 	width: 100%;
@@ -62,6 +67,12 @@
 .orders-filterbar input::placeholder,
 .create-form input::placeholder,
 .create-form textarea::placeholder,
+.proposal-form input::placeholder,
+.detail-field input::placeholder,
+.detail-field textarea::placeholder,
+.detail-item input::placeholder,
+.detail-item textarea::placeholder,
+.detail-check--editable input:not([type="checkbox"])::placeholder,
 .ai-panel textarea::placeholder {
 	color: #8c8780;
 }
@@ -411,6 +422,13 @@
 	background: rgba(31, 29, 27, 0.78);
 }
 
+.save-panel {
+	position: sticky;
+	top: 12px;
+	z-index: 20;
+	backdrop-filter: blur(10px);
+}
+
 .save-panel span {
 	color: #ffbd73;
 	font-weight: 800;
@@ -485,6 +503,18 @@
 	line-height: 1.15;
 }
 
+.section-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.section-head h2 {
+	margin-bottom: 0;
+}
+
 .detail-field {
 	display: grid;
 	gap: 8px;
@@ -530,6 +560,11 @@
 	border-bottom: 1px solid rgba(250, 151, 44, 0.14);
 }
 
+.detail-item input,
+.detail-item select {
+	width: 100%;
+}
+
 .detail-item strong {
 	display: block;
 	margin-bottom: 8px;
@@ -542,6 +577,18 @@
 	display: inline-flex;
 	color: #aaa39a;
 	font-weight: 700;
+}
+
+.clarification-form {
+	display: grid;
+	gap: 12px;
+}
+
+.clarification-form__row,
+.scope-item__actions {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px;
 }
 
 .proposal-list,
@@ -567,6 +614,18 @@
 	accent-color: #fa972c;
 }
 
+.detail-check--editable {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 12px;
+}
+
+.detail-check--editable input[type="text"],
+.detail-check--editable input:not([type]) {
+	margin: 0;
+}
+
 .scope-line {
 	margin-bottom: 22px;
 }
@@ -579,6 +638,11 @@
 
 .scope-line p + p {
 	margin-top: 10px;
+}
+
+.scope-item {
+	display: grid;
+	gap: 10px;
 }
 
 .field-block,
@@ -675,6 +739,12 @@
 	.scope-grid,
 	.approval-grid,
 	.order-info-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.clarification-form__row,
+	.scope-item__actions,
+	.detail-check--editable {
 		grid-template-columns: 1fr;
 	}
 }

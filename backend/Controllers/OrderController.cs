@@ -3,7 +3,7 @@ using backend;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+// TODO: Сделать двухстронее подтверждение готовности заказа
 namespace MyApp.Namespace;
 
 [Route("api/v1/[controller]")]
@@ -75,6 +75,23 @@ public class OrderController : ControllerBase
 			});
 		}
 		Order order = await _orderService.UpdateOrderAsync(id, userId, request, ct);
+
+		return Ok(ToDto(order));
+	}
+
+	[Authorize(Roles = "Freelancer")]
+	[HttpPut("{orderId:int}/clarification-questions")]
+	public async Task<IActionResult> UpdateClarificationQuestions(
+		int orderId,
+		[FromBody] UpdateClarificationQuestionsRequest request,
+		CancellationToken ct)
+	{
+		if (!TryGetUserId(out int userId))
+		{
+			return Unauthorized();
+		}
+
+		Order order = await _orderService.UpdateClarificationQuestionsAsync(orderId, userId, request, ct);
 
 		return Ok(ToDto(order));
 	}

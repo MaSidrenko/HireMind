@@ -37,36 +37,24 @@ export async function createProjectRequest(input: CreateProjectInput) {
 		body: {
 			title: input.title,
 			rawDescription: input.rawDescription,
+			technicalSpecification: input.aiSummary,
 			category: categoryToBackend[input.category as keyof typeof categoryToBackend],
 			budgetMin: input.minPrice,
 			budgetMax: input.maxPrice,
 			currency: input.currency,
 			budgetType: paymentToBackend[input.payment],
 			skills: input.skills,
-			companyName: input.companyName,
+			aiGenerated: Boolean(input.aiSummary || input.briefSections),
+			readinessScore: 0,
+			briefSections: input.briefSections,
+			clarificationQuestions: input.clarificationQuestions,
+			scopeItems: input.scopeItems,
+			doneCriteria: input.doneCriteria,
+			risks: input.risks,
 		},
 	});
 
-	return normalizeProjectOrder({
-		hirerId: input.hirerId,
-		hirerName: input.hirerName,
-		title: input.title,
-		shortDescription: input.rawDescription.slice(0, 150),
-		rawDescription: input.rawDescription,
-		technicalSpecification: input.aiSummary,
-		category: input.category,
-		budgetMin: input.minPrice,
-		budgetMax: input.maxPrice,
-		currency: input.currency,
-		budgetType: input.payment,
-		skills: input.skills,
-		companyName: input.companyName,
-		aiGenerated: Boolean(input.aiSummary || input.briefSections),
-		briefSections: input.briefSections,
-		clarificationQuestions: input.clarificationQuestions,
-		risks: input.risks,
-		...project,
-	});
+	return normalizeProjectOrder(project);
 }
 
 // const categoryToBackend = {
@@ -130,8 +118,6 @@ export async function updateProjectRequest(project: ProjectOrder) {
 		doneCriteria: project.doneCriteria,
 		risks: project.risks,
 		approvals: project.approvals,
-
-		companyName: project.companyName,
 	};
 
 	const nextProject = await apiRequest<Partial<ProjectOrder>>(
@@ -143,6 +129,23 @@ export async function updateProjectRequest(project: ProjectOrder) {
 	);
 
 	return normalizeProjectOrder(nextProject);
+}
+
+export async function updateProjectClarificationQuestionsRequest(
+	orderId: number,
+	clarificationQuestions: ProjectOrder["clarificationQuestions"],
+) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/clarification-questions`,
+		{
+			method: "PUT",
+			body: {
+				clarificationQuestions,
+			},
+		},
+	);
+
+	return normalizeProjectOrder(result);
 }
 
 

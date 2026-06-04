@@ -160,17 +160,74 @@ public class OrderService : IOrderService
 		{
 			Title = request.Title ?? string.Empty,
 			Description = request.RawDescription ?? string.Empty,
+			TechnicalSpecification = request.TechnicalSpecification ?? string.Empty,
 			Category = request.Category,
 			MinPrice = request.BudgetMin,
 			MaxPrice = request.BudgetMax,
 			Currency = request.Currency,
+			Payment = request.BudgetType,
 			Skills = request.Skills ?? new List<string>(),
 			CreatedAt = DateTime.UtcNow,
 			UpdatedAt = DateTime.UtcNow,
 			PublishedAt = DateTime.UtcNow,
 			Status = OrderStatus.Published,
 			CustomerId = customer.Id,
+			AiGenerated = request.AiGenerated,
+			ReadinessScore = request.ReadinessScore,
+			WorkflowStage = request.AiGenerated ? WorkflowStage.brief : WorkflowStage.raw,
 		};
+		if (HasAiBriefContent(request))
+		{
+			order.BriefSections = new OrderBriefSections
+			{
+				Goal = request.BriefSections.Goal,
+				Audience = request.BriefSections.Audience,
+				Screens = request.BriefSections.Screens,
+				Features = request.BriefSections.Features,
+				Content = request.BriefSections.Content,
+				Design = request.BriefSections.Design,
+				Constraints = request.BriefSections.Constraints,
+				OpenQuestions = request.BriefSections.OpenQuestions
+			};
+
+			order.ClarificationQuestions = request.ClarificationQuestions
+				.Select(q => new ClarificationQuestion
+				{
+					Question = q.Question,
+					Importance = q.Importance,
+					Answer = q.Answer,
+					Options = q.Options ?? new List<string>()
+				})
+				.ToList();
+
+			order.ScopeItems = request.ScopeItems
+				.Select(s => new ScopeItem
+				{
+					Title = s.Title,
+					Description = s.Description,
+					Bucket = s.Bucket
+				})
+				.ToList();
+
+			order.DoneCriteria = request.DoneCriteria
+				.Select(dc => new DoneCriterion
+				{
+					Text = dc.Text,
+					Checked = dc.Checked
+				})
+				.ToList();
+
+			order.Risks = request.Risks
+				.Select(r => new RiskItem
+				{
+					Title = r.Title,
+					Level = r.Level,
+					Impact = r.Impact,
+					Action = r.Action,
+					Resolved = r.Resolved
+				})
+				.ToList();
+		}
 
 		_db.Orders.Add(order);
 
@@ -179,6 +236,24 @@ public class OrderService : IOrderService
 		Order? createdOrder = await LoadOrderGraphAsync(order.Id, ct);
 
 		return createdOrder ?? throw new OrderNotFoundException(order.Id);
+	}
+
+	private static bool HasAiBriefContent(CreateOrderRequest request)
+	{
+		return request.AiGenerated
+			|| !string.IsNullOrWhiteSpace(request.TechnicalSpecification)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Goal)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Audience)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Screens)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Features)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Content)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Design)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.Constraints)
+			|| !string.IsNullOrWhiteSpace(request.BriefSections.OpenQuestions)
+			|| request.ClarificationQuestions.Count > 0
+			|| request.ScopeItems.Count > 0
+			|| request.DoneCriteria.Count > 0
+			|| request.Risks.Count > 0;
 	}
 
 	public async Task<Order> GetByIdAsync(int id, CancellationToken ct)
@@ -727,11 +802,6 @@ public class OrderService : IOrderService
 			order.ClientRatingByFreelancer = null;
 			order.FreelancerRatingByClient = null;
 		}
-
-
-		if(request.CompanyName is not null)		
-			order.Customer.CompanyName = request.CompanyName;
-
 		if(order.BriefSections is null || order.BriefSections.Id == 0)
 		{
 			order.BriefSections = new OrderBriefSections
@@ -883,6 +953,46 @@ public class OrderService : IOrderService
 		}
 
 		return order;
+	}
+
+	public async Task<Order> UpdateClarificationQuestionsAsync(
+		int orderId,
+		int userId,
+		UpdateClarificationQuestionsRequest request,
+		CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderId, ct);
+
+		if (order is null)
+			throw new OrderNotFoundException(orderId);
+
+		if (order.FreelancerId != userId)
+			throw new OrderAccessDeniedException(orderId);
+
+		_db.ClarificationQuestions.RemoveRange(order.ClarificationQuestions);
+
+		order.ClarificationQuestions = request.ClarificationQuestions
+			.Where(question => !string.IsNullOrWhiteSpace(question.Question))
+			.Select(question => new ClarificationQuestion
+			{
+				OrderId = order.Id,
+				Question = question.Question.Trim(),
+				Importance = question.Importance,
+				Answer = question.Answer,
+				Options = question.Options
+					.Where(option => !string.IsNullOrWhiteSpace(option))
+					.Select(option => option.Trim())
+					.ToList()
+			})
+			.ToList();
+
+		order.WorkflowStage = WorkflowStage.clarification;
+		order.UpdatedAt = DateTime.UtcNow;
+
+		await _db.SaveChangesAsync(ct);
+
+		return await LoadOrderGraphAsync(orderId, ct)
+			?? throw new OrderNotFoundException(orderId);
 	}
 
 	public async Task<Order> RateOrderAsync(int orderId, int userId, UpdateOrderRatingRequest request, CancellationToken ct)

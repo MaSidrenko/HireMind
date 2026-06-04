@@ -295,6 +295,7 @@
 .profile-card--skills {
 	grid-column: span 8;
 	align-self: start;
+	overflow: visible;
 }
 
 .profile-card--message {
@@ -334,6 +335,11 @@
 	border: 1px solid rgba(250, 151, 44, 0.14);
 	border-radius: 18px;
 	background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-skills__editor {
+	position: relative;
+	z-index: 2;
 }
 
 .profile-skills__label {

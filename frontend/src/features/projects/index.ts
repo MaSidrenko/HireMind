@@ -23,6 +23,7 @@ export {
 	getProjectById,
 	createProjectRequest,
 	updateProjectRequest,
+	updateProjectClarificationQuestionsRequest,
 	acceptProposalRequest,
 	withdrawProposalRequest,
 	updateOrderApprovalRequest,

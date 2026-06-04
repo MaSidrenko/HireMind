@@ -339,16 +339,16 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		publishedAt: null,
 		completedAt: null,
 		updatedAt: now,
-		companyName: input.companyName || "Новая компания",
-		aiGenerated: true,
+		companyName: input.companyName || "",
+		aiGenerated: Boolean(input.aiSummary || input.briefSections),
 		readinessScore: 0,
 		briefSections:
 			input.briefSections ??
 			makeBrief(input.title, input.rawDescription, input.category),
 		clarificationQuestions:
 			input.clarificationQuestions ?? makeQuestions(input.category),
-		scopeItems: makeScope(),
-		doneCriteria: makeDone(),
+		scopeItems: input.scopeItems ?? makeScope(),
+		doneCriteria: input.doneCriteria ?? makeDone(),
 		risks: input.risks ?? makeRisks(),
 		approvals: { client: false, freelancer: false },
 		hirerRating: 0,
