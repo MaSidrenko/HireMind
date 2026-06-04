@@ -249,8 +249,11 @@ public class AiService : IAiService
 			- Верни только один JSON-объект.
 			- Если данных не хватает, заполни секции максимально полезно, но не выдумывай конкретику без опоры на входные данные.
 			- Для вопросов добавляй только реально полезные уточнения.
+			- Для scope указывай только то, что помогает согласовать границы работы.
+			- Для критериев готовности указывай только проверяемые результаты.
 			- Для рисков добавляй только существенные риски.
 			- Поля importance и level должны быть только: low, medium, high.
+			- Поле bucket должно быть только: included, excluded, later.
 
 			Структура JSON:
 			{
@@ -271,6 +274,19 @@ public class AiService : IAiService
 			      "importance": "low | medium | high",
 			      "answer": "",
 			      "options": ["string"]
+			    }
+			  ],
+			  "scopeItems": [
+			    {
+			      "title": "string",
+			      "description": "string",
+			      "bucket": "included | excluded | later"
+			    }
+			  ],
+			  "doneCriteria": [
+			    {
+			      "text": "string",
+			      "checked": false
 			    }
 			  ],
 			  "risks": [
@@ -348,6 +364,8 @@ public class AiService : IAiService
 			result.Summary = ValueOrFallbackForBrief(result.Summary);
 			result.BriefSections ??= new BriefSectionsDto();
 			result.Questions ??= new List<ClarificationQuestionDto>();
+			result.ScopeItems ??= new List<ScopeItemDto>();
+			result.DoneCriteria ??= new List<DoneCriterionDto>();
 			result.Risks ??= new List<RiskItemDto>();
 
 			for (int i = 0; i < result.Questions.Count; i++)
@@ -355,6 +373,16 @@ public class AiService : IAiService
 				result.Questions[i].Id = i + 1;
 				result.Questions[i].Answer ??= string.Empty;
 				result.Questions[i].Options ??= new List<string>();
+			}
+
+			for (int i = 0; i < result.ScopeItems.Count; i++)
+			{
+				result.ScopeItems[i].Id = i + 1;
+			}
+
+			for (int i = 0; i < result.DoneCriteria.Count; i++)
+			{
+				result.DoneCriteria[i].Id = i + 1;
 			}
 
 			for (int i = 0; i < result.Risks.Count; i++)

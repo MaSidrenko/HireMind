@@ -19,6 +19,7 @@ type AuthContextType = {
 	isAuthenticated: boolean;
 	loading: boolean;
 	refreshAuth: () => Promise<void>;
+	replaceUser: (nextUser: User | null) => void;
 	signIn: (email: string, password: string) => Promise<void>;
 	signUp: (payload: SignUpPayload) => Promise<void>;
 	updateProfile: (patch: ProfilePatch) => Promise<void>;
@@ -88,6 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setUser(nextUser);
 	}, []);
 
+	const replaceUser = useCallback((nextUser: User | null) => {
+		setUser(nextUser);
+	}, []);
+
 	const signUp = useCallback(async (payload: SignUpPayload) => {
 		ensureContact(payload.contacts);
 
@@ -135,12 +140,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			isAuthenticated: !!user,
 			loading,
 			refreshAuth,
+			replaceUser,
 			signIn,
 			signUp,
 			updateProfile,
 			logout,
 		}),
-		[user, loading, refreshAuth, signIn, signUp, updateProfile, logout],
+		[
+			user,
+			loading,
+			refreshAuth,
+			replaceUser,
+			signIn,
+			signUp,
+			updateProfile,
+			logout,
+		],
 	);
 
 	return (

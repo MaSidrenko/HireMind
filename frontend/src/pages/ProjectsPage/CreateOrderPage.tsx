@@ -41,7 +41,6 @@ export default function CreateOrderPage({
 }: CreateOrderPageProps) {
 	const { user } = useAuth();
 	const [title, setTitle] = useState("");
-	const [companyName, setCompanyName] = useState("");
 	const [category, setCategory] = useState(categoryPlaceholder);
 	const [rawDescription, setRawDescription] = useState("");
 	const [budgetMin, setBudgetMin] = useState("");
@@ -56,6 +55,8 @@ export default function CreateOrderPage({
 	const [aiApplied, setAiApplied] = useState(false);
 	const [error, setError] = useState("");
 	const [loadingAi, setLoadingAi] = useState(false);
+	const companyName =
+		user?.role === "Client" ? user.companyName?.trim() ?? "" : "";
 
 	const validateDraft = () => {
 		if (title.trim().length < 5 || rawDescription.trim().length < 30) {
@@ -147,7 +148,7 @@ export default function CreateOrderPage({
 				hirerId: user?.id ?? 0,
 				hirerName: user?.fullName ?? "Заказчик",
 				title: title.trim(),
-				companyName: companyName.trim(),
+				companyName,
 				category,
 				rawDescription: rawDescription.trim(),
 				minPrice: min,
@@ -158,6 +159,8 @@ export default function CreateOrderPage({
 				aiSummary: appliedAi?.summary,
 				briefSections: appliedAi?.briefSections,
 				clarificationQuestions: appliedAi?.questions,
+				scopeItems: appliedAi?.scopeItems,
+				doneCriteria: appliedAi?.doneCriteria,
 				risks: appliedAi?.risks,
 			});
 			onCreated(order);
@@ -185,11 +188,10 @@ export default function CreateOrderPage({
 						onChange={(event) => setTitle(event.target.value)}
 						placeholder="Название заказа"
 					/>
-					<input
-						value={companyName}
-						onChange={(event) => setCompanyName(event.target.value)}
-						placeholder="Компания"
-					/>
+					<div className="detail-item">
+						<span>Компания из профиля</span>
+						<strong>{companyName || "Не указана в профиле"}</strong>
+					</div>
 					<select
 						value={category}
 						onChange={(event) => {

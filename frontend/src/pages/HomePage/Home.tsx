@@ -30,9 +30,9 @@ export default function Home() {
 				<section className="border-slogan-home-page">
 					<h1 className="slogan-home-page">
 						<span className="highligh-home-page">HireMind:</span> ИИ
-						формирует ТЗ. <br />{" "}
+						формирует ТЗ <br />{" "}
 						<span className="home-page-another-size">
-							Вы занимаетесь делом.
+							Вы занимаетесь делом
 						</span>
 					</h1>
 					<div className="btn-main-page-container">

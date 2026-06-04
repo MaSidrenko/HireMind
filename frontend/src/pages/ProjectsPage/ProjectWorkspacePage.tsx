@@ -12,11 +12,15 @@ import {
 	type AiBriefResult,
 	type BudgetType,
 	type BriefSectionKey,
+	type ClarificationQuestion,
 	type Currency,
+	type DoneCriterion,
 	type OrderStatus,
 	type ProjectOrder,
 	type ProjectProposal,
+	type RiskLevel,
 	type ScopeBucket,
+	type ScopeItem,
 } from "@/features";
 import { ApiError } from "@/shared";
 import { AiAssistantPanel } from "./components/AiAssistantPanel";
@@ -25,6 +29,7 @@ import {
 	acceptProposalRequest,
 	createProposalRequest,
 	rateOrderRequest,
+	updateProjectClarificationQuestionsRequest,
 	updateOrderApprovalRequest,
 	withdrawProposalRequest,
 } from "@/features/projects/projectsApi";
@@ -43,6 +48,17 @@ const budgetTypes: BudgetType[] = ["fixed", "hourly"];
 function getErrorMessage(error: unknown, fallback: string) {
 	if (error instanceof ApiError) return error.message;
 	return fallback;
+}
+
+function createLocalId() {
+	return Date.now() + Math.floor(Math.random() * 1000);
+}
+
+function parseQuestionOptions(value: string) {
+	return value
+		.split(",")
+		.map((item) => item.trim())
+		.filter(Boolean);
 }
 
 function prepareOrder(order: ProjectOrder): ProjectOrder {
@@ -76,6 +92,10 @@ export default function ProjectWorkspacePage({
 	);
 	const [proposalDays, setProposalDays] = useState("14");
 	const [ratingScore, setRatingScore] = useState("5");
+	const [newQuestionText, setNewQuestionText] = useState("");
+	const [newQuestionImportance, setNewQuestionImportance] =
+		useState<RiskLevel>("medium");
+	const [newQuestionOptions, setNewQuestionOptions] = useState("");
 
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const isOwner = canEdit;
@@ -93,6 +113,7 @@ export default function ProjectWorkspacePage({
 	);
 	const isSelectedFreelancer =
 		isFreelancer && draft.selectedFreelancerId === user?.id;
+	const canManageClarificationQuestions = isSelectedFreelancer;
 	const isOrderParticipantFreelancer = draft.selectedFreelancerId === user?.id;
 	const isCompletedOrder =
 		draft.status === "Completed" || draft.completedAt !== null;
@@ -216,6 +237,70 @@ export default function ProjectWorkspacePage({
 	const updateBrief = (key: BriefSectionKey, value: string) => {
 		setDraftPatch({
 			briefSections: { ...draft.briefSections, [key]: value },
+			workflowStage: "brief",
+		});
+	};
+
+	const updateScopeItem = (id: number, patch: Partial<ScopeItem>) => {
+		setDraftPatch({
+			scopeItems: draft.scopeItems.map((item) =>
+				item.id === id ? { ...item, ...patch } : item,
+			),
+			workflowStage: "brief",
+		});
+	};
+
+	const addScopeItem = (bucket: ScopeBucket) => {
+		setDraftPatch({
+			scopeItems: [
+				...draft.scopeItems,
+				{
+					id: createLocalId(),
+					title: "",
+					description: "",
+					bucket,
+				},
+			],
+			workflowStage: "brief",
+		});
+	};
+
+	const removeScopeItem = (id: number) => {
+		setDraftPatch({
+			scopeItems: draft.scopeItems.filter((item) => item.id !== id),
+			workflowStage: "brief",
+		});
+	};
+
+	const updateDoneCriterion = (
+		id: number,
+		patch: Partial<DoneCriterion>,
+	) => {
+		setDraftPatch({
+			doneCriteria: draft.doneCriteria.map((item) =>
+				item.id === id ? { ...item, ...patch } : item,
+			),
+			workflowStage: "brief",
+		});
+	};
+
+	const addDoneCriterion = () => {
+		setDraftPatch({
+			doneCriteria: [
+				...draft.doneCriteria,
+				{
+					id: createLocalId(),
+					text: "",
+					checked: false,
+				},
+			],
+			workflowStage: "brief",
+		});
+	};
+
+	const removeDoneCriterion = (id: number) => {
+		setDraftPatch({
+			doneCriteria: draft.doneCriteria.filter((item) => item.id !== id),
 			workflowStage: "brief",
 		});
 	};
@@ -398,12 +483,58 @@ export default function ProjectWorkspacePage({
 
 	const applyAiResult = (result: AiBriefResult) => {
 		setDraftPatch({
+			technicalSpecification: result.summary,
 			briefSections: result.briefSections,
 			clarificationQuestions: result.questions,
+			scopeItems: result.scopeItems,
+			doneCriteria: result.doneCriteria,
 			risks: result.risks,
 			aiGenerated: true,
 			workflowStage: "brief",
 		});
+	};
+
+	const submitClarificationQuestion = async () => {
+		if (!canManageClarificationQuestions) {
+			return;
+		}
+
+		if (newQuestionText.trim().length < 10) {
+			setFormError("Вопрос должен быть чуть подробнее");
+			return;
+		}
+
+		const nextQuestions: ClarificationQuestion[] = [
+			...draft.clarificationQuestions,
+			{
+				id: createLocalId(),
+				question: newQuestionText.trim(),
+				importance: newQuestionImportance,
+				answer: "",
+				options: parseQuestionOptions(newQuestionOptions),
+			},
+		];
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await updateProjectClarificationQuestionsRequest(
+				draft.id,
+				nextQuestions,
+			);
+			applyServerOrder(nextOrder, "Вопрос сохранён");
+			setNewQuestionText("");
+			setNewQuestionImportance("medium");
+			setNewQuestionOptions("");
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось сохранить вопрос"),
+			);
+		} finally {
+			setSaving(false);
+		}
 	};
 
 	const submitRating = async () => {
@@ -462,7 +593,11 @@ export default function ProjectWorkspacePage({
 							{draft.selectedFreelancerName}
 						</span>
 					) : null}
-					{!isOwner ? (
+					{canManageClarificationQuestions ? (
+						<span className="hm-badge hm-badge--stage">
+							Может задавать вопросы
+						</span>
+					) : !isOwner ? (
 						<span className="hm-badge hm-badge--stage">
 							Только просмотр
 						</span>
@@ -529,6 +664,85 @@ export default function ProjectWorkspacePage({
 				</section>
 			) : null}
 
+			{canRateOrder ? (
+				<section className="order-section">
+					<h2>Оценка сотрудничества</h2>
+					<div className="detail-item rating-panel">
+						<strong>
+							{isClientParticipant
+								? "Оцените исполнителя"
+								: "Оцените заказчика"}
+						</strong>
+						<p>
+							{ratingTargetName} · текущий рейтинг{" "}
+							{safeRatingTargetValue.toFixed(1)} / 5
+						</p>
+						<div
+							className="rating-row"
+							role="radiogroup"
+							aria-label="Оценка"
+						>
+							{[1, 2, 3, 4, 5].map((value) => (
+								<button
+									key={value}
+									type="button"
+									className={
+										Number(ratingScore) === value
+											? "rating-chip rating-chip--active"
+											: "rating-chip"
+									}
+									onClick={() => setRatingScore(String(value))}
+									disabled={saving}
+								>
+									{value}
+								</button>
+							))}
+						</div>
+						<div className="rating-summary">
+							<span>
+								{existingOwnRating !== null
+									? `Ваша оценка: ${existingOwnRating} / 5`
+									: "Оценка пока не выставлена"}
+							</span>
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void submitRating()}
+								disabled={saving}
+							>
+								{existingOwnRating !== null
+									? "Обновить оценку"
+									: "Подтвердить оценку"}
+							</button>
+						</div>
+					</div>
+				</section>
+			) : null}
+
+			{isOwner && dirty ? (
+				<section className="save-panel">
+					<span>Есть несохранённые изменения</span>
+					<div>
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void saveDraft()}
+							disabled={saving}
+						>
+							{saving ? "Сохраняем..." : "Сохранить"}
+						</button>
+						<button
+							type="button"
+							className="hm-button hm-button--ghost"
+							onClick={cancelDraft}
+							disabled={saving}
+						>
+							Отменить
+						</button>
+					</div>
+				</section>
+			) : null}
+
 			<section className="order-description">
 				{isOwner ? (
 					<label className="detail-field detail-field--description">
@@ -547,6 +761,26 @@ export default function ProjectWorkspacePage({
 					Опубликован {formatDate(draft.publishedAt)} · обновлён{" "}
 					{formatDate(draft.updatedAt)}
 				</span>
+			</section>
+
+			<section className="order-section">
+				<h2>Техническое задание</h2>
+				{isOwner ? (
+					<label className="detail-field">
+						<span>Сводка и требования</span>
+						<textarea
+							value={draft.technicalSpecification}
+							onChange={(event) =>
+								setDraftPatch({
+									technicalSpecification: event.target.value,
+									workflowStage: "brief",
+								})
+							}
+						/>
+					</label>
+				) : (
+					<p>{draft.technicalSpecification || "Пока не заполнено"}</p>
+				)}
 			</section>
 
 			<section className="order-info-grid">
@@ -803,6 +1037,9 @@ export default function ProjectWorkspacePage({
 					<article key={question.id} className="detail-item">
 						<strong>{question.question}</strong>
 						<span>{riskLevelLabels[question.importance]}</span>
+						{question.options.length ? (
+							<p>Варианты: {question.options.join(", ")}</p>
+						) : null}
 						{isOwner ? (
 							<textarea
 								value={question.answer}
@@ -830,6 +1067,49 @@ export default function ProjectWorkspacePage({
 						)}
 					</article>
 				))}
+				{canManageClarificationQuestions ? (
+					<div className="detail-item clarification-form">
+						<strong>Добавить уточняющий вопрос</strong>
+						<textarea
+							value={newQuestionText}
+							onChange={(event) =>
+								setNewQuestionText(event.target.value)
+							}
+							placeholder="Что нужно уточнить у заказчика?"
+						/>
+						<div className="clarification-form__row">
+							<select
+								value={newQuestionImportance}
+								onChange={(event) =>
+									setNewQuestionImportance(
+										event.target.value as RiskLevel,
+									)
+								}
+							>
+								<option value="low">Низкий приоритет</option>
+								<option value="medium">
+									Средний приоритет
+								</option>
+								<option value="high">Высокий приоритет</option>
+							</select>
+							<input
+								value={newQuestionOptions}
+								onChange={(event) =>
+									setNewQuestionOptions(event.target.value)
+								}
+								placeholder="Варианты ответа через запятую"
+							/>
+						</div>
+						<button
+							type="button"
+							className="hm-button"
+							onClick={() => void submitClarificationQuestion()}
+							disabled={saving}
+						>
+							{saving ? "Сохраняем..." : "Добавить вопрос"}
+						</button>
+					</div>
+				) : null}
 			</section>
 
 			<section className="order-section">
@@ -841,11 +1121,76 @@ export default function ProjectWorkspacePage({
 							{draft.scopeItems
 								.filter((item) => item.bucket === bucket)
 								.map((item) => (
-									<p key={item.id}>
-										<strong>{item.title}</strong> —{" "}
-										{item.description}
-									</p>
+									<div key={item.id} className="detail-item scope-item">
+										{isOwner ? (
+											<>
+												<input
+													value={item.title}
+													onChange={(event) =>
+														updateScopeItem(item.id, {
+															title: event.target.value,
+														})
+													}
+													placeholder="Название пункта"
+												/>
+												<textarea
+													value={item.description}
+													onChange={(event) =>
+														updateScopeItem(item.id, {
+															description:
+																event.target.value,
+														})
+													}
+													placeholder="Что именно сюда входит"
+												/>
+												<div className="scope-item__actions">
+													<select
+														value={item.bucket}
+														onChange={(event) =>
+															updateScopeItem(item.id, {
+																bucket: event.target
+																	.value as ScopeBucket,
+															})
+														}
+													>
+														<option value="included">
+															В scope
+														</option>
+														<option value="excluded">
+															Вне scope
+														</option>
+														<option value="later">
+															Позже
+														</option>
+													</select>
+													<button
+														type="button"
+														className="hm-button hm-button--ghost"
+														onClick={() =>
+															removeScopeItem(item.id)
+														}
+													>
+														Удалить
+													</button>
+												</div>
+											</>
+										) : (
+											<p>
+												<strong>{item.title}</strong> —{" "}
+												{item.description}
+											</p>
+										)}
+									</div>
 								))}
+							{isOwner ? (
+								<button
+									type="button"
+									className="hm-button hm-button--ghost"
+									onClick={() => addScopeItem(bucket)}
+								>
+									Добавить пункт
+								</button>
+							) : null}
 						</div>
 					),
 				)}
@@ -854,32 +1199,59 @@ export default function ProjectWorkspacePage({
 			<section className="order-section">
 				<h2>Definition of Done</h2>
 				{draft.doneCriteria.map((criterion) => (
-					<label key={criterion.id} className="detail-check">
+					<div key={criterion.id} className="detail-check detail-check--editable">
 						<input
 							type="checkbox"
 							checked={criterion.checked}
 							disabled={!isOwner}
 							onChange={() =>
-								setDraftPatch({
-									doneCriteria: draft.doneCriteria.map(
-										(item) =>
-											item.id === criterion.id
-												? {
-														...item,
-														checked: !item.checked,
-													}
-												: item,
-									),
+								updateDoneCriterion(criterion.id, {
+									checked: !criterion.checked,
 								})
 							}
 						/>
-						<span>{criterion.text}</span>
-					</label>
+						{isOwner ? (
+							<>
+								<input
+									value={criterion.text}
+									onChange={(event) =>
+										updateDoneCriterion(criterion.id, {
+											text: event.target.value,
+										})
+									}
+									placeholder="Проверяемый критерий готовности"
+								/>
+								<button
+									type="button"
+									className="hm-button hm-button--ghost"
+									onClick={() =>
+										removeDoneCriterion(criterion.id)
+									}
+								>
+									Удалить
+								</button>
+							</>
+						) : (
+							<span>{criterion.text}</span>
+						)}
+					</div>
 				))}
+				{isOwner ? (
+					<button
+						type="button"
+						className="hm-button hm-button--ghost"
+						onClick={addDoneCriterion}
+					>
+						Добавить критерий
+					</button>
+				) : null}
 			</section>
 
 			<section className="order-section">
-				<h2>Риски</h2>
+				<div className="section-head">
+					<h2>Риски</h2>
+					<span className="detail-note">AI-generated</span>
+				</div>
 				{draft.risks.map((risk) => (
 					<article key={risk.id} className="detail-item">
 						<strong>{risk.title}</strong>
@@ -945,79 +1317,6 @@ export default function ProjectWorkspacePage({
 								</span>
 							)}
 						</article>
-					</div>
-				</section>
-			) : null}
-			{canRateOrder ? (
-				<section className="order-section">
-					<h2>Оценка сотрудничества</h2>
-					<div className="detail-item rating-panel">
-						<strong>
-							{isClientParticipant
-								? "Оцените исполнителя"
-								: "Оцените заказчика"}
-						</strong>
-						<p>
-							{ratingTargetName} · текущий рейтинг{" "}
-							{safeRatingTargetValue.toFixed(1)} / 5
-						</p>
-						<div className="rating-row" role="radiogroup" aria-label="Оценка">
-							{[1, 2, 3, 4, 5].map((value) => (
-								<button
-									key={value}
-									type="button"
-									className={
-										Number(ratingScore) === value
-											? "rating-chip rating-chip--active"
-											: "rating-chip"
-									}
-									onClick={() => setRatingScore(String(value))}
-									disabled={saving}
-								>
-									{value}
-								</button>
-							))}
-						</div>
-						<div className="rating-summary">
-							<span>
-								{existingOwnRating !== null
-									? `Ваша оценка: ${existingOwnRating} / 5`
-									: "Оценка пока не выставлена"}
-							</span>
-							<button
-								type="button"
-								className="hm-button"
-								onClick={() => void submitRating()}
-								disabled={saving}
-							>
-								{existingOwnRating !== null
-									? "Обновить оценку"
-									: "Подтвердить оценку"}
-							</button>
-						</div>
-					</div>
-				</section>
-			) : null}
-			{isOwner && dirty ? (
-				<section className="save-panel">
-					<span>Есть несохранённые изменения</span>
-					<div>
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void saveDraft()}
-							disabled={saving}
-						>
-							{saving ? "Сохраняем..." : "Сохранить"}
-						</button>
-						<button
-							type="button"
-							className="hm-button hm-button--ghost"
-							onClick={cancelDraft}
-							disabled={saving}
-						>
-							Отменить
-						</button>
 					</div>
 				</section>
 			) : null}

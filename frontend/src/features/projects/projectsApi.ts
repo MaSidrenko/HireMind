@@ -48,8 +48,9 @@ export async function createProjectRequest(input: CreateProjectInput) {
 			readinessScore: 0,
 			briefSections: input.briefSections,
 			clarificationQuestions: input.clarificationQuestions,
+			scopeItems: input.scopeItems,
+			doneCriteria: input.doneCriteria,
 			risks: input.risks,
-			companyName: input.companyName,
 		},
 	});
 
@@ -117,8 +118,6 @@ export async function updateProjectRequest(project: ProjectOrder) {
 		doneCriteria: project.doneCriteria,
 		risks: project.risks,
 		approvals: project.approvals,
-
-		companyName: project.companyName,
 	};
 
 	const nextProject = await apiRequest<Partial<ProjectOrder>>(
@@ -130,6 +129,23 @@ export async function updateProjectRequest(project: ProjectOrder) {
 	);
 
 	return normalizeProjectOrder(nextProject);
+}
+
+export async function updateProjectClarificationQuestionsRequest(
+	orderId: number,
+	clarificationQuestions: ProjectOrder["clarificationQuestions"],
+) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/clarification-questions`,
+		{
+			method: "PUT",
+			body: {
+				clarificationQuestions,
+			},
+		},
+	);
+
+	return normalizeProjectOrder(result);
 }
 
 

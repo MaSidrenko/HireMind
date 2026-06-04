@@ -15,6 +15,8 @@ public class CreateOrderRequest
 	public int ReadinessScore { get; set; }
 	public BriefSectionsRequest BriefSections { get; set; } = new();
 	public List<ClarificationQuestionRequest> ClarificationQuestions { get; set; } = new();
+	public List<ScopeItemRequest> ScopeItems { get; set; } = new();
+	public List<DoneCriterionRequest> DoneCriteria { get; set; } = new();
 	public List<RiskItemRequest> Risks { get; set; } = new();
 	public string? CompanyName { get; set; }
 }

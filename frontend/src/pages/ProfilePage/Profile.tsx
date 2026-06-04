@@ -83,7 +83,7 @@ function makeFormState(
 }
 
 export default function Profile() {
-	const { user, logout, updateProfile, refreshAuth } = useAuth();
+	const { user, logout, updateProfile, refreshAuth, replaceUser } = useAuth();
 	const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 	const [skillsError, setSkillsError] = useState<string | null>(null);
 	const [isSavingSkills, setIsSavingSkills] = useState(false);
@@ -292,7 +292,12 @@ export default function Profile() {
 
 		try {
 			await updateProfileSkills(skills);
-			await refreshAuth();
+			if ("skills" in user) {
+				replaceUser({
+					...user,
+					skills,
+				});
+			}
 		} catch (error) {
 			console.error(error);
 			setSelectedSkills(previousSkills);

@@ -7,6 +7,7 @@ public interface IOrderService
 	public Task<List<OrderListItemDto>> GetAccteptedProjectListAsync(CancellationToken ct);
 	public Task<Order> CreateOrderAsync(CreateOrderRequest request, int userID, CancellationToken ct);
 	public Task<Order> UpdateOrderAsync(int orderId,int userId, UpdateOrderRequest request, CancellationToken ct);
+	public Task<Order> UpdateClarificationQuestionsAsync(int orderId, int userId, UpdateClarificationQuestionsRequest request, CancellationToken ct);
 	public Task<Order> RespondToOrderAsync(int proposalId, CreateProposalRequest request, CancellationToken ct);
 	public Task<Order> AcceptProposalAsync(int proposalId, int userId, CancellationToken ct);
 	public Task<Order> WithdrawProposalAsync(int proposalId,int userId, CancellationToken ct);

@@ -129,5 +129,7 @@ export type CreateProjectInput = {
 	aiSummary?: string;
 	briefSections?: BriefSections;
 	clarificationQuestions?: ClarificationQuestion[];
+	scopeItems?: ScopeItem[];
+	doneCriteria?: DoneCriterion[];
 	risks?: RiskItem[];
 };
