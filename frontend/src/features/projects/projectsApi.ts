@@ -117,7 +117,7 @@ export async function updateProjectRequest(project: ProjectOrder) {
 		scopeItems: project.scopeItems,
 		doneCriteria: project.doneCriteria,
 		risks: project.risks,
-		approvals: project.approvals,
+		// approvals: project.approvals,
 	};
 
 	const nextProject = await apiRequest<Partial<ProjectOrder>>(
@@ -217,6 +217,40 @@ export async function rateOrderRequest(orderId: number, score: number) {
 		{
 			method: "PUT",
 			body: { score },
+		},
+	);
+
+	return normalizeProjectOrder(result);
+}
+
+
+export async function freelancerMarkDone(orderId: number) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/completion/freelancer`,
+		{
+			method: "PUT",
+		},
+	);
+
+	return normalizeProjectOrder(result);
+}
+
+export async function clientMarkDone(orderId: number) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/completion/client/accept`,
+		{
+			method: "PUT",
+		},
+	);
+
+	return normalizeProjectOrder(result);
+}
+
+export async function clientMarkReject(orderId: number) {
+	const result = await apiRequest<Partial<ProjectOrder>>(
+		`/Order/${orderId}/completion/client/reject`,
+		{
+			method: "PUT",
 		},
 	);
 

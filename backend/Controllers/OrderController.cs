@@ -3,7 +3,6 @@ using backend;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-// TODO: Сделать двухстронее подтверждение готовности заказа
 namespace MyApp.Namespace;
 
 [Route("api/v1/[controller]")]

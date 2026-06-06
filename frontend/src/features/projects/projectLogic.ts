@@ -237,10 +237,19 @@ export function calculateReadiness(order: ProjectOrder) {
 export function normalizeProjectOrder(
 	order: Partial<ProjectOrder>,
 ): ProjectOrder {
+	const rawOrder = order as Record<string, unknown>;
 	const title = safeString(order.title, "Без названия");
 	const rawDescription = safeString(order.rawDescription);
 	const category = safeString(order.category, "Разработка");
 	const proposals = Array.isArray(order.proposals) ? order.proposals : [];
+	const clientDoneApproved =
+		typeof rawOrder.clientDoneApproved === "boolean"
+			? rawOrder.clientDoneApproved
+			: order.approvals?.clientDone;
+	const freelancerDoneApproved =
+		typeof rawOrder.freelancerDoneApproved === "boolean"
+			? rawOrder.freelancerDoneApproved
+			: order.approvals?.freelancerDone;
 	const fallbackBrief = makeBrief(title, rawDescription, category);
 	const brief = briefSections.reduce((acc, { key }) => {
 		const value = order.briefSections?.[key];
@@ -301,6 +310,8 @@ export function normalizeProjectOrder(
 		approvals: {
 			client: Boolean(order.approvals?.client),
 			freelancer: Boolean(order.approvals?.freelancer),
+			clientDone: Boolean(clientDoneApproved),
+			freelancerDone: Boolean(freelancerDoneApproved),
 		},
 		clientRatingByFreelancer: safeNullableNumber(
 			order.clientRatingByFreelancer,
@@ -350,7 +361,12 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		scopeItems: input.scopeItems ?? makeScope(),
 		doneCriteria: input.doneCriteria ?? makeDone(),
 		risks: input.risks ?? makeRisks(),
-		approvals: { client: false, freelancer: false },
+		approvals: {
+			client: false,
+			freelancer: false,
+			clientDone: false,
+			freelancerDone: false,
+		},
 		hirerRating: 0,
 		selectedFreelancerRating: null,
 		clientRatingByFreelancer: null,

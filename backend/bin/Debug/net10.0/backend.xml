@@ -277,6 +277,18 @@
         <member name="M:backend.Migrations.UpdateAiTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
+        <member name="T:backend.Migrations.UpdateOrderTableByDonesCriteria">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrderTableByDonesCriteria.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrderTableByDonesCriteria.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Migrations.UpdateOrderTableByDonesCriteria.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:backend.Contacts">
             <summary>
             Contacts User. Minimum required fields: telegram or phone. 
