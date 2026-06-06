@@ -104,6 +104,19 @@
 	font-size: 14px;
 }
 
+.sign-in-recovery-link {
+	align-self: flex-end;
+	color: #ffb764;
+	font-size: 18px;
+	font-weight: 700;
+	text-decoration: none;
+	transition: color 0.2s ease;
+}
+
+.sign-in-recovery-link:hover {
+	color: #fa972c;
+}
+
 @media (max-width: 760px) {
 	.box-sign-in {
 		box-sizing: border-box;
@@ -126,5 +139,10 @@
 
 	.box-sign-in input {
 		padding: 16px;
+	}
+
+	.sign-in-recovery-link {
+		align-self: flex-start;
+		font-size: 16px;
 	}
 }

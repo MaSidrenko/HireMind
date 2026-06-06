@@ -13,12 +13,21 @@ describe("PageRoutes", () => {
 			expect.arrayContaining([
 				expect.objectContaining({ path: "/", access: "public" }),
 				expect.objectContaining({ path: "/projects", access: "public" }),
-				expect.objectContaining({ path: "/freelancers", access: "client" }),
+				expect.objectContaining({ path: "/freelancers", access: "Client" }),
 				expect.objectContaining({ path: "/profile", access: "private" }),
 			]),
 		);
 		expect(
 			PageRoutes.find((route) => route.path === "/projects/new")?.showInNavbar,
 		).toBe(false);
+		expect(
+			PageRoutes.find((route) => route.path === "/recovery-password"),
+		).toEqual(
+			expect.objectContaining({
+				path: "/recovery-password",
+				access: "guest",
+				showInNavbar: false,
+			}),
+		);
 	});
 });

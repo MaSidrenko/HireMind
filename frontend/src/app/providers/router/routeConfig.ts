@@ -3,6 +3,7 @@ import {
 	HomePage,
 	SignUp,
 	SignIn,
+	RecoveryPassword,
 	Profile,
 	Projects,
 	Freelancers,
@@ -27,6 +28,13 @@ export const PageRoutes: AppPage[] = [
 		label: "Вход",
 		component: SignIn,
 		showInNavbar: true,
+		access: "guest",
+	},
+	{
+		path: "/recovery-password",
+		label: "Восстановление пароля",
+		component: RecoveryPassword,
+		showInNavbar: false,
 		access: "guest",
 	},
 	{
