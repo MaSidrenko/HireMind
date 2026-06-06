@@ -29,7 +29,7 @@ public class UpdateOrderRequest
 	public List<DoneCriterionRequest> DoneCriteria { get; set; } = new();
 	public List<RiskItemRequest> Risks { get; set; } = new();
 
-	public ApprovalsRequest Approvals { get; set; } = new();
+	// public ApprovalsRequest Approvals { get; set; } = new();
 	
 	public string? CompanyName {get;set;}
 }

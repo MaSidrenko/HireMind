@@ -33,6 +33,9 @@ public class Order
 
 	public bool ClientApproved { get; set; } = false;
 	public bool FreelancerApproved { get; set; } = false;
+	public bool ClientDoneApproved { get; set; } = false;
+	public bool FreelancerDoneApproved { get; set;} = false;
+
 	public int? ClientRatingByFreelancer { get; set; }
 	public int? FreelancerRatingByClient { get; set; }
 

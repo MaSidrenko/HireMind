@@ -12,6 +12,9 @@ public interface IOrderService
 	public Task<Order> AcceptProposalAsync(int proposalId, int userId, CancellationToken ct);
 	public Task<Order> WithdrawProposalAsync(int proposalId,int userId, CancellationToken ct);
 	Task<Order> UpdateClientApproval(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct);
+	public Task<Order> CompleteByFreelancer(int orderID, int userId, CancellationToken ct);
+	public Task<Order> AcceptCompletionByClient(int orderId, int userId, CancellationToken ct);
+	public Task<Order> RejectCompletionByClient(int orderId, int userId, CancellationToken ct);
 	public Task<Order> UpdateFreelancerApprovalAsync(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct);
 	public Task<Order> RateOrderAsync(int orderId, int userId, UpdateOrderRatingRequest request, CancellationToken ct);
 	public Task<Order?> LoadOrderGraphAsync(int orderId, CancellationToken ct, bool asNoTracking = false);

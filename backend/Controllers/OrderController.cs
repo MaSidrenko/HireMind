@@ -166,7 +166,38 @@ public class OrderController : ControllerBase
 
 		return Ok(ToDto(order));
 	}
+	[Authorize(Roles = "Freelancer")]
+	[HttpPut("{orderId:int}/completion/freelancer")]
+	public async Task<IActionResult> UpdateFreelacnerComplition(int orderId, CancellationToken ct = default)
+	{
+		if(!TryGetUserId(out int freelancerId))
+			return Unauthorized();
 
+		Order order = await _orderService.CompleteByFreelancer(orderId, freelancerId, ct);
+
+		return Ok(ToDto(order));
+	}
+	[Authorize(Roles = "Client")]
+	[HttpPut("{orderId:int}/completion/client/accept")]
+	public async Task<IActionResult> UpdateClientComplitionAccept(int orderId, CancellationToken ct = default)
+	{
+		if(!TryGetUserId(out int clientId))
+			return Unauthorized();
+
+		Order order = await _orderService.AcceptCompletionByClient(orderId, clientId, ct);
+
+		return Ok(ToDto(order));
+	}
+	[Authorize(Roles = "Client")]
+	[HttpPut("{orderId:int}/completion/client/reject")]
+	public async Task<IActionResult> UpdateClientComplitionReject(int orderId, CancellationToken ct = default)
+	{
+		if(!TryGetUserId(out int clientId))
+			return Unauthorized();
+
+		Order order = await _orderService.RejectCompletionByClient(orderId, clientId, ct);
+		return Ok(ToDto(order));	
+	}
 	[Authorize(Roles = "Freelancer")]
 	[HttpPut("{orderId:int}/approval/freelancer")]
 	public async Task<IActionResult> UpdateFreelancerApproval(
@@ -270,6 +301,8 @@ public class OrderController : ControllerBase
 			CompletedAt = order.CompletedAt,
 			UpdatedAt = order.UpdatedAt,
 			AiGenerated = order.AiGenerated,
+			ClientDoneApproved = order.ClientDoneApproved,
+			FreelancerDoneApproved = order.FreelancerDoneApproved,
 			ReadinessScore = order.ReadinessScore,
 			BriefSections = new BriefSectionsDto
 			{

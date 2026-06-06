@@ -39,6 +39,8 @@ public class OrderListItemDto
 	public DateTime UpdatedAt { get; set; }
 
 	public bool AiGenerated { get; set; }
+	public bool ClientDoneApproved { get; set; } = false;
+	public bool FreelancerDoneApproved { get; set;} = false;
 	public int ReadinessScore { get; set; }
 
 	public BriefSectionsDto BriefSections { get; set; } = new();
