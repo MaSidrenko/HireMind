@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-
 namespace MyApp.Namespace
 {
     /// <summary>
@@ -143,7 +142,24 @@ namespace MyApp.Namespace
                 user = result.User
             });
         }
+        [HttpPost("recovery-password")]
+        public async Task<IActionResult> RecoveryPasswordRequest([FromBody] RecoveryPasswordRequest request, [FromServices] IEmailSender emailSender, CancellationToken ct = default)
+        {
+            RequestPasswordResetResult? result = await _authService.RequestPasswordResetAsync(request, emailSender, ct);
 
+            if(!result.IsSuccess)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = result.Message
+                });
+            }
+
+            return Ok(new 
+            {
+               message = result.Message
+            });
+        }
         private void AppendAccessTokenCookie(string accessToken, DateTime expiresAtUtc)
         {
             Response.Cookies.Append(

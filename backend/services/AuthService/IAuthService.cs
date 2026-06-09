@@ -7,4 +7,5 @@ public interface IAuthService
 	Task SignOutAsnyc(int userId, CancellationToken ct = default);
 	Task<UserResult> Me(int userId, CancellationToken ct = default);
 	Task<EmailVerifyResult> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default);
+	Task<RequestPasswordResetResult> RequestPasswordResetAsync(RecoveryPasswordRequest request,IEmailSender emailSender, CancellationToken ct = default);
 }
