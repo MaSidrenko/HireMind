@@ -160,6 +160,22 @@ namespace MyApp.Namespace
                message = result.Message
             });
         }
+        [HttpPost("recovery-password/confirm")]
+        public async Task<IActionResult> ConfirmCodeRecoveryPassword([FromBody] VerifyPasswordRequest request, CancellationToken ct = default)
+        {
+            VerifyPasswordResult result = await _authService.VerifyPasswordAsync(request, ct);
+
+            if(!result.IsSuccess)
+                return Ok(new
+                {
+                    message = result.ErrorMessage
+                });
+
+            return Ok(new
+            {
+                message = result.ErrorMessage
+            });
+        }
         private void AppendAccessTokenCookie(string accessToken, DateTime expiresAtUtc)
         {
             Response.Cookies.Append(

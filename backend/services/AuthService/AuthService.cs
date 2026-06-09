@@ -284,4 +284,47 @@ public class AuthService : IAuthService
 
 		return RequestPasswordResetResult.Success(neutralMessage);
 	}
+
+	public async Task<VerifyPasswordResult> VerifyPasswordAsync(VerifyPasswordRequest request, CancellationToken ct)
+	{
+		string normalizeEmail = request.Email.Trim().ToLowerInvariant();
+		User? user = await _userService.GetByEmailAsync(normalizeEmail, ct);
+
+		if(user is null)
+			return VerifyPasswordResult.Fail("Неверный email или код");
+
+		if(!user.isEmailConfirmed)
+			return VerifyPasswordResult.Fail("Email не подтвержден!");
+
+		if(user.PasswordResetCodeExpiresAtUtc is null || user.PasswordResetCodeExpiresAtUtc < DateTime.UtcNow)
+		{
+			return VerifyPasswordResult.Fail("Код истек");
+		}
+
+		if(user.PasswordResetAttempts > 5)
+		{
+			return VerifyPasswordResult.Fail("Слишком много попыток.Запросите новый код");
+		}
+
+		bool isCodeValid = EmailCodeHasher.Verify(request.Code, user.PasswordResetCodeHash!);
+
+		if(!isCodeValid)
+		{
+			user.PasswordResetAttempts++;
+			await _userService.SaveChangesAsync(ct);
+
+			return VerifyPasswordResult.Fail("Неверный код");
+		}
+
+		var passwordHashResult = _passwordHashService.HashPassword(request.NewPassword);
+		user.PasswordHash = passwordHashResult.Hash;
+		
+		user.PasswordResetCodeHash = null;
+		user.PasswordResetCodeExpiresAtUtc = null;
+		user.PasswordResetAttempts = 0;
+
+		await _userService.SaveChangesAsync(ct);
+
+		return VerifyPasswordResult.Success();
+	}
 }
