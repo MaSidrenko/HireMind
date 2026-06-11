@@ -33,11 +33,11 @@ describe("projectLogic", () => {
 			id: 12345,
 			hirerId: 7,
 			hirerName: "Анна Заказчик",
-			status: "draft",
+			status: "Draft",
 			workflowStage: "clarification",
-			companyName: "Новая компания",
+			companyName: "",
 			skills: ["Discovery"],
-			aiGenerated: true,
+			aiGenerated: false,
 		});
 		expect(project.briefSections.goal).toContain("Лендинг");
 		expect(project.clarificationQuestions).toEqual(
