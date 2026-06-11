@@ -2,22 +2,22 @@
 
 public class VerifyPasswordResult
 {
-	  public bool IsSuccess { get; }
-    public string? ErrorMessage { get; }
+	public bool IsSuccess { get; }
+	public string Message { get; }
 
-    private VerifyPasswordResult(bool isSuccess, string? errorMessage)
-    {
-        IsSuccess = isSuccess;
-        ErrorMessage = errorMessage;
-    }
+	private VerifyPasswordResult(bool isSuccess, string message)
+	{
+		IsSuccess = isSuccess;
+		Message = message;
+	}
 
-    public static VerifyPasswordResult Success()
-    {
-        return new VerifyPasswordResult(true, null);
-    }
+	public static VerifyPasswordResult Success(string message)
+	{
+		return new VerifyPasswordResult(true, message);
+	}
 
-    public static VerifyPasswordResult Fail(string errorMessage)
-    {
-        return new VerifyPasswordResult(false, errorMessage);
-    }
+	public static VerifyPasswordResult Fail(string message)
+	{
+		return new VerifyPasswordResult(false, message);
+	}
 }

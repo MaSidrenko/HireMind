@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace MyApp.Namespace;
 
-[Route("api/v1/[controller]")]
+[Route("api/v1/order")]
 [ApiController]
 public class OrderController : ControllerBase
 {
@@ -96,7 +96,7 @@ public class OrderController : ControllerBase
 	}
 
 	[Authorize(Roles = "Freelancer")]
-	[HttpPut("Proposal/create")]
+	[HttpPut("proposal/create")]
 	public async Task<IActionResult> RespondToOrder([FromBody] CreateProposalRequest request, CancellationToken ct)
 	{
 		if (!TryGetUserId(out int userId))
@@ -122,7 +122,7 @@ public class OrderController : ControllerBase
 	}
 
 	[Authorize(Roles = "Client")]
-	[HttpPut("Proposal/{proposalId:int}/accept")]
+	[HttpPut("proposal/{proposalId:int}/accept")]
 	public async Task<IActionResult> AcceptProposal(int proposalId, CancellationToken ct)
 	{
 		if (!TryGetUserId(out int userId))
@@ -136,7 +136,7 @@ public class OrderController : ControllerBase
 	}
 
 	[Authorize(Roles = "Freelancer")]
-	[HttpPut("Proposal/{proposalId:int}/withdraw")]
+	[HttpPut("proposal/{proposalId:int}/withdraw")]
 	public async Task<IActionResult> WithdrawProposal(int proposalId, CancellationToken ct)
 	{
 		if (!TryGetUserId(out int userId))

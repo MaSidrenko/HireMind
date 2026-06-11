@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MyApp.Namespace;
 
-[Route("api/v1/[controller]")]
+[Route("api/v1/profile")]
 [ApiController]
 [Authorize]
 public class ProfileController : ControllerBase

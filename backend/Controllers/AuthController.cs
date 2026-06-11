@@ -10,7 +10,7 @@ namespace MyApp.Namespace
     /// <summary>
     /// Auth controller for handling authentication requests.
     /// </summary>
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -166,14 +166,14 @@ namespace MyApp.Namespace
             VerifyPasswordResult result = await _authService.VerifyPasswordAsync(request, ct);
 
             if(!result.IsSuccess)
-                return Ok(new
+                return BadRequest(new
                 {
-                    message = result.ErrorMessage
+                    message = result.Message
                 });
 
             return Ok(new
             {
-                message = result.ErrorMessage
+                message = result.Message
             });
         }
         private void AppendAccessTokenCookie(string accessToken, DateTime expiresAtUtc)

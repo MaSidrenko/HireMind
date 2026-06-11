@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from "@/shared";
+import { AUTH_API, ApiError, apiRequest } from "@/shared";
 
 type AuthMessageResponse = {
     message: string;
@@ -9,7 +9,7 @@ export async function emailVerifyRequest(
     code: string,
 ): Promise<AuthMessageResponse> {
     try {
-        return await apiRequest<AuthMessageResponse>("/auth/email-verify", {
+        return await apiRequest<AuthMessageResponse>(`${AUTH_API}/email-verify`, {
             method: "POST",
             body: {
                 email: email.trim().toLowerCase(),
@@ -34,7 +34,7 @@ export async function resetPasswordRequest(
 	email: string,
 ): Promise<AuthMessageResponse> {
 	try {
-		return await apiRequest<AuthMessageResponse>("/auth/recovery-password", {
+		return await apiRequest<AuthMessageResponse>(`${AUTH_API}/recovery-password`, {
 			method: "POST",
 			body: {
 				email: email.trim().toLowerCase(),
@@ -52,3 +52,28 @@ export async function resetPasswordRequest(
 		throw new Error("Не удалось отправить код. Попробуйте позже");
 	}
 }	
+
+export async function verifyPassword(
+	email: string,
+	code: string,
+	newPassword: string,
+): Promise<AuthMessageResponse> {
+	try {
+		return await apiRequest<AuthMessageResponse>(`${AUTH_API}/recovery-password/confirm`, {
+			method: "POST",
+			body: {
+				email: email.trim().toLowerCase(),
+				code: code.trim(),
+				newPassword,
+			},
+		});
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new Error(
+				error.message || "Не удалось сохранить новый пароль",
+			);
+		}
+
+		throw new Error("Не удалось сохранить новый пароль. Попробуйте позже");
+	}
+}

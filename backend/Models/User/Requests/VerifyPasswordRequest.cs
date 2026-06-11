@@ -2,7 +2,7 @@
 
 public class VerifyPasswordRequest
 {
-	public string? Email;
-	public string? Code;
-	public string? NewPassword;
+	public string? Email { get; set; }
+	public string? Code { get; set; }
+	public string? NewPassword { get; set; }
 }

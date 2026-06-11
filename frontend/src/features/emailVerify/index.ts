@@ -1,1 +1,1 @@
-export { emailVerifyRequest, resetPasswordRequest } from "./emailVerify";
+export { emailVerifyRequest, resetPasswordRequest, verifyPassword } from "./emailVerify";

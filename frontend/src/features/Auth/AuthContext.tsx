@@ -7,7 +7,7 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { apiRequest, isEmailValid } from "@/shared";
+import { AUTH_API, PROFILE_API, apiRequest, isEmailValid } from "@/shared";
 import { signInRequest } from "@/features/SignIn";
 import { signUpRequest } from "@/features/SignUp";
 import type { SignUpPayload } from "@/features/SignUp";
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		if (typeof patch.hourlyRate === "number" && patch.hourlyRate < 0) {
 			throw new Error("Почасовая ставка не может быть отрицательной");
 		}
-		const response = await apiRequest<AuthResponse>("/profile", {
+		const response = await apiRequest<AuthResponse>(PROFILE_API, {
 			method: "PUT",
 			body: {
 				...patch,
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const logout = useCallback(async () => {
 		try {
-			await apiRequest<{ message: string }>("/auth/logout", {
+			await apiRequest<{ message: string }>(`${AUTH_API}/logout`, {
 				method: "POST",
 			});
 		} catch (error) {

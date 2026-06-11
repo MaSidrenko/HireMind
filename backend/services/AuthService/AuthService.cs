@@ -287,14 +287,34 @@ public class AuthService : IAuthService
 
 	public async Task<VerifyPasswordResult> VerifyPasswordAsync(VerifyPasswordRequest request, CancellationToken ct)
 	{
-		string normalizeEmail = request.Email.Trim().ToLowerInvariant();
-		User? user = await _userService.GetByEmailAsync(normalizeEmail, ct);
+		if(string.IsNullOrWhiteSpace(request.Email))
+		{
+			return VerifyPasswordResult.Fail("Введите email");
+		}
+
+		if(string.IsNullOrWhiteSpace(request.Code))
+		{
+			return VerifyPasswordResult.Fail("Введите код восстановления");
+		}
+
+		if(string.IsNullOrWhiteSpace(request.NewPassword))
+		{
+			return VerifyPasswordResult.Fail("Введите новый пароль");
+		}
+
+		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+		string normalizedCode = request.Code.Trim();
+		User? user = await _userService.GetByEmailAsync(normalizedEmail, ct);
 
 		if(user is null)
+		{
 			return VerifyPasswordResult.Fail("Неверный email или код");
+		}
 
-		if(!user.isEmailConfirmed)
-			return VerifyPasswordResult.Fail("Email не подтвержден!");
+		if(string.IsNullOrWhiteSpace(user.PasswordResetCodeHash))
+		{
+			return VerifyPasswordResult.Fail("Неверный email или код");
+		}
 
 		if(user.PasswordResetCodeExpiresAtUtc is null || user.PasswordResetCodeExpiresAtUtc < DateTime.UtcNow)
 		{
@@ -306,7 +326,7 @@ public class AuthService : IAuthService
 			return VerifyPasswordResult.Fail("Слишком много попыток.Запросите новый код");
 		}
 
-		bool isCodeValid = EmailCodeHasher.Verify(request.Code, user.PasswordResetCodeHash!);
+		bool isCodeValid = EmailCodeHasher.Verify(normalizedCode, user.PasswordResetCodeHash);
 
 		if(!isCodeValid)
 		{
@@ -318,6 +338,7 @@ public class AuthService : IAuthService
 
 		var passwordHashResult = _passwordHashService.HashPassword(request.NewPassword);
 		user.PasswordHash = passwordHashResult.Hash;
+		user.Salt = passwordHashResult.Salt;
 		
 		user.PasswordResetCodeHash = null;
 		user.PasswordResetCodeExpiresAtUtc = null;
@@ -325,6 +346,6 @@ public class AuthService : IAuthService
 
 		await _userService.SaveChangesAsync(ct);
 
-		return VerifyPasswordResult.Success();
+		return VerifyPasswordResult.Success("Пароль успешно изменен");
 	}
 }

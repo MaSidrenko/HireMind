@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isEmailValid, isPasswordValid } from "@/shared";
 import "./ResetPassword.css";
+import { verifyPassword } from "@/features";
 
 type ResetPasswordLocationState = {
 	email?: string;
@@ -17,21 +18,25 @@ export default function ResetPassword() {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [fieldError, setFieldError] = useState("");
-	const [successHint, setSuccessHint] = useState("");
+	const [formError, setFormError] = useState("");
+	const [successMessage, setSuccessMessage] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	function clearMessages() {
 		setFieldError("");
-		setSuccessHint("");
+		setFormError("");
+		setSuccessMessage("");
 	}
 
-	function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		const normalizedEmail = email.trim();
 		const normalizedCode = code.trim();
 
 		setFieldError("");
-		setSuccessHint("");
+		setFormError("");
+		setSuccessMessage("");
 
 		if (!normalizedEmail) {
 			setFieldError("Введите email");
@@ -75,9 +80,27 @@ export default function ResetPassword() {
 			return;
 		}
 
-		setSuccessHint(
-			"UI готов. Следующий шаг здесь — вызвать endpoint подтверждения кода и смены пароля.",
-		);
+		setIsSubmitting(true);
+
+		try {
+			const response = await verifyPassword(
+				normalizedEmail,
+				normalizedCode,
+				password,
+			);
+			setSuccessMessage(response.message);
+			setCode("");
+			setPassword("");
+			setConfirmPassword("");
+		} catch (error) {
+			setFormError(
+				error instanceof Error
+					? error.message
+					: "Не удалось сохранить новый пароль",
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
 	}
 
 	return (
@@ -104,6 +127,7 @@ export default function ResetPassword() {
 										setEmail(event.target.value);
 										clearMessages();
 									}}
+									disabled={isSubmitting}
 								/>
 							</label>
 
@@ -119,6 +143,7 @@ export default function ResetPassword() {
 										setCode(event.target.value);
 										clearMessages();
 									}}
+									disabled={isSubmitting}
 								/>
 							</label>
 
@@ -134,6 +159,7 @@ export default function ResetPassword() {
 										setPassword(event.target.value);
 										clearMessages();
 									}}
+									disabled={isSubmitting}
 								/>
 							</label>
 
@@ -149,6 +175,7 @@ export default function ResetPassword() {
 										setConfirmPassword(event.target.value);
 										clearMessages();
 									}}
+									disabled={isSubmitting}
 								/>
 							</label>
 
@@ -156,19 +183,29 @@ export default function ResetPassword() {
 								<span className="field-error">{fieldError}</span>
 							) : null}
 
-							{successHint ? (
+							{formError ? (
+								<span className="field-error">{formError}</span>
+							) : null}
+
+							{successMessage ? (
 								<span className="reset-password-success">
-									{successHint}
+									{successMessage}
 								</span>
 							) : null}
 
-							<button type="submit" className="input-reset-password">
-								Сохранить новый пароль
+							<button
+								type="submit"
+								className="input-reset-password"
+								disabled={isSubmitting}
+							>
+								{isSubmitting
+									? "Сохраняем..."
+									: "Сохранить новый пароль"}
 							</button>
 
 							<span className="reset-password-note">
-								На этом экране останется только подключить request к
-								endpoint подтверждения recovery-кода.
+								После успешной смены пароля можно сразу вернуться ко
+								входу и авторизоваться с новым паролем.
 							</span>
 						</div>
 					</div>

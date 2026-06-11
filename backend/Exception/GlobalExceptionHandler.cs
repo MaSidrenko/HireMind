@@ -33,6 +33,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 			InvalidEmailException => StatusCodes.Status400BadRequest,
 			EmailExsistsException => StatusCodes.Status400BadRequest,
 			NullCompanyException => StatusCodes.Status400BadRequest,
+			AiServiceUnavailableException => StatusCodes.Status503ServiceUnavailable,
 			AiRequestFailedException => StatusCodes.Status502BadGateway,
 			AiInvalidResponseException => StatusCodes.Status502BadGateway,
 			_ => StatusCodes.Status500InternalServerError
@@ -61,6 +62,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 			InvalidEmailException => "Invalid Email",
 			EmailExsistsException => "Email already exists",
 			NullCompanyException => "Null company",
+			AiServiceUnavailableException => "AI service unavailable",
 			AiRequestFailedException => "AI provider request failed",
 			AiInvalidResponseException => "AI provider response is invalid",
 			_ => "Internal server error"

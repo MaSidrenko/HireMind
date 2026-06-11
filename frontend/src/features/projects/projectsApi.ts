@@ -1,20 +1,24 @@
-import { apiRequest } from "@/shared";
+import { ORDER_API, apiRequest } from "@/shared";
 import { normalizeProjectOrder } from "./projectLogic";
 import type { CreateProjectInput, ProjectOrder } from "./types";
 
 export async function getProjects() {
-	const projects = await apiRequest<Partial<ProjectOrder>[]>("Order/get-all");
+	const projects = await apiRequest<Partial<ProjectOrder>[]>(
+		`${ORDER_API}/get-all`,
+	);
 	return projects.map(normalizeProjectOrder);
 }
 
 export async function getAcceptedProject() {
-	const projects = await apiRequest<Partial<ProjectOrder>[]>("Order/get-accepted-projects");
+	const projects = await apiRequest<Partial<ProjectOrder>[]>(
+		`${ORDER_API}/get-accepted-projects`,
+	);
 	return projects.map(normalizeProjectOrder);
 }
 
 export async function getProjectById(id: number) {
 	const project = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/get-by-id/${id}`,
+		`${ORDER_API}/get-by-id/${id}`,
 	);
 	return normalizeProjectOrder(project);
 }
@@ -32,7 +36,7 @@ const paymentToBackend = {
 } as const;
 
 export async function createProjectRequest(input: CreateProjectInput) {
-	const project = await apiRequest<Partial<ProjectOrder>>("/Order/create", {
+	const project = await apiRequest<Partial<ProjectOrder>>(`${ORDER_API}/create`, {
 		method: "POST",
 		body: {
 			title: input.title,
@@ -121,7 +125,7 @@ export async function updateProjectRequest(project: ProjectOrder) {
 	};
 
 	const nextProject = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/update/${project.id}`,
+		`${ORDER_API}/update/${project.id}`,
 		{
 			method: "PUT",
 			body,
@@ -136,7 +140,7 @@ export async function updateProjectClarificationQuestionsRequest(
 	clarificationQuestions: ProjectOrder["clarificationQuestions"],
 ) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/clarification-questions`,
+		`${ORDER_API}/${orderId}/clarification-questions`,
 		{
 			method: "PUT",
 			body: {
@@ -158,7 +162,7 @@ export type CreateProposalInput = {
 
 export async function createProposalRequest(input: CreateProposalInput) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		"/Order/Proposal/create",
+		`${ORDER_API}/proposal/create`,
 		{
 			method: "PUT",
 			body: {
@@ -175,7 +179,7 @@ export async function createProposalRequest(input: CreateProposalInput) {
 
 export async function acceptProposalRequest(proposalId: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/Proposal/${proposalId}/accept`,
+		`${ORDER_API}/proposal/${proposalId}/accept`,
 		{
 			method: "PUT",
 		},
@@ -186,7 +190,7 @@ export async function acceptProposalRequest(proposalId: number) {
 
 export async function withdrawProposalRequest(proposalId: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/Proposal/${proposalId}/withdraw`,
+		`${ORDER_API}/proposal/${proposalId}/withdraw`,
 		{
 			method: "PUT",
 		},
@@ -201,7 +205,7 @@ export async function updateOrderApprovalRequest(
 	approved: boolean,
 ) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/approval/${side}`,
+		`${ORDER_API}/${orderId}/approval/${side}`,
 		{
 			method: "PUT",
 			body: { approved },
@@ -213,7 +217,7 @@ export async function updateOrderApprovalRequest(
 
 export async function rateOrderRequest(orderId: number, score: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/rating`,
+		`${ORDER_API}/${orderId}/rating`,
 		{
 			method: "PUT",
 			body: { score },
@@ -226,7 +230,7 @@ export async function rateOrderRequest(orderId: number, score: number) {
 
 export async function freelancerMarkDone(orderId: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/completion/freelancer`,
+		`${ORDER_API}/${orderId}/completion/freelancer`,
 		{
 			method: "PUT",
 		},
@@ -237,7 +241,7 @@ export async function freelancerMarkDone(orderId: number) {
 
 export async function clientMarkDone(orderId: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/completion/client/accept`,
+		`${ORDER_API}/${orderId}/completion/client/accept`,
 		{
 			method: "PUT",
 		},
@@ -248,7 +252,7 @@ export async function clientMarkDone(orderId: number) {
 
 export async function clientMarkReject(orderId: number) {
 	const result = await apiRequest<Partial<ProjectOrder>>(
-		`/Order/${orderId}/completion/client/reject`,
+		`${ORDER_API}/${orderId}/completion/client/reject`,
 		{
 			method: "PUT",
 		},
