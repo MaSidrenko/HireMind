@@ -200,7 +200,7 @@ describe("AuthProvider", () => {
 		});
 
 		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
-		expect(url).toEqual(expect.stringContaining("/api/auth/logout"));
+		expect(url).toEqual(expect.stringContaining("/api/v1/auth/logout"));
 		expect(init).toMatchObject({
 			method: "POST",
 			credentials: "include",
