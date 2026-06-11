@@ -9,6 +9,7 @@ import type { ContactRequest, Freelancer } from "./freelancersApi.types";
 
 vi.mock("@/shared", () => ({
 	apiRequest: vi.fn(),
+	FREELANCER_API: "/freelancer",
 }));
 
 const mockedApiRequest = vi.mocked(apiRequest);
@@ -42,7 +43,7 @@ describe("freelancersApi", () => {
 
 		await expect(getFreelancers()).resolves.toEqual(freelancers);
 
-		expect(mockedApiRequest).toHaveBeenCalledWith("/api/freelancers");
+		expect(mockedApiRequest).toHaveBeenCalledWith("/freelancer/freelancers");
 	});
 
 	it("sends contact request to selected freelancer", async () => {
@@ -56,13 +57,15 @@ describe("freelancersApi", () => {
 		const savedRequest = { ...request, id: 44 };
 		mockedApiRequest.mockResolvedValueOnce(savedRequest);
 
-		await expect(sendContactRequest(request)).resolves.toEqual(savedRequest);
+		await expect(
+			sendContactRequest(request.freelancerId, request.message),
+		).resolves.toEqual(savedRequest);
 
 		expect(mockedApiRequest).toHaveBeenCalledWith(
-			"/api/freelancers/7/contact-requests",
+			"/freelancer/7/contact-requests",
 			{
 				method: "POST",
-				body: request,
+				body: request.message,
 			},
 		);
 	});
@@ -81,6 +84,8 @@ describe("freelancersApi", () => {
 
 		await expect(getContactRequests()).resolves.toEqual(requests);
 
-		expect(mockedApiRequest).toHaveBeenCalledWith("/api/contact-requests");
+		expect(mockedApiRequest).toHaveBeenCalledWith(
+			"/freelancer/contact-requests",
+		);
 	});
 });
