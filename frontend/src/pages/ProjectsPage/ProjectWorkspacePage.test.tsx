@@ -3,30 +3,49 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useAuth } from "../../features/Auth/AuthContext";
+import {
+	acceptProposalRequest,
+	createProposalRequest,
+} from "../../features/projects/projectsApi";
 import type { ProjectOrder } from "../../features/projects/types";
 import ProjectWorkspacePage from "./ProjectWorkspacePage";
-
 
 vi.mock("../../features/Auth/AuthContext.tsx", () => ({
 	useAuth: vi.fn(),
 }));
 
+vi.mock("../../features/projects/projectsApi", () => ({
+	acceptProposalRequest: vi.fn(),
+	clientMarkDone: vi.fn(),
+	clientMarkReject: vi.fn(),
+	createProposalRequest: vi.fn(),
+	freelancerMarkDone: vi.fn(),
+	rateOrderRequest: vi.fn(),
+	updateProjectClarificationQuestionsRequest: vi.fn(),
+	updateOrderApprovalRequest: vi.fn(),
+	withdrawProposalRequest: vi.fn(),
+}));
+
 const mockedUseAuth = vi.mocked(useAuth);
+const mockedAcceptProposalRequest = vi.mocked(acceptProposalRequest);
+const mockedCreateProposalRequest = vi.mocked(createProposalRequest);
 
 function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 	return {
 		id: 1,
 		hirerId: 7,
 		hirerName: "Анна Заказчик",
+		hirerRating: 0,
 		selectedFreelancerId: null,
 		selectedFreelancerName: null,
+		selectedFreelancerRating: null,
 		title: "Лендинг для диплома",
 		shortDescription: "Короткое описание",
 		rawDescription: "Нужно сделать понятный лендинг для демонстрации дипломного проекта.",
 		technicalSpecification: "",
-		status: "draft",
+		status: "Draft",
 		workflowStage: "brief",
-		category: "Веб-разработка",
+		category: "Разработка",
 		budgetMin: 10000,
 		budgetMax: 25000,
 		currency: "RUB",
@@ -35,6 +54,7 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 		proposalsCount: 0,
 		proposals: [],
 		publishedAt: null,
+		completedAt: null,
 		updatedAt: "2026-05-13T00:00:00.000Z",
 		companyName: "HireMind",
 		aiGenerated: true,
@@ -77,19 +97,29 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 				resolved: true,
 			},
 		],
-		approvals: { client: false, freelancer: false },
+		approvals: {
+			client: false,
+			freelancer: false,
+			clientDone: false,
+			freelancerDone: false,
+		},
+		clientRatingByFreelancer: null,
+		freelancerRatingByClient: null,
 		...partial,
 	};
 }
 
 describe("ProjectWorkspacePage", () => {
 	beforeEach(() => {
+		mockedAcceptProposalRequest.mockReset();
+		mockedCreateProposalRequest.mockReset();
 		mockedUseAuth.mockReturnValue({
 			user: {
 				id: 7,
 				fullName: "Анна Заказчик",
 				email: "anna@example.com",
-				role: "client",
+				role: "Client",
+				rating: 0,
 				contacts: {},
 				isOnline: true,
 			},
@@ -121,7 +151,7 @@ describe("ProjectWorkspacePage", () => {
 		await waitFor(() => {
 			expect(onChange).toHaveBeenCalledWith(
 				expect.objectContaining({
-					status: "published",
+					status: "Published",
 					publishedAt: expect.any(String),
 				}),
 			);
@@ -153,13 +183,34 @@ describe("ProjectWorkspacePage", () => {
 
 	it("allows freelancer to submit proposal for published order", async () => {
 		const user = userEvent.setup();
-		const onChange = vi.fn().mockResolvedValue(undefined);
+		const updatedOrder = makeOrder({
+			status: "Published",
+			proposalsCount: 1,
+			proposals: [
+				{
+					id: 11,
+					projectId: 1,
+					freelancerId: 42,
+					freelancerName: "Иван Фрилансер",
+					message:
+						"Здравствуйте! Готов обсудить задачу и взять проект в работу.",
+					price: 10000,
+					currency: "RUB",
+					estimatedDays: 14,
+					status: "pending",
+					createdAt: "2026-05-13T00:00:00.000Z",
+				},
+			],
+		});
+		mockedCreateProposalRequest.mockResolvedValue(updatedOrder);
+
 		mockedUseAuth.mockReturnValue({
 			user: {
 				id: 42,
 				fullName: "Иван Фрилансер",
 				email: "ivan@example.com",
-				role: "freelancer",
+				role: "Freelancer",
+				rating: 0,
 				contacts: {},
 				isOnline: true,
 			},
@@ -174,39 +225,59 @@ describe("ProjectWorkspacePage", () => {
 
 		render(
 			<ProjectWorkspacePage
-				order={makeOrder({ status: "published" })}
+				order={makeOrder({ status: "Published" })}
 				canEdit={false}
 				onBack={vi.fn()}
-				onChange={onChange}
+				onChange={vi.fn()}
 			/>,
 		);
 
 		await user.click(screen.getByRole("button", { name: "Откликнуться" }));
 
 		await waitFor(() => {
-			expect(onChange).toHaveBeenCalledWith(
-				expect.objectContaining({
-					proposalsCount: 1,
-					proposals: [
-						expect.objectContaining({
-							freelancerId: 42,
-							freelancerName: "Иван Фрилансер",
-							status: "pending",
-						}),
-					],
-				}),
-			);
+			expect(mockedCreateProposalRequest).toHaveBeenCalledWith({
+				orderId: 1,
+				price: 10000,
+				message:
+					"Здравствуйте! Готов обсудить задачу и взять проект в работу.",
+				estimatedDays: 14,
+			});
 		});
+
+		expect(await screen.findByText("Отклик отправлен")).toBeInTheDocument();
+		expect(screen.getByText("Ваш отклик")).toBeInTheDocument();
 	});
 
 	it("lets owner select freelancer proposal", async () => {
 		const user = userEvent.setup();
-		const onChange = vi.fn().mockResolvedValue(undefined);
+		mockedAcceptProposalRequest.mockResolvedValue(
+			makeOrder({
+				status: "Published",
+				selectedFreelancerId: 42,
+				selectedFreelancerName: "Иван Фрилансер",
+				workflowStage: "review",
+				proposalsCount: 1,
+				proposals: [
+					{
+						id: 10,
+						projectId: 1,
+						freelancerId: 42,
+						freelancerName: "Иван Фрилансер",
+						message: "Готов взять проект в работу.",
+						price: 20000,
+						currency: "RUB",
+						estimatedDays: 7,
+						status: "accepted",
+						createdAt: "2026-05-13T00:00:00.000Z",
+					},
+				],
+			}),
+		);
 
 		render(
 			<ProjectWorkspacePage
 				order={makeOrder({
-					status: "published",
+					status: "Published",
 					proposalsCount: 1,
 					proposals: [
 						{
@@ -225,7 +296,7 @@ describe("ProjectWorkspacePage", () => {
 				})}
 				canEdit
 				onBack={vi.fn()}
-				onChange={onChange}
+				onChange={vi.fn()}
 			/>,
 		);
 
@@ -234,19 +305,10 @@ describe("ProjectWorkspacePage", () => {
 		);
 
 		await waitFor(() => {
-			expect(onChange).toHaveBeenCalledWith(
-				expect.objectContaining({
-					selectedFreelancerId: 42,
-					selectedFreelancerName: "Иван Фрилансер",
-					workflowStage: "review",
-					proposals: [
-						expect.objectContaining({
-							id: 10,
-							status: "accepted",
-						}),
-					],
-				}),
-			);
+			expect(mockedAcceptProposalRequest).toHaveBeenCalledWith(10);
 		});
+
+		expect(await screen.findByText("Исполнитель выбран")).toBeInTheDocument();
+		expect(screen.getAllByText("Иван Фрилансер").length).toBeGreaterThan(0);
 	});
 });
