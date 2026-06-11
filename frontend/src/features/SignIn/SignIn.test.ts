@@ -36,12 +36,12 @@ describe("SignIn api", () => {
 
 		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
-		expect(url).toEqual(expect.stringContaining("/api/auth/sign-in"));
+		expect(url).toEqual(expect.stringContaining("/api/v1/auth/sign-in"));
 		expect(init).toMatchObject({
 			method: "POST",
 			credentials: "include",
 			body: JSON.stringify({
-				login: "test@test.com",
+				email: "test@test.com",
 				password: "123456Qw!",
 			}),
 		});
