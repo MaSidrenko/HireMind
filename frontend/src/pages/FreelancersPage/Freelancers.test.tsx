@@ -138,10 +138,8 @@ describe("Freelancers", () => {
 		await user.click(screen.getByRole("button", { name: "Отправить заявку" }));
 
 		expect(mockedSendContactRequest).toHaveBeenCalledWith(
-			expect.objectContaining({
-				freelancerId: 1,
-				status: "sent",
-			}),
+			1,
+			"Здравствуйте! Хочу обсудить проект и уточнить вашу доступность.",
 		);
 		expect(await screen.findByText("Статус: отправлена")).toBeInTheDocument();
 	});
