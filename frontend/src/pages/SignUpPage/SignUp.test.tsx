@@ -205,6 +205,6 @@ describe("SignUp", () => {
 			});
 		});
 
-		expect(screen.getByText("Email code page")).toBeInTheDocument();
+		expect(await screen.findByText("Email code page")).toBeInTheDocument();
 	});
 });
