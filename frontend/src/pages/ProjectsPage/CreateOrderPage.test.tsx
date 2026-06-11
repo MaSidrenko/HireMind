@@ -31,7 +31,8 @@ describe("CreateOrderPage", () => {
 				id: 7,
 				fullName: "Анна Заказчик",
 				email: "anna@example.com",
-				role: "client",
+				role: "Client",
+				rating: 0,
 				contacts: {},
 				isOnline: true,
 				companyName: "HireMind",
@@ -101,7 +102,8 @@ describe("CreateOrderPage", () => {
 		render(<CreateOrderPage onBack={vi.fn()} onCreated={onCreated} />);
 
 		await user.type(screen.getByPlaceholderText("Название заказа"), "Лендинг");
-		await user.type(screen.getByPlaceholderText("Компания"), "HireMind");
+		expect(screen.getByText("Компания из профиля")).toBeInTheDocument();
+		expect(screen.getByText("HireMind")).toBeInTheDocument();
 		await user.selectOptions(screen.getAllByRole("combobox")[0], "Разработка");
 		await user.type(
 			screen.getByPlaceholderText("Сырой запрос заказчика"),
@@ -117,8 +119,9 @@ describe("CreateOrderPage", () => {
 				expect.objectContaining({
 					hirerId: 7,
 					hirerName: "Анна Заказчик",
-					budgetMin: 10000,
-					budgetMax: 25000,
+					companyName: "HireMind",
+					minPrice: 10000,
+					maxPrice: 25000,
 					skills: ["React", "CSS"],
 				}),
 			);
