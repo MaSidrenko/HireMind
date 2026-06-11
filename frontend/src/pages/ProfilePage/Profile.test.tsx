@@ -5,10 +5,15 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Profile from "./Profile";
 import { updateProfileSkills, useAuth } from "@/features";
+import { getAcceptedProject } from "@/features/projects/projectsApi";
 
 vi.mock("@/features", () => ({
 	useAuth: vi.fn(),
 	updateProfileSkills: vi.fn(),
+}));
+
+vi.mock("@/features/projects/projectsApi", () => ({
+	getAcceptedProject: vi.fn(),
 }));
 
 type SkillsAutocompleteProps = {
@@ -37,28 +42,39 @@ vi.mock("@/widgets/SkillsAutoComplete/SkillsAutoComplete", () => ({
 
 const mockedUseAuth = vi.mocked(useAuth);
 const mockedUpdateProfileSkills = vi.mocked(updateProfileSkills);
+const mockedGetAcceptedProject = vi.mocked(getAcceptedProject);
 
 const logoutMock = vi.fn();
+const replaceUserMock = vi.fn();
+const updateProfileMock = vi.fn();
+const refreshAuthMock = vi.fn();
 
 const freelanceUser = {
 	id: 1,
 	fullName: "John Doe",
 	email: "john.doe@exapmle.com",
-	role: "freelancer",
+	role: "Freelancer",
 	isOnline: true,
+	isTelegramConnected: false,
+	rating: 0,
 	contacts: {
 		telegram: "@john_doe",
 		phone: "+792583456789",
 	},
 	skills: ["TypeScript"],
+	hourlyRate: null,
+	currency: null,
+	completedOrders: 0,
 };
 
 const clientUser = {
 	id: 2,
 	fullName: "Alice Smith",
 	email: "alice@exapmle.com",
-	role: "client",
+	role: "Client",
 	isOnline: false,
+	isTelegramConnected: false,
+	rating: 0,
 	contacts: {
 		telegram: "",
 		phone: "",
@@ -70,6 +86,13 @@ function mockAuth(user: unknown) {
 	mockedUseAuth.mockReturnValue({
 		user,
 		logout: logoutMock,
+		replaceUser: replaceUserMock,
+		updateProfile: updateProfileMock,
+		refreshAuth: refreshAuthMock,
+		signIn: vi.fn(),
+		signUp: vi.fn(),
+		isAuthenticated: Boolean(user),
+		loading: false,
 	} as ReturnType<typeof useAuth>);
 }
 
@@ -85,6 +108,7 @@ describe("Profile", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockedUpdateProfileSkills.mockReturnValue(undefined);
+		mockedGetAcceptedProject.mockResolvedValue([]);
 		vi.spyOn(console, "error").mockImplementation(() => {});
 	});
 
@@ -92,7 +116,7 @@ describe("Profile", () => {
 		mockAuth(null);
 
 		const { container } = renderProfile();
-		expect(container).toBeEmpty();
+		expect(container).toBeEmptyDOMElement();
 	});
 
 	it("render freelancer profile", async () => {
