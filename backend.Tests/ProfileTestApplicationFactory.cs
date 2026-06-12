@@ -13,6 +13,7 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
 	public Mock<IProfileSerivce> ProfileServiceMock { get; } = new(MockBehavior.Strict);
 	public Mock<ITelegramLinkService> TelegramServiceMock { get; } = new(MockBehavior.Strict);
 	public Mock<IFreelancerService> FreelancerServiceMock { get; } = new(MockBehavior.Strict);
+	public Mock<IAiService> AiServiceMock { get; } = new(MockBehavior.Strict);
 	protected override void ConfigureWebHost(IWebHostBuilder builder)
 	{
 		builder.UseEnvironment("Testing");
@@ -33,10 +34,12 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
 				services.RemoveAll<IProfileSerivce>();
 				services.RemoveAll<ITelegramLinkService>();
 				services.RemoveAll<IFreelancerService>();
+				services.RemoveAll<IAiService>();
 
 				services.AddSingleton(ProfileServiceMock.Object);
 				services.AddSingleton(TelegramServiceMock.Object);
 				services.AddSingleton(FreelancerServiceMock.Object);
+				services.AddSingleton(AiServiceMock.Object);
 		});
 	}
 }
