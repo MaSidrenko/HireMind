@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { setupMockApi } from "./helpers/mockApi";
+
+test.beforeEach(async ({ page }) => {
+	await setupMockApi(page);
+});
 
 test("home page opens and category link applies orders filter", async ({
 	page,

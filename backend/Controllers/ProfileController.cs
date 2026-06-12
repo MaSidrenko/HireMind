@@ -40,7 +40,13 @@ public class ProfileController : ControllerBase
 		}
 
 		User? user = await _profileService.UpdateProfileAsync(request, userId, ct);
-
+		if (user is null)
+		{
+			return NotFound(new
+			{
+				message = "Пользователь не найден."
+			});
+		}
 		return Ok(new
 		{
 			user = ToDto(user)
@@ -59,6 +65,14 @@ public class ProfileController : ControllerBase
 		}
 
 		User? user = await _profileService.UpdateSkillsAsync(request, userId, ct);
+		
+		if (user is null)
+		{
+			return NotFound(new
+			{
+				message = "Пользователь не найден."
+			});
+		}
 
 		return Ok(new
 		{

@@ -270,3 +270,5 @@ static string? ResolveTelegramSetting(IConfiguration configuration, params strin
 
     return null;
 }
+
+public partial class Program { }
