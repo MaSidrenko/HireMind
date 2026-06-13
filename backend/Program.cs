@@ -56,10 +56,10 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.RequireHttpsMetadata = true;
-        options.SaveToken = false;
+	.AddJwtBearer(options =>
+	{
+		options.RequireHttpsMetadata = true;
+		options.SaveToken = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
