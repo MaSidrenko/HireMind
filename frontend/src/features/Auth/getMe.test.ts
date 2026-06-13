@@ -24,14 +24,16 @@ describe("getMe", () => {
 		vi.mocked(globalThis.fetch).mockResolvedValue({
 			ok: true,
 			status: 200,
-			text: vi.fn().mockResolvedValue(JSON.stringify(mockUser)),
+			text: vi
+				.fn()
+				.mockResolvedValue(JSON.stringify({ user: mockUser })),
 		} as unknown as Response);
 
 		const result = await getMe();
 
 		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 		const [url, init] = vi.mocked(globalThis.fetch).mock.calls[0];
-		expect(url).toEqual(expect.stringContaining("/api/auth/me"));
+		expect(url).toEqual(expect.stringContaining("/api/v1/auth/me"));
 		expect(init).toMatchObject({
 			method: "GET",
 			credentials: "include",

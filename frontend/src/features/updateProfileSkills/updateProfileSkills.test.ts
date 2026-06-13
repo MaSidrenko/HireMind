@@ -4,6 +4,7 @@ import { updateProfileSkills } from "./updateProfileSkills";
 
 vi.mock("@/shared", () => ({
 	apiRequest: vi.fn(),
+	PROFILE_API: "/profile",
 }));
 
 const mockedApiRequest = vi.mocked(apiRequest);
@@ -20,7 +21,7 @@ describe("updateProfileSkills", () => {
 			ok: true,
 		});
 
-		expect(mockedApiRequest).toHaveBeenCalledWith("/api/profile/skills", {
+		expect(mockedApiRequest).toHaveBeenCalledWith("/profile/skills", {
 			method: "PATCH",
 			body: {
 				skills: ["React", "TypeScript"],

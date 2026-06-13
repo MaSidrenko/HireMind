@@ -6,6 +6,7 @@ import type { AiBriefResult } from "./types";
 
 vi.mock("../../shared", () => ({
 	apiRequest: vi.fn(),
+	AI_API: "/ai",
 }));
 
 const mockedApiRequest = vi.mocked(apiRequest);
@@ -48,7 +49,7 @@ describe("aiAssistntAPI", () => {
 
 		await expect(generateAiBrief(input)).resolves.toEqual(briefResult);
 
-		expect(mockedApiRequest).toHaveBeenCalledWith("/api/ai/briefs/generate", {
+		expect(mockedApiRequest).toHaveBeenCalledWith("/ai/briefs/generate", {
 			method: "POST",
 			body: input,
 		});
@@ -61,7 +62,7 @@ describe("aiAssistntAPI", () => {
 			"Добавьте критерии приемки.",
 		);
 
-		expect(mockedApiRequest).toHaveBeenCalledWith("/api/ai/project-assistant", {
+		expect(mockedApiRequest).toHaveBeenCalledWith("/ai/project-assistant", {
 			method: "POST",
 			body: {
 				projectId: 12,

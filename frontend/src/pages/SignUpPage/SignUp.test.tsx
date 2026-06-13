@@ -50,7 +50,7 @@ function renderSignUp() {
 		<MemoryRouter initialEntries={["/sign-up"]}>
 			<Routes>
 				<Route path="/sign-up" element={<SignUp />} />
-				<Route path="/projects" element={<div>Projects page</div>} />
+				<Route path="/email-code" element={<div>Email code page</div>} />
 			</Routes>
 		</MemoryRouter>,
 	);
@@ -205,6 +205,6 @@ describe("SignUp", () => {
 			});
 		});
 
-		expect(screen.getByText("Projects page")).toBeInTheDocument();
+		expect(await screen.findByText("Email code page")).toBeInTheDocument();
 	});
 });

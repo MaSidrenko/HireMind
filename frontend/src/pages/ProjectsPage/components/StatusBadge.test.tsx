@@ -5,9 +5,9 @@ import { StageBadge, StatusBadge } from "./StatusBadge";
 
 describe("StatusBadge", () => {
 	it("renders order status label", () => {
-		render(<StatusBadge status="published" />);
+		render(<StatusBadge status="Published" />);
 
-		expect(screen.getByText("Опубликован")).toHaveClass("hm-badge--published");
+		expect(screen.getByText("Опубликован")).toHaveClass("hm-badge--Published");
 	});
 
 	it("renders workflow stage label", () => {

@@ -17,13 +17,15 @@ function makeOrder(partial: Partial<ProjectOrder>): ProjectOrder {
 		id: 1,
 		hirerId: 10,
 		hirerName: "Заказчик",
+		hirerRating: 0,
 		selectedFreelancerId: null,
 		selectedFreelancerName: null,
+		selectedFreelancerRating: null,
 		title: "Заказ",
 		shortDescription: "Короткое описание",
 		rawDescription: "Подробное описание заказа",
 		technicalSpecification: "",
-		status: "published",
+		status: "Published",
 		workflowStage: "brief",
 		category: "Разработка",
 		budgetMin: 1000,
@@ -34,6 +36,7 @@ function makeOrder(partial: Partial<ProjectOrder>): ProjectOrder {
 		proposalsCount: 0,
 		proposals: [],
 		publishedAt: "2026-05-13T00:00:00.000Z",
+		completedAt: null,
 		updatedAt: "2026-05-13T00:00:00.000Z",
 		companyName: "HireMind",
 		aiGenerated: true,
@@ -52,7 +55,14 @@ function makeOrder(partial: Partial<ProjectOrder>): ProjectOrder {
 		scopeItems: [],
 		doneCriteria: [],
 		risks: [],
-		approvals: { client: false, freelancer: false },
+		approvals: {
+			client: false,
+			freelancer: false,
+			clientDone: false,
+			freelancerDone: false,
+		},
+		clientRatingByFreelancer: null,
+		freelancerRatingByClient: null,
 		...partial,
 	};
 }
@@ -108,7 +118,8 @@ describe("OrdersPage", () => {
 				id: 7,
 				fullName: "Анна Заказчик",
 				email: "anna@example.com",
-				role: "client",
+				role: "Client",
+				rating: 0,
 				contacts: {},
 				isOnline: true,
 			},
@@ -166,21 +177,21 @@ describe("OrdersPage", () => {
 					makeOrder({
 						id: 1,
 						title: "React dashboard",
-						status: "published",
+						status: "Published",
 						budgetMin: 10000,
 						budgetMax: 20000,
 					}),
 					makeOrder({
 						id: 2,
 						title: "React admin",
-						status: "draft",
+						status: "Draft",
 						budgetMin: 50000,
 						budgetMax: 80000,
 					}),
 					makeOrder({
 						id: 3,
 						title: "Design system",
-						status: "published",
+						status: "Published",
 						budgetMin: 30000,
 						budgetMax: 45000,
 					}),
@@ -191,7 +202,7 @@ describe("OrdersPage", () => {
 			/>,
 		);
 
-		await user.selectOptions(screen.getAllByRole("combobox")[0], "published");
+		await user.selectOptions(screen.getAllByRole("combobox")[0], "Published");
 		await user.type(screen.getByPlaceholderText("Название заказа"), "react");
 		await user.type(screen.getByPlaceholderText("Цена от"), "15000");
 		await user.type(screen.getByPlaceholderText("Цена до"), "25000");

@@ -100,7 +100,7 @@ public class AuthService : IAuthService
     CreateUserRequest request,
     IEmailSender emailSender,
     CancellationToken ct = default)
-{
+	{
     if (string.IsNullOrWhiteSpace(request.FullName))
         return SignUpResult.Fail("Full name is required");
 
