@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from "@/shared";
+import { AUTH_API, ApiError, apiRequest } from "@/shared";
 
 type Contacts = {
     telegram?: string;
@@ -22,7 +22,7 @@ export async function signUpRequest(
     payload: SignUpPayload,
 ): Promise<SignUpResponse> {
     try {
-        return await apiRequest<SignUpResponse>("/auth/sign-up", {
+        return await apiRequest<SignUpResponse>(`${AUTH_API}/sign-up`, {
             method: "POST",
             body: {
                 fullName: payload.fullName,

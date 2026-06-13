@@ -491,6 +491,230 @@ public class OrderService : IOrderService
 
 		return order;
 	}
+	public async Task<Order> CompleteByFreelancer(int orderID, int userId, CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderID, ct);
+
+		if(order is null)
+			throw new OrderNotFoundException(orderID);
+
+		if(order.FreelancerId is null || order.Freelancer is null)
+			throw new FreelancerNotSelectedException();
+
+		if(order.FreelancerId != userId)
+			throw new ForbiddenProposalOperationException();
+
+		if(HasCompletedState(order) || order.ClientDoneApproved)
+			throw new OrderCompletionAlreadyConfirmedException();
+
+		if(order.Status != OrderStatus.In_Progress)
+			throw new OrderCompletionUnavailableException();
+
+		if(order.FreelancerDoneApproved)
+			throw new OrderCompletionAlreadyRequestedException();
+
+		order.FreelancerDoneApproved = true;
+		order.ClientDoneApproved = false;
+		order.UpdatedAt = DateTime.UtcNow;
+		
+		await _db.SaveChangesAsync(ct);
+
+		string completionRequestedSubject = BuildOrderNotificationSubject(order.Title);
+		string completionRequestedText = BuildOrderNotificationMessage(
+			order.Title,
+			"Исполнитель отметил заказ как готовый. Ожидается подтверждение заказчика."
+		);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Customer.Email,
+				completionRequestedSubject,
+				completionRequestedText
+			);
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if (order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Customer.TelegramChatId.Value,
+					$"{completionRequestedSubject}\n{completionRequestedText}"
+				);
+			}
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		return order;
+	}
+
+	public async Task<Order> AcceptCompletionByClient(int orderId, int userId, CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderId, ct);
+		if(order is null)
+			throw new OrderNotFoundException(orderId);
+
+		if(order.FreelancerId is null || order.Freelancer is null)
+			throw new FreelancerNotSelectedException();
+
+		if(order.CustomerId != userId)
+			throw new ForbiddenProposalOperationException();
+
+		if(HasCompletedState(order) || order.ClientDoneApproved)
+			throw new OrderCompletionAlreadyConfirmedException();
+
+		if(order.Status != OrderStatus.In_Progress)
+			throw new OrderCompletionUnavailableException();
+
+		if(!order.FreelancerDoneApproved)
+			throw new OrderCompletionNotRequestedException();
+
+		order.ClientDoneApproved = true;
+		order.Status = OrderStatus.Completed;
+		order.CompletedAt = DateTime.UtcNow;
+		order.UpdatedAt = DateTime.UtcNow;
+		await _db.SaveChangesAsync(ct);
+		await RecalculateFreelancerCompletedOrdersAsync(order.FreelancerId.Value, ct);
+		await _db.SaveChangesAsync(ct);
+
+		string completionAcceptedSubject = BuildOrderNotificationSubject(order.Title);
+		string completionAcceptedText = BuildOrderNotificationMessage(
+			order.Title,
+			"Заказчик подтвердил готовность. Заказ завершён."
+		);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Customer.Email,
+				completionAcceptedSubject,
+				completionAcceptedText
+			);
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if (order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Customer.TelegramChatId.Value,
+					$"{completionAcceptedSubject}\n{completionAcceptedText}"
+				);
+			}
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Freelancer.Email,
+				completionAcceptedSubject,
+				completionAcceptedText
+			);
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if (order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Freelancer.TelegramChatId.Value,
+					$"{completionAcceptedSubject}\n{completionAcceptedText}"
+				);
+			}
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		return order;
+	}
+	public async Task<Order> RejectCompletionByClient(int orderId, int userId, CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderId, ct);
+
+		if(order is null)
+			throw new OrderNotFoundException(orderId);
+
+		if(order.FreelancerId is null || order.Freelancer is null)
+			throw new FreelancerNotSelectedException();
+
+		if(order.CustomerId != userId)
+			throw new ForbiddenProposalOperationException();
+
+		if(HasCompletedState(order) || order.ClientDoneApproved)
+			throw new OrderCompletionAlreadyConfirmedException();
+
+		if(order.Status != OrderStatus.In_Progress)
+			throw new OrderCompletionUnavailableException();
+
+		if(!order.FreelancerDoneApproved)
+			throw new OrderCompletionNotRequestedException();
+
+		order.FreelancerDoneApproved = false;
+		order.ClientDoneApproved = false;
+		order.Status = OrderStatus.In_Progress;
+		order.CompletedAt = null;
+		order.UpdatedAt = DateTime.UtcNow;
+
+		await _db.SaveChangesAsync(ct);
+
+		string completionRejectedSubject = BuildOrderNotificationSubject(order.Title);
+		string completionRejectedText = BuildOrderNotificationMessage(
+			order.Title,
+			"Заказчик отклонил завершение. Проект возвращён в работу."
+		);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Freelancer.Email,
+				completionRejectedSubject,
+				completionRejectedText
+			);
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if (order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Freelancer.TelegramChatId.Value,
+					$"{completionRejectedSubject}\n{completionRejectedText}"
+				);
+			}
+		}
+		catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		return order;
+	}
 
 	public async Task<Order> UpdateClientApproval(
 		int orderId,
@@ -752,6 +976,11 @@ public class OrderService : IOrderService
 
 	public async Task<Order> UpdateOrderAsync(int orderId, int userId, UpdateOrderRequest request, CancellationToken ct)
 	{
+		if(request.Status == OrderStatus.In_Progress || request.Status == OrderStatus.Completed
+				|| request.Status == OrderStatus.Cancelled)
+		{
+			throw new OrderStatusUpdateUnavailableException();
+		}
 		Order? order = await LoadOrderGraphAsync(orderId, ct);
 
 		if(order is null)
@@ -773,35 +1002,35 @@ public class OrderService : IOrderService
 
 		OrderStatus oldStatus = order.Status;
 		bool wasCompletedBeforeUpdate = HasCompletedState(order);
-		bool isLeavingCompletedState = wasCompletedBeforeUpdate
-			&& request.Status != OrderStatus.Completed
-			&& request.Status != OrderStatus.Archived;
-		bool shouldClearClientRating = isLeavingCompletedState
-			&& order.ClientRatingByFreelancer.HasValue;
-		bool shouldClearFreelancerRating = isLeavingCompletedState
-			&& order.FreelancerRatingByClient.HasValue;
-		bool shouldRecalculateCompletedOrders = order.FreelancerId.HasValue
-			&& (wasCompletedBeforeUpdate || request.Status == OrderStatus.Completed);
+		// bool isLeavingCompletedState = wasCompletedBeforeUpdate
+		// 	&& request.Status != OrderStatus.Completed
+		// 	&& request.Status != OrderStatus.Archived;
+		// bool shouldClearClientRating = isLeavingCompletedState
+		// 	&& order.ClientRatingByFreelancer.HasValue;
+		// bool shouldClearFreelancerRating = isLeavingCompletedState
+		// 	&& order.FreelancerRatingByClient.HasValue;
+		// bool shouldRecalculateCompletedOrders = order.FreelancerId.HasValue
+		// 	&& (wasCompletedBeforeUpdate || request.Status == OrderStatus.Completed);
 
 		order.Status = request.Status;
 		order.WorkflowStage = request.WorkflowStage;
 		order.AiGenerated = request.AiGenerated;
 		order.ReadinessScore = request.ReadinessScore;
-		order.ClientApproved = request.Approvals.Client;
-		order.FreelancerApproved = request.Approvals.Freelancer;
+		// order.ClientApproved = request.Approvals.Client;
+		// order.FreelancerApproved = request.Approvals.Freelancer;
 		order.UpdatedAt = DateTime.UtcNow;
 
 		if(oldStatus != OrderStatus.Published && request.Status == OrderStatus.Published)
 			order.PublishedAt = DateTime.UtcNow;
 
-		ApplyCompletedState(order, wasCompletedBeforeUpdate, request.Status);
+		// ApplyCompletedState(order, wasCompletedBeforeUpdate, request.Status);
 
-		if (isLeavingCompletedState)
-		{
-			order.CompletedAt = null;
-			order.ClientRatingByFreelancer = null;
-			order.FreelancerRatingByClient = null;
-		}
+		// if (isLeavingCompletedState)
+		// {
+		// 	order.CompletedAt = null;
+		// 	order.ClientRatingByFreelancer = null;
+		// 	order.FreelancerRatingByClient = null;
+		// }
 		if(order.BriefSections is null || order.BriefSections.Id == 0)
 		{
 			order.BriefSections = new OrderBriefSections
@@ -866,25 +1095,25 @@ public class OrderService : IOrderService
 
 		await _db.SaveChangesAsync(ct);
 
-		if (shouldRecalculateCompletedOrders && order.FreelancerId.HasValue)
-		{
-			await RecalculateFreelancerCompletedOrdersAsync(order.FreelancerId.Value, ct);
-		}
+		// if (shouldRecalculateCompletedOrders && order.FreelancerId.HasValue)
+		// {
+		// 	await RecalculateFreelancerCompletedOrdersAsync(order.FreelancerId.Value, ct);
+		// }
 
-		if (shouldClearClientRating)
-		{
-			await RecalculateClientRatingAsync(order.CustomerId, ct);
-		}
+		// if (shouldClearClientRating)
+		// {
+		// 	await RecalculateClientRatingAsync(order.CustomerId, ct);
+		// }
 
-		if (shouldClearFreelancerRating && order.FreelancerId.HasValue)
-		{
-			await RecalculateFreelancerRatingAsync(order.FreelancerId.Value, ct);
-		}
+		// if (shouldClearFreelancerRating && order.FreelancerId.HasValue)
+		// {
+		// 	await RecalculateFreelancerRatingAsync(order.FreelancerId.Value, ct);
+		// }
 
-		if (shouldClearClientRating || shouldClearFreelancerRating)
-		{
-			await _db.SaveChangesAsync(ct);
-		}
+		// if (shouldClearClientRating || shouldClearFreelancerRating)
+		// {
+		// 	await _db.SaveChangesAsync(ct);
+		// }
 
 		if(oldStatus != order.Status && order.FreelancerId.HasValue && order.Freelancer is not null)
 		{
@@ -896,16 +1125,16 @@ public class OrderService : IOrderService
 				emailSubject = BuildOrderNotificationSubject(order.Title);
 				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик поставил проект на паузу.");
 			}
-			else if(order.Status == OrderStatus.Completed)
-			{
-				emailSubject = BuildOrderNotificationSubject(order.Title);
-				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отметил проект как завершённый.");
-			}
-			else if(order.Status == OrderStatus.Cancelled)
-			{
-				emailSubject = BuildOrderNotificationSubject(order.Title);
-				notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отменил проект.");
-			}
+			// else if(order.Status == OrderStatus.Completed)
+			// {
+			// 	emailSubject = BuildOrderNotificationSubject(order.Title);
+			// 	notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отметил проект как завершённый.");
+			// }
+			// else if(order.Status == OrderStatus.Cancelled)
+			// {
+			// 	emailSubject = BuildOrderNotificationSubject(order.Title);
+			// 	notificationText = BuildOrderNotificationMessage(order.Title, "Заказчик отменил проект.");
+			// }
 			else if(order.Status == OrderStatus.Archived)
 			{
 				emailSubject = BuildOrderNotificationSubject(order.Title);

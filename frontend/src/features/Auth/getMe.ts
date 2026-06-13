@@ -1,5 +1,5 @@
 import type { User } from "./getMe.types";
-import { ApiError, apiRequest } from "@/shared";
+import { AUTH_API, ApiError, apiRequest } from "@/shared";
 
 type MeResponse = {
 	user: User;
@@ -7,7 +7,7 @@ type MeResponse = {
 
 export async function getMe(signal?: AbortSignal): Promise<User | null> {
 	try {
-		const response = await apiRequest<MeResponse>("/auth/me", {
+		const response = await apiRequest<MeResponse>(`${AUTH_API}/me`, {
 			method: "GET",
 			signal,
 		});

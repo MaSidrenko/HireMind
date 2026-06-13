@@ -8,6 +8,7 @@ import { Route, Routes } from "react-router-dom";
 import { renderRoutes } from "./providers/router/renderRoutes";
 import { useAuth } from "@/features/Auth/AuthContext";
 import EmailVerifyGuard from "@/pages/EmailVerifyPage/lib/EmailVerifyGuard";
+import ScrollToTopButton from "@/widgets/ScrollToTopButton/ScrollToTopButton";
 
 function App() {
 	const { isAuthenticated, loading, user } = useAuth();
@@ -38,6 +39,7 @@ function App() {
 
 	return (
 		<div>
+			<ScrollToTopButton />
 			<Navbar links={navBarLinks}></Navbar>
 			<Routes>
 				{renderRoutes(PageRoutes)}

@@ -60,4 +60,4 @@ export {
 	type Freelancer,
 	type ContactRequest,
 } from "./freelancers";
-export { emailVerifyRequest } from "./emailVerify";
+export { emailVerifyRequest, resetPasswordRequest, verifyPassword } from "./emailVerify";

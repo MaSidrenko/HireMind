@@ -234,4 +234,118 @@ public class AuthService : IAuthService
 		
 		return EmailVerifyResult.Success(user);
 	}
+
+	public async Task<RequestPasswordResetResult> RequestPasswordResetAsync(RecoveryPasswordRequest request, IEmailSender emailSender, CancellationToken ct = default)
+	{
+		const string neutralMessage = "Если пользователь существует, то код отправлен на почту";
+
+		if (string.IsNullOrWhiteSpace(request.Email))
+		{
+			return RequestPasswordResetResult.Success(neutralMessage);
+		}
+
+		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+		User? user = await _userService.GetByEmailAsync(normalizedEmail, ct);
+
+		if(user is null)
+		{
+			return RequestPasswordResetResult.Success(neutralMessage);
+		}
+
+		var code = EmailCodeGenerator.GenerateCode();
+		
+		var oldHash = user.PasswordResetCodeHash;
+		var oldTime = user.PasswordResetCodeExpiresAtUtc;
+		var oldAttempts = user.PasswordResetAttempts;
+
+		user.PasswordResetAttempts = 0;
+		user.PasswordResetCodeHash = EmailCodeHasher.Hash(code);
+		user.PasswordResetCodeExpiresAtUtc = DateTime.UtcNow.AddMinutes(15);
+		await _userService.SaveChangesAsync(ct);
+
+		try
+		{
+			await emailSender.SendEmailAsync(
+				normalizedEmail,
+				"Код подтверждения",
+				$"Ваш код подтверждения: {code}"
+			);
+		}
+		catch
+		{
+			user.PasswordResetCodeHash = oldHash;
+			user.PasswordResetCodeExpiresAtUtc = oldTime;
+			user.PasswordResetAttempts = oldAttempts;
+
+			await _userService.SaveChangesAsync(ct);
+
+			return RequestPasswordResetResult.Fail("Не удалось отправить код. Попробуйте позже");
+		}
+
+		return RequestPasswordResetResult.Success(neutralMessage);
+	}
+
+	public async Task<VerifyPasswordResult> VerifyPasswordAsync(VerifyPasswordRequest request, CancellationToken ct)
+	{
+		if(string.IsNullOrWhiteSpace(request.Email))
+		{
+			return VerifyPasswordResult.Fail("Введите email");
+		}
+
+		if(string.IsNullOrWhiteSpace(request.Code))
+		{
+			return VerifyPasswordResult.Fail("Введите код восстановления");
+		}
+
+		if(string.IsNullOrWhiteSpace(request.NewPassword))
+		{
+			return VerifyPasswordResult.Fail("Введите новый пароль");
+		}
+
+		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+		string normalizedCode = request.Code.Trim();
+		User? user = await _userService.GetByEmailAsync(normalizedEmail, ct);
+
+		if(user is null)
+		{
+			return VerifyPasswordResult.Fail("Неверный email или код");
+		}
+
+		if(string.IsNullOrWhiteSpace(user.PasswordResetCodeHash))
+		{
+			return VerifyPasswordResult.Fail("Неверный email или код");
+		}
+
+		if(user.PasswordResetCodeExpiresAtUtc is null || user.PasswordResetCodeExpiresAtUtc < DateTime.UtcNow)
+		{
+			return VerifyPasswordResult.Fail("Код истек");
+		}
+
+		if(user.PasswordResetAttempts > 5)
+		{
+			return VerifyPasswordResult.Fail("Слишком много попыток.Запросите новый код");
+		}
+
+		bool isCodeValid = EmailCodeHasher.Verify(normalizedCode, user.PasswordResetCodeHash);
+
+		if(!isCodeValid)
+		{
+			user.PasswordResetAttempts++;
+			await _userService.SaveChangesAsync(ct);
+
+			return VerifyPasswordResult.Fail("Неверный код");
+		}
+
+		var passwordHashResult = _passwordHashService.HashPassword(request.NewPassword);
+		user.PasswordHash = passwordHashResult.Hash;
+		user.Salt = passwordHashResult.Salt;
+		
+		user.PasswordResetCodeHash = null;
+		user.PasswordResetCodeExpiresAtUtc = null;
+		user.PasswordResetAttempts = 0;
+
+		await _userService.SaveChangesAsync(ct);
+
+		return VerifyPasswordResult.Success("Пароль успешно изменен");
+	}
 }

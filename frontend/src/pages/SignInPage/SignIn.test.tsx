@@ -19,6 +19,10 @@ function renderSignIn() {
 			<Routes>
 				<Route path="/sign-in" element={<SignIn />} />
 				<Route path="/profile" element={<div>Profile page</div>} />
+				<Route
+					path="/recovery-password"
+					element={<div>Recovery page</div>}
+				/>
 			</Routes>
 		</MemoryRouter>,
 	);
@@ -97,5 +101,14 @@ describe("SignIn", () => {
 
 		expect(screen.getAllByText("Поле обязательно")).toHaveLength(2);
 		expect(signInMock).not.toHaveBeenCalled();
+	});
+
+	it("navigates to recovery password page", async () => {
+		const user = userEvent.setup();
+		renderSignIn();
+
+		await user.click(screen.getByRole("link", { name: "Забыли пароль?" }));
+
+		expect(screen.getByText("Recovery page")).toBeInTheDocument();
 	});
 });

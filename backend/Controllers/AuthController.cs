@@ -5,13 +5,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-
 namespace MyApp.Namespace
 {
     /// <summary>
     /// Auth controller for handling authentication requests.
     /// </summary>
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -143,7 +142,40 @@ namespace MyApp.Namespace
                 user = result.User
             });
         }
+        [HttpPost("recovery-password")]
+        public async Task<IActionResult> RecoveryPasswordRequest([FromBody] RecoveryPasswordRequest request, [FromServices] IEmailSender emailSender, CancellationToken ct = default)
+        {
+            RequestPasswordResetResult? result = await _authService.RequestPasswordResetAsync(request, emailSender, ct);
 
+            if(!result.IsSuccess)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = result.Message
+                });
+            }
+
+            return Ok(new 
+            {
+               message = result.Message
+            });
+        }
+        [HttpPost("recovery-password/confirm")]
+        public async Task<IActionResult> ConfirmCodeRecoveryPassword([FromBody] VerifyPasswordRequest request, CancellationToken ct = default)
+        {
+            VerifyPasswordResult result = await _authService.VerifyPasswordAsync(request, ct);
+
+            if(!result.IsSuccess)
+                return BadRequest(new
+                {
+                    message = result.Message
+                });
+
+            return Ok(new
+            {
+                message = result.Message
+            });
+        }
         private void AppendAccessTokenCookie(string accessToken, DateTime expiresAtUtc)
         {
             Response.Cookies.Append(

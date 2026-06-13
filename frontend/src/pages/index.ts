@@ -1,6 +1,8 @@
 export { HomePage } from "./HomePage";
 export { SignUp } from "./SignUpPage";
 export { SignIn } from "./SignInPage";
+export { RecoveryPassword } from "./RecoveryPasswordPage";
+export { ResetPassword } from "./ResetPasswordPage";
 export { Contacts } from "./ContactsPage";
 export { AboutUs } from "./AboutUsPage";
 export {

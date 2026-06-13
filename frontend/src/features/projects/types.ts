@@ -109,6 +109,8 @@ export type ProjectOrder = {
 	approvals: {
 		client: boolean;
 		freelancer: boolean;
+		clientDone: boolean;
+		freelancerDone: boolean;
 	};
 	clientRatingByFreelancer: number | null;
 	freelancerRatingByClient: number | null;

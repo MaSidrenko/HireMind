@@ -15,25 +15,20 @@ Env.TraversePath().Load();
 
 
 var builder = WebApplication.CreateBuilder(args);
-string groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY");
+string? groqApiKey = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 string groqBaseUrl = Environment.GetEnvironmentVariable("GROQ_BASE_URL")
         ?? "https://api.groq.com/openai/v1/";
-string groqModel = Environment.GetEnvironmentVariable("GROQ_MODEL")
-        ?? "qwen/qwen3-32b";
+bool isAiEnabled = !string.IsNullOrWhiteSpace(groqApiKey);
 
-if(string.IsNullOrWhiteSpace(groqApiKey))
+if (isAiEnabled)
 {
-    throw new InvalidOperationException("Пустой AI api key");
+	builder.Services.AddHttpClient("GroqAPI", httpClient =>
+	{
+		httpClient.BaseAddress = new Uri(groqBaseUrl);
+		httpClient.DefaultRequestHeaders.Authorization =
+			new AuthenticationHeaderValue("Bearer", groqApiKey);
+	});
 }
-builder.Services.AddHttpClient("GroqAPI", HttpClient =>
-{
-    HttpClient.BaseAddress = new Uri(groqBaseUrl);
-
-    HttpClient.DefaultRequestHeaders.Authorization = 
-        new AuthenticationHeaderValue("Bearer", groqApiKey);
-
-    
-});
 
 // if(builder.Environment.IsDevelopment())
 // {
@@ -149,7 +144,14 @@ builder.Services.AddScoped<IProfileSerivce, ProfileSerivce>();
 builder.Services.AddScoped<IFreelancerService, FreelancerService>();
 builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
 builder.Services.AddScoped<ITelegramNotificationService, NullTelegramNotificationService>();
-builder.Services.AddScoped<IAiService, AiService>();
+if (isAiEnabled)
+{
+	builder.Services.AddScoped<IAiService, AiService>();
+}
+else
+{
+	builder.Services.AddScoped<IAiService, NullAiService>();
+}
 builder.Services.AddSingleton(telegramBotOptions);
 
 if (!string.IsNullOrWhiteSpace(telegramBotOptions.BotToken))

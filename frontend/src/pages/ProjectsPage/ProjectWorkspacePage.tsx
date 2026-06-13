@@ -27,7 +27,10 @@ import { AiAssistantPanel } from "./components/AiAssistantPanel";
 import { StageBadge, StatusBadge } from "./components/StatusBadge";
 import {
 	acceptProposalRequest,
+	clientMarkDone,
+	clientMarkReject,
 	createProposalRequest,
+	freelancerMarkDone,
 	rateOrderRequest,
 	updateProjectClarificationQuestionsRequest,
 	updateOrderApprovalRequest,
@@ -117,6 +120,22 @@ export default function ProjectWorkspacePage({
 	const isOrderParticipantFreelancer = draft.selectedFreelancerId === user?.id;
 	const isCompletedOrder =
 		draft.status === "Completed" || draft.completedAt !== null;
+	const completionRequested =
+		draft.approvals.freelancerDone || draft.approvals.clientDone;
+	const canFreelancerMarkDone = Boolean(
+		isSelectedFreelancer &&
+		draft.status === "In_Progress" &&
+		!draft.approvals.freelancerDone &&
+		!isCompletedOrder,
+	);
+	const canClientAcceptCompletion = Boolean(
+		isOwner &&
+		draft.status === "In_Progress" &&
+		draft.approvals.freelancerDone &&
+		!draft.approvals.clientDone &&
+		!isCompletedOrder,
+	);
+	const canClientRejectCompletion = canClientAcceptCompletion;
 	const canPropose =
 		isFreelancer &&
 		draft.status === "Published" &&
@@ -146,6 +165,43 @@ export default function ProjectWorkspacePage({
 	const safeRatingTargetValue = Number.isFinite(ratingTargetValue)
 		? ratingTargetValue
 		: 0;
+	const completionStateKey = isCompletedOrder
+		? "completed"
+		: draft.approvals.freelancerDone
+			? "awaiting_client"
+			: "in_progress";
+	const completionStateTitle =
+		completionStateKey === "completed"
+			? "Заказ завершён"
+			: completionStateKey === "awaiting_client"
+				? "Нужно решение заказчика"
+				: "Работа ещё в процессе";
+	const completionStateText =
+		completionStateKey === "completed"
+			? `Заказ закрыт${
+					draft.completedAt
+						? ` ${formatDate(draft.completedAt)}`
+						: ""
+				}. Теперь стороны могут оставить оценки по сотрудничеству.`
+			: completionStateKey === "awaiting_client"
+				? "Исполнитель уже отправил результат. Заказчик может принять работу или вернуть проект в работу."
+				: "Когда исполнитель закончит задачу, он отправит результат на подтверждение, а заказчик примет финальное решение.";
+	const completionProgress = isCompletedOrder
+		? 3
+		: draft.approvals.freelancerDone
+			? 2
+			: 1;
+	const completionFreelancerLabel = draft.approvals.freelancerDone
+		? "Отправлено"
+		: canFreelancerMarkDone
+			? "Можно отправлять"
+			: "В работе";
+	const completionClientLabel =
+		isCompletedOrder || draft.approvals.clientDone
+			? "Подтверждено"
+			: draft.approvals.freelancerDone
+				? "Нужно решение"
+				: "Пока недоступно";
 
 	useEffect(() => {
 		setRatingScore(String(existingOwnRating ?? 5));
@@ -306,36 +362,15 @@ export default function ProjectWorkspacePage({
 	};
 
 	const setStatus = async (status: OrderStatus) => {
-		const isLeavingCompleted =
-			isCompletedOrder &&
-			status !== "Completed" &&
-			status !== "Archived";
 		const publishedAt =
 			status === "Published"
 				? (draft.publishedAt ?? new Date().toISOString())
 				: draft.publishedAt;
-		const completedAt =
-			status === "Completed"
-				? (draft.completedAt ?? new Date().toISOString())
-				: isLeavingCompleted
-					? null
-					: draft.completedAt;
 		await commit(
 			prepareOrder({
 				...draft,
 				status,
 				publishedAt,
-				completedAt,
-				workflowStage:
-					status === "In_Progress" || status === "Completed"
-						? "approved"
-						: draft.workflowStage,
-				clientRatingByFreelancer: isLeavingCompleted
-					? null
-					: draft.clientRatingByFreelancer,
-				freelancerRatingByClient: isLeavingCompleted
-					? null
-					: draft.freelancerRatingByClient,
 				updatedAt: new Date().toISOString(),
 			}),
 			"Статус обновлён",
@@ -481,6 +516,63 @@ export default function ProjectWorkspacePage({
 		}
 	};
 
+	const submitCompletionByFreelancer = async () => {
+		if (!canFreelancerMarkDone) return;
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await freelancerMarkDone(draft.id);
+			applyServerOrder(nextOrder, "Готовность отправлена заказчику");
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось отправить заказ на подтверждение"),
+			);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const acceptCompletion = async () => {
+		if (!canClientAcceptCompletion) return;
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await clientMarkDone(draft.id);
+			applyServerOrder(nextOrder, "Заказ завершён");
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось подтвердить завершение"),
+			);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const rejectCompletion = async () => {
+		if (!canClientRejectCompletion) return;
+
+		setSaving(true);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			const nextOrder = await clientMarkReject(draft.id);
+			applyServerOrder(nextOrder, "Проект возвращён в работу");
+		} catch (error) {
+			setFormError(
+				getErrorMessage(error, "Не удалось вернуть проект в работу"),
+			);
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	const applyAiResult = (result: AiBriefResult) => {
 		setDraftPatch({
 			technicalSpecification: result.summary,
@@ -588,6 +680,11 @@ export default function ProjectWorkspacePage({
 				<div className="order-details-badges">
 					<StatusBadge status={draft.status} />
 					<StageBadge stage={draft.workflowStage} />
+					{draft.approvals.freelancerDone && !isCompletedOrder ? (
+						<span className="hm-badge hm-badge--stage">
+							Ожидает приёмки
+						</span>
+					) : null}
 					{draft.selectedFreelancerName ? (
 						<span className="hm-badge hm-badge--stage">
 							{draft.selectedFreelancerName}
@@ -634,15 +731,6 @@ export default function ProjectWorkspacePage({
 							Вернуть в публикацию
 						</button>
 					) : null}
-					{draft.status === "In_Progress" ? (
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void setStatus("Completed")}
-						>
-							Завершить
-						</button>
-					) : null}
 					{draft.status !== "Archived" ? (
 						<button
 							type="button"
@@ -661,6 +749,227 @@ export default function ProjectWorkspacePage({
 							Восстановить
 						</button>
 					) : null}
+				</section>
+			) : null}
+
+			{(draft.status === "In_Progress" || completionRequested || isCompletedOrder) &&
+			draft.selectedFreelancerId ? (
+				<section className="order-section order-section--completion">
+					<div className="section-head section-head--completion">
+						<div>
+							<h2>Завершение заказа</h2>
+							<p className="section-lead">
+								Финальная приёмка проходит в два шага: сначала
+								исполнитель отправляет результат, затем заказчик
+								подтверждает завершение.
+							</p>
+						</div>
+						<span
+							className={`completion-pill completion-pill--${completionStateKey}`}
+						>
+							{completionStateTitle}
+						</span>
+					</div>
+
+					<div className="completion-shell">
+						<div className="completion-overview">
+							<div className="completion-overview__copy">
+								<span className="hm-kicker">Статус приёмки</span>
+								<strong>{completionStateTitle}</strong>
+								<p>{completionStateText}</p>
+							</div>
+							<div className="completion-overview__meta">
+								<div>
+									<span>Исполнитель</span>
+									<strong>
+										{selectedProposal?.freelancerName ??
+											draft.selectedFreelancerName ??
+											"Исполнитель"}
+									</strong>
+								</div>
+								<div>
+									<span>Финальный статус</span>
+									<strong>
+										{isCompletedOrder && draft.completedAt
+											? formatDate(draft.completedAt)
+											: "После решения заказчика"}
+									</strong>
+								</div>
+							</div>
+						</div>
+
+						<div className="completion-steps" aria-label="Этапы завершения">
+							<article
+								className={
+									completionProgress > 1
+										? "completion-step completion-step--done"
+										: "completion-step completion-step--active"
+								}
+							>
+								<span className="completion-step__index">1</span>
+								<div>
+									<strong>Работа в процессе</strong>
+									<p>
+										Исполнитель завершает задачу и готовит
+										результат к сдаче.
+									</p>
+								</div>
+							</article>
+							<article
+								className={
+									completionProgress > 2
+										? "completion-step completion-step--done"
+										: completionProgress === 2
+											? "completion-step completion-step--active"
+											: "completion-step"
+								}
+							>
+								<span className="completion-step__index">2</span>
+								<div>
+									<strong>Отправка на приёмку</strong>
+									<p>
+										Исполнитель нажимает завершение, и заказ
+										переходит в ожидание решения заказчика.
+									</p>
+								</div>
+							</article>
+							<article
+								className={
+									completionProgress === 3
+										? "completion-step completion-step--done"
+										: "completion-step"
+								}
+							>
+								<span className="completion-step__index">3</span>
+								<div>
+									<strong>Решение заказчика</strong>
+									<p>
+										Заказчик подтверждает завершение или
+										возвращает проект в работу.
+									</p>
+								</div>
+							</article>
+						</div>
+
+						<div className="completion-grid">
+							<article className="completion-card">
+								<div className="completion-card__head">
+									<div>
+										<span className="completion-card__role">
+											Исполнитель
+										</span>
+										<strong>
+											{selectedProposal?.freelancerName ??
+												draft.selectedFreelancerName ??
+												"Исполнитель"}
+										</strong>
+									</div>
+									<span
+										className={`completion-card__badge ${
+											draft.approvals.freelancerDone
+												? "completion-card__badge--done"
+												: canFreelancerMarkDone
+													? "completion-card__badge--action"
+													: "completion-card__badge--waiting"
+										}`}
+									>
+										{completionFreelancerLabel}
+									</span>
+								</div>
+								<p className="completion-state">
+									{draft.approvals.freelancerDone
+										? "Исполнитель отметил заказ как готовый и ждёт финального решения заказчика."
+										: "После завершения работы исполнитель отправляет заказ на подтверждение одним действием."}
+								</p>
+								<div className="completion-card__footer">
+									{canFreelancerMarkDone ? (
+										<button
+											type="button"
+											className="hm-button"
+											onClick={() =>
+												void submitCompletionByFreelancer()
+											}
+											disabled={saving}
+										>
+											Отправить на подтверждение
+										</button>
+									) : isSelectedFreelancer &&
+									  draft.approvals.freelancerDone &&
+									  !isCompletedOrder ? (
+										<span className="detail-note">
+											Ожидаем решение заказчика
+										</span>
+									) : (
+										<span className="detail-note">
+											Отправить результат может только выбранный
+											исполнитель
+										</span>
+									)}
+								</div>
+							</article>
+
+							<article className="completion-card">
+								<div className="completion-card__head">
+									<div>
+										<span className="completion-card__role">
+											Заказчик
+										</span>
+										<strong>{draft.hirerName}</strong>
+									</div>
+									<span
+										className={`completion-card__badge ${
+											isCompletedOrder || draft.approvals.clientDone
+												? "completion-card__badge--done"
+												: draft.approvals.freelancerDone
+													? "completion-card__badge--action"
+													: "completion-card__badge--waiting"
+										}`}
+									>
+										{completionClientLabel}
+									</span>
+								</div>
+								<p className="completion-state">
+									{isCompletedOrder || draft.approvals.clientDone
+										? "Заказчик подтвердил завершение. Проект считается закрытым."
+										: draft.approvals.freelancerDone
+											? "Заказчик может принять результат или вернуть проект в работу без изменения основной карточки заказа."
+											: "Кнопки подтверждения появятся после того, как исполнитель отметит заказ готовым."}
+								</p>
+								<div className="completion-card__footer">
+									{canClientAcceptCompletion ? (
+										<div className="completion-actions">
+											<button
+												type="button"
+												className="hm-button"
+												onClick={() => void acceptCompletion()}
+												disabled={saving}
+											>
+												Подтвердить завершение
+											</button>
+											<button
+												type="button"
+												className="hm-button hm-button--ghost"
+												onClick={() => void rejectCompletion()}
+												disabled={saving}
+											>
+												Вернуть в работу
+											</button>
+										</div>
+									) : draft.approvals.freelancerDone &&
+									  !isOwner &&
+									  !isCompletedOrder ? (
+										<span className="detail-note">
+											Ожидаем подтверждение заказчика
+										</span>
+									) : (
+										<span className="detail-note">
+											Финальное решение принимает заказчик
+										</span>
+									)}
+								</div>
+							</article>
+						</div>
+					</div>
 				</section>
 			) : null}
 

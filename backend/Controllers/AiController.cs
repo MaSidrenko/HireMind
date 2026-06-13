@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MyApp.Namespace
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/ai")]
     [ApiController]
     [Authorize(Roles = "Client")]
 	    public class AiController : ControllerBase

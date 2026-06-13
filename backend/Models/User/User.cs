@@ -67,4 +67,8 @@ public sealed class User
 	public string? EmailVerificationCodeHash { get; set; }
 	public DateTime? EmailVerificationCodeExpiresAtUtc { get; set; }
 	public int EmailVerificationAttempts { get; set; } = 0;
+
+	public string?  PasswordResetCodeHash { get; set; }
+	public DateTime? PasswordResetCodeExpiresAtUtc { get; set; }
+	public int PasswordResetAttempts { get; set; } = 0;
 }

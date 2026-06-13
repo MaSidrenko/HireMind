@@ -187,6 +187,9 @@ namespace backend.Migrations
                     b.Property<bool>("ClientApproved")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("ClientDoneApproved")
+                        .HasColumnType("boolean");
+
                     b.Property<int?>("ClientRatingByFreelancer")
                         .HasColumnType("integer");
 
@@ -210,6 +213,9 @@ namespace backend.Migrations
                         .HasColumnType("text");
 
                     b.Property<bool>("FreelancerApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("FreelancerDoneApproved")
                         .HasColumnType("boolean");
 
                     b.Property<int?>("FreelancerId")
@@ -503,6 +509,15 @@ namespace backend.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<int>("PasswordResetAttempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("PasswordResetCodeExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordResetCodeHash")
                         .HasColumnType("text");
 
                     b.Property<double>("Rating")

@@ -2,7 +2,7 @@ import type React from "react";
 import "./SignIn.css";
 import { useState } from "react";
 import { type SignInForm, validateSignIn } from "./lib/validateSignIn";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features";
 
 export default function SignIn() {
@@ -100,6 +100,12 @@ export default function SignIn() {
 						className="input-sign-in"
 						disabled={isSubmitting}
 					/>
+					<Link
+						to="/recovery-password"
+						className="sign-in-recovery-link"
+					>
+						Забыли пароль?
+					</Link>
 					{formError && (
 						<span className="field-error">{formError}</span>
 					)}

@@ -1,4 +1,4 @@
-import { ApiError, apiRequest } from "@/shared";
+import { AUTH_API, ApiError, apiRequest } from "@/shared";
 import type { User } from "@/features/Auth/getMe.types";
 
 export type AuthResponse = User | { user: User };
@@ -8,7 +8,7 @@ export async function signInRequest(
 	password: string,
 ): Promise<AuthResponse> {
 	try {
-		return await apiRequest<AuthResponse>("/auth/sign-in", {
+		return await apiRequest<AuthResponse>(`${AUTH_API}/sign-in`, {
 			method: "POST",
 			body: { email: email, password: password },
 		});
