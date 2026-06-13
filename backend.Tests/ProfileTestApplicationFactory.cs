@@ -20,6 +20,7 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
 	public Mock<IAiService> AiServiceMock { get; } = new(MockBehavior.Strict);
 	public Mock<IAuthService> AuthServiceMock { get; } = new(MockBehavior.Strict);
 	public Mock<IEmailSender> EmailSenderMock { get; } = new(MockBehavior.Strict);
+	public Mock<IOrderService> OrderServiceMock { get; } = new(MockBehavior.Strict);
 
 	public TestApplicationFactory(
 		bool useTestAuthentication = true,
@@ -62,6 +63,7 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
 				services.RemoveAll<IAiService>();
 				services.RemoveAll<IAuthService>();
 				services.RemoveAll<IEmailSender>();
+				services.RemoveAll<IOrderService>();
 
 				services.AddSingleton(ProfileServiceMock.Object);
 				services.AddSingleton(TelegramServiceMock.Object);
@@ -69,6 +71,7 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
 				services.AddSingleton(AiServiceMock.Object);
 				services.AddSingleton(AuthServiceMock.Object);
 				services.AddSingleton(EmailSenderMock.Object);
+				services.AddSingleton(OrderServiceMock.Object);
 		});
 	}
 }
