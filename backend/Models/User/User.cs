@@ -62,8 +62,9 @@ public sealed class User
 	/// Is user online or not. True if yes, false otherwise. 
 	/// </summary>
 	public bool IsOnline { get; set; } = false;
-	
+	public bool IsBanned { get; set; } = false;
 	public bool isEmailConfirmed { get; set; } = false;
+	public string? PendingEmail { get; set; }
 	public string? EmailVerificationCodeHash { get; set; }
 	public DateTime? EmailVerificationCodeExpiresAtUtc { get; set; }
 	public int EmailVerificationAttempts { get; set; } = 0;

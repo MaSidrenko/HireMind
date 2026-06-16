@@ -1,7 +1,13 @@
 import { Navbar } from "@/widgets";
 import { Footer } from "@/widgets";
 import { PageState } from "@/widgets";
-import { Contacts, AboutUs, NotFound, EmailVerify } from "@/pages";
+import {
+	Contacts,
+	AboutUs,
+	NotFound,
+	EmailChangeConfirm,
+	EmailVerify,
+} from "@/pages";
 import "./App.css";
 import { PageRoutes } from "./providers/router/routeConfig";
 import { Route, Routes } from "react-router-dom";
@@ -13,6 +19,7 @@ import ScrollToTopButton from "@/widgets/ScrollToTopButton/ScrollToTopButton";
 function App() {
 	const { isAuthenticated, loading, user } = useAuth();
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
+	const isAdmin = normalizedRole === "admin";
 	if (loading) {
 		return (
 			<PageState
@@ -29,9 +36,10 @@ function App() {
 		if (route.access === "public") return true;
 		if (route.access === "private") return isAuthenticated;
 		if (route.access === "Client")
-			return isAuthenticated && normalizedRole === "client";
+			return isAuthenticated && (normalizedRole === "client" || isAdmin);
 		if (route.access === "Freelancer")
-			return isAuthenticated && normalizedRole === "freelancer";
+			return isAuthenticated && (normalizedRole === "freelancer" || isAdmin);
+		if (route.access === "Admin") return isAuthenticated && isAdmin;
 		if (route.access === "guest") return !isAuthenticated;
 
 		return false;
@@ -46,6 +54,7 @@ function App() {
 				<Route path="/contacts" element={<Contacts />} />
 				<Route path="/about" element={<AboutUs />} />
 				<Route path="*" element={<NotFound />} />
+				<Route path="/email-change/confirm" element={<EmailChangeConfirm />} />
 				<Route element={<EmailVerifyGuard />}>
 					<Route path="/email-code" element={<EmailVerify />} />
 				</Route>

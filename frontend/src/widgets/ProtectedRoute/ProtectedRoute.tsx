@@ -12,6 +12,7 @@ type Props = {
 
 export default function ProtectedRoute({children, allowedRole}: Props) {
 	const { isAuthenticated, loading, user} = useAuth();
+	const normalizedRole = String(user?.role ?? "").toLowerCase();
 
 	if(loading) {
 		return (
@@ -27,7 +28,11 @@ export default function ProtectedRoute({children, allowedRole}: Props) {
 		return <Navigate to="/sign-in" />
 	}
 
-	if(allowedRole && user?.role !== allowedRole) {
+	if(
+		allowedRole &&
+		normalizedRole !== "admin" &&
+		normalizedRole !== String(allowedRole).toLowerCase()
+	) {
 		return <Navigate to="/projects" replace/>
 	}
 

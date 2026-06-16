@@ -20,6 +20,15 @@ string groqBaseUrl = Environment.GetEnvironmentVariable("GROQ_BASE_URL")
         ?? "https://api.groq.com/openai/v1/";
 bool isAiEnabled = !string.IsNullOrWhiteSpace(groqApiKey);
 
+Console.WriteLine($"GROQ_API_KEY loaded: {!string.IsNullOrWhiteSpace(groqApiKey)}");
+Console.WriteLine($"GROQ_API_KEY length: {groqApiKey?.Length ?? 0}");
+
+if (!string.IsNullOrWhiteSpace(groqApiKey))
+{
+    Console.WriteLine($"GROQ_API_KEY prefix: {groqApiKey[..Math.Min(4, groqApiKey.Length)]}");
+    Console.WriteLine($"GROQ_API_KEY suffix: {groqApiKey[^Math.Min(4, groqApiKey.Length)..]}");
+}
+
 if (isAiEnabled)
 {
 	builder.Services.AddHttpClient("GroqAPI", httpClient =>

@@ -13,5 +13,7 @@ export {
 } from "./ProjectsPage";
 export { Profile } from "./ProfilePage";
 export { Freelancers } from "./FreelancersPage";
+export { Admin } from "./AdminPage";
 export { NotFound } from "./NotFoundPage";
 export { EmailVerify } from "./EmailVerifyPage";
+export { EmailChangeConfirm } from "./EmailChangeConfirmPage";

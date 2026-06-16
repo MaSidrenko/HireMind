@@ -101,9 +101,10 @@ export default function ProjectWorkspacePage({
 	const [newQuestionOptions, setNewQuestionOptions] = useState("");
 
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
+	const isAdmin = normalizedRole === "admin";
 	const isOwner = canEdit;
 	const isFreelancer = normalizedRole === "freelancer";
-	const isClientParticipant = draft.hirerId === user?.id;
+	const isClientParticipant = draft.hirerId === user?.id || isAdmin;
 	const ownProposal = useMemo(
 		() =>
 			draft.proposals.find(
@@ -114,10 +115,13 @@ export default function ProjectWorkspacePage({
 	const selectedProposal = draft.proposals.find(
 		(proposal) => proposal.freelancerId === draft.selectedFreelancerId,
 	);
-	const isSelectedFreelancer =
-		isFreelancer && draft.selectedFreelancerId === user?.id;
+	const isSelectedFreelancer = Boolean(
+		(isFreelancer && draft.selectedFreelancerId === user?.id) ||
+			(isAdmin && draft.selectedFreelancerId),
+	);
 	const canManageClarificationQuestions = isSelectedFreelancer;
-	const isOrderParticipantFreelancer = draft.selectedFreelancerId === user?.id;
+	const isOrderParticipantFreelancer =
+		draft.selectedFreelancerId === user?.id || isAdmin;
 	const isCompletedOrder =
 		draft.status === "Completed" || draft.completedAt !== null;
 	const completionRequested =
@@ -689,6 +693,9 @@ export default function ProjectWorkspacePage({
 						<span className="hm-badge hm-badge--stage">
 							{draft.selectedFreelancerName}
 						</span>
+					) : null}
+					{isAdmin ? (
+						<span className="hm-badge hm-badge--ai">Админ-режим</span>
 					) : null}
 					{canManageClarificationQuestions ? (
 						<span className="hm-badge hm-badge--stage">

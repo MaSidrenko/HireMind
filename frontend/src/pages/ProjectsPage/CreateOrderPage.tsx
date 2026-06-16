@@ -56,7 +56,7 @@ export default function CreateOrderPage({
 	const [error, setError] = useState("");
 	const [loadingAi, setLoadingAi] = useState(false);
 	const companyName =
-		user?.role === "Client" ? user.companyName?.trim() ?? "" : "";
+		user && "companyName" in user ? user.companyName?.trim() ?? "" : "";
 
 	const validateDraft = () => {
 		if (title.trim().length < 5 || rawDescription.trim().length < 30) {

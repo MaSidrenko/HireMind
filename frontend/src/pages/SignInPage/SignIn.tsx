@@ -106,6 +106,12 @@ export default function SignIn() {
 					>
 						Забыли пароль?
 					</Link>
+					<Link
+						to="/email-change/confirm"
+						className="sign-in-recovery-link"
+					>
+						Подтвердить новый email
+					</Link>
 					{formError && (
 						<span className="field-error">{formError}</span>
 					)}

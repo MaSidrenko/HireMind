@@ -1,4 +1,6 @@
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/+$/, "");
+export const API_BASE_URL = (
+	import.meta.env.VITE_API_BASE_URL || "/api/v1"
+).replace(/\/+$/, "");
 
 type ApiOptions = Omit<RequestInit, "body"> & {
 	body?: unknown;
@@ -78,6 +80,13 @@ export async function apiRequest<T>(
 			requestBody: options.body,
 			responseData: data,
 		});
+
+		if (typeof data === "object" && data !== null && "errors" in data) {
+			console.log(
+				"VALIDATION ERRORS:",
+				JSON.stringify((data as { errors: unknown }).errors, null, 2),
+			);
+		}
 		throw new ApiError(
 			getErrorMessage(data, "Ошибка запроса к серверу"),
 			response.status,

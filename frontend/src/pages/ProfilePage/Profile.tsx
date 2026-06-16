@@ -25,7 +25,7 @@ type TelegramConnectLinkResponse = {
 	expiresAtUtc: string;
 };
 
-type EditableRole = "Freelancer" | "Client";
+type EditableRole = "Freelancer" | "Client" | "Admin";
 
 type ProfileFormState = {
 	email: string;
@@ -74,11 +74,11 @@ function makeFormState(
 		phone: user.contacts?.phone ?? "",
 		companyName: "companyName" in user ? user.companyName ?? "" : "",
 		hourlyRate:
-			"hourlyRate" in user && user.hourlyRate !== null
+			"hourlyRate" in user && user.hourlyRate != null
 				? String(user.hourlyRate)
 				: "",
 		currency:
-			"currency" in user && user.currency !== null ? user.currency : "RUB",
+			"currency" in user && user.currency != null ? user.currency : "RUB",
 	};
 }
 
@@ -204,9 +204,14 @@ export default function Profile() {
 	const normalizedRole = String(user.role).toLowerCase();
 	const isFreelancer = normalizedRole === "freelancer";
 	const isClient = normalizedRole === "client";
+	const isAdmin = normalizedRole === "admin";
 	const previewRole = isEditing ? profileForm.role : user.role;
 	const previewIsFreelancer = previewRole === "Freelancer";
-	const roleLabel = isClient ? "Заказчик" : "Исполнитель";
+	const roleLabel = isAdmin
+		? "Администратор"
+		: isClient
+			? "Заказчик"
+			: "Исполнитель";
 	const contacts = user.contacts ?? {};
 	const userRating = Number.isFinite(user.rating) ? user.rating : 0;
 	const freelancerHourlyRate =
@@ -251,7 +256,7 @@ export default function Profile() {
 			isCompletedOrder(order) && order.clientRatingByFreelancer !== null,
 	);
 	const freelancerCompletedOrders =
-		isFreelancer && "completedOrders" in user && user.completedOrders !== null
+		isFreelancer && "completedOrders" in user && user.completedOrders != null
 			? Math.max(
 					user.completedOrders,
 					completedOrders.length + unratedCompletedOrders.length,
@@ -459,24 +464,38 @@ export default function Profile() {
 			description: "Формат работы и доступные сценарии внутри платформы",
 		},
 		{
-			label: isFreelancer ? "Принятые отклики" : "Активные заказы",
+			label: isAdmin
+				? "Заказов в системе"
+				: isFreelancer
+					? "Принятые отклики"
+					: "Активные заказы",
 			value: String(
-				isFreelancer ? acceptedOrders.length : clientActiveOrders.length,
+				isAdmin
+					? orders.length
+					: isFreelancer
+						? acceptedOrders.length
+						: clientActiveOrders.length,
 			),
-			description: isFreelancer
-				? "Проекты, где заказчик уже выбрал вас исполнителем."
-				: "Опубликованные заказы, которые ещё не завершены.",
+			description: isAdmin
+				? "Все заказы, которые вы можете контролировать через платформу."
+				: isFreelancer
+					? "Проекты, где заказчик уже выбрал вас исполнителем."
+					: "Опубликованные заказы, которые ещё не завершены.",
 		},
 		{
-			label: isFreelancer ? "Завершённые заказы" : "Контакты",
-			value: isFreelancer
-				? String(freelancerCompletedOrders)
-				: contacts.telegram || contacts.phone
-					? "Заполнены"
-					: "Ожидают заполнения",
-			description: isFreelancer
-				? "Количество заказов, которые были завершены исполнителем."
-				: "Чем больше данных, тем легче связаться с вами.",
+			label: isAdmin ? "Доступ" : isFreelancer ? "Завершённые заказы" : "Контакты",
+			value: isAdmin
+				? "Полный"
+				: isFreelancer
+					? String(freelancerCompletedOrders)
+					: contacts.telegram || contacts.phone
+						? "Заполнены"
+						: "Ожидают заполнения",
+			description: isAdmin
+				? "Админ может открывать профиль, фрилансеров, заказы и админ-панель."
+				: isFreelancer
+					? "Количество заказов, которые были завершены исполнителем."
+					: "Чем больше данных, тем легче связаться с вами.",
 		},
 	];
 
@@ -488,12 +507,18 @@ export default function Profile() {
 			label: "Перейти",
 		},
 		{
-			title: isFreelancer ? "Найти задачу" : "Создать заказ",
-			description: isFreelancer
-				? "Подберите новый проект под свою экспертизу."
-				: "Опубликуйте новый заказ и начните сбор откликов.",
-			to: isFreelancer ? "/projects" : "/projects/new",
-			label: isFreelancer ? "Смотреть проекты" : "Создать",
+			title: isAdmin
+				? "Открыть админ-панель"
+				: isFreelancer
+					? "Найти задачу"
+					: "Создать заказ",
+			description: isAdmin
+				? "Управляйте пользователями и заказами в одном месте."
+				: isFreelancer
+					? "Подберите новый проект под свою экспертизу."
+					: "Опубликуйте новый заказ и начните сбор откликов.",
+			to: isAdmin ? "/admin" : isFreelancer ? "/projects" : "/projects/new",
+			label: isAdmin ? "Открыть" : isFreelancer ? "Смотреть проекты" : "Создать",
 		},
 	];
 
@@ -615,7 +640,7 @@ export default function Profile() {
 								<span>Компания</span>
 								<strong>{profileForm.companyName || "Не указана"}</strong>
 							</div>
-						) : (
+						) : isFreelancer ? (
 							<>
 								<div className="profile-highlight__row">
 									<span>Ставка</span>
@@ -628,6 +653,17 @@ export default function Profile() {
 								<div className="profile-highlight__row">
 									<span>Сделанные заказы</span>
 									<strong>{freelancerCompletedOrders}</strong>
+								</div>
+							</>
+						) : (
+							<>
+								<div className="profile-highlight__row">
+									<span>Доступ</span>
+									<strong>Полный</strong>
+								</div>
+								<div className="profile-highlight__row">
+									<span>Панель</span>
+									<strong>/admin</strong>
 								</div>
 							</>
 						)}
@@ -806,6 +842,7 @@ export default function Profile() {
 									>
 										<option value="Freelancer">Исполнитель</option>
 										<option value="Client">Заказчик</option>
+										<option value="Admin">Администратор</option>
 									</select>
 								</label>
 								<label>

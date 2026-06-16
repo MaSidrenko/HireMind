@@ -7,7 +7,11 @@ export function renderRoutes(pages: AppPage[]) {
 	return pages.map(({ path, component: Component, access = "public" }) => {
 		let element = <Component />;
 
-		if (access === "Client" || access === "Freelancer") {
+		if (
+			access === "Client" ||
+			access === "Freelancer" ||
+			access === "Admin"
+		) {
 			element = (
 				<ProtectedRoute allowedRole={access}>
 					<Component />

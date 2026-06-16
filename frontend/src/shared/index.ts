@@ -7,4 +7,5 @@ export {
 	ORDER_API,
 	FREELANCER_API,
 	AI_API,
+	ADMIN_API,
 } from "./apiRoutes";

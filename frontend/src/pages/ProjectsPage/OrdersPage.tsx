@@ -38,7 +38,7 @@ export default function OrdersPage({
 	const [priceFrom, setPriceFrom] = useState("");
 	const [priceTo, setPriceTo] = useState("");
 	const [sort, setSort] = useState<SortMode>("none");
-	const canCreate = normalizedRole === "client";
+	const canCreate = normalizedRole === "client" || normalizedRole === "admin";
 
 	const categoryOptions = useMemo(() => {
 		return Array.from(

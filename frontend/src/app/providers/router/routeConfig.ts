@@ -8,6 +8,7 @@ import {
 	Profile,
 	Projects,
 	Freelancers,
+	Admin,
 } from "@/pages/index";
 export const PageRoutes: AppPage[] = [
 	{
@@ -51,6 +52,13 @@ export const PageRoutes: AppPage[] = [
 		component: Profile,
 		showInNavbar: true,
 		access: "private",
+	},
+	{
+		path: "/admin",
+		label: "Админ",
+		component: Admin,
+		showInNavbar: true,
+		access: "Admin",
 	},
 	{
 		path: "/projects/new",
