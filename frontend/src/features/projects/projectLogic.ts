@@ -32,6 +32,13 @@ const workflowStages: WorkflowStage[] = [
 ];
 const currencies: Currency[] = ["RUB", "USD", "EUR"];
 const budgetTypes: BudgetType[] = ["fixed", "hourly"];
+const backendCategoryToUi = {
+	Development: "Разработка",
+	Design: "Дизайн",
+	Marketing: "Маркетинг",
+	Content: "Контент",
+	MobileDevelopment: "Мобильная разработка",
+} as const;
 
 function pickValue<T extends string>(
 	value: unknown,
@@ -55,6 +62,14 @@ function safeNullableNumber(value: unknown) {
 
 function safeString(value: unknown, fallback = "") {
 	return typeof value === "string" ? value : fallback;
+}
+
+function normalizeCategory(value: unknown) {
+	if (typeof value !== "string") {
+		return "Разработка";
+	}
+
+	return backendCategoryToUi[value as keyof typeof backendCategoryToUi] ?? value;
 }
 
 function safeDate(value: unknown) {
@@ -240,7 +255,7 @@ export function normalizeProjectOrder(
 	const rawOrder = order as Record<string, unknown>;
 	const title = safeString(order.title, "Без названия");
 	const rawDescription = safeString(order.rawDescription);
-	const category = safeString(order.category, "Разработка");
+	const category = normalizeCategory(order.category);
 	const proposals = Array.isArray(order.proposals) ? order.proposals : [];
 	const clientDoneApproved =
 		typeof rawOrder.clientDoneApproved === "boolean"

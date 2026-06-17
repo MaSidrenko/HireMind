@@ -8,7 +8,6 @@ import {
 	type Currency,
 	type OrderStatus,
 	type ProjectOrder,
-	type WorkflowStage,
 } from "@/features/projects";
 import { ADMIN_API, ApiError, apiRequest } from "@/shared";
 
@@ -52,6 +51,7 @@ const categoryToBackend = {
 	"Дизайн": "Design",
 	"Маркетинг": "Marketing",
 	"Контент": "Content",
+	"Мобильная разработка": "MobileDevelopment",
 } as const;
 
 const paymentToBackend = {
@@ -115,7 +115,6 @@ export type AdminOrderUpdateInput = {
 	currency: Currency;
 	budgetType: BudgetType;
 	skills: string[];
-	workflowStage: WorkflowStage;
 };
 
 export type AdminActionResponse = {
@@ -452,15 +451,7 @@ function buildAdminOrderPayload(
 			paymentToBackend[input.budgetType as keyof typeof paymentToBackend] ??
 			input.budgetType,
 		status: statusToBackend[input.status] ?? input.status,
-		workflowStage: input.workflowStage,
 		skills: input.skills,
-		aiGenerated: order.aiGenerated,
-		readinessScore: order.readinessScore,
-		briefSections: order.briefSections,
-		clarificationQuestions: order.clarificationQuestions,
-		scopeItems: order.scopeItems,
-		doneCriteria: order.doneCriteria,
-		risks: order.risks,
 		companyName: input.companyName.trim(),
 	};
 }

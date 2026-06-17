@@ -261,7 +261,6 @@ describe("adminApi", () => {
 				currency: order.currency,
 				budgetType: order.budgetType,
 				skills: order.skills,
-				workflowStage: order.workflowStage,
 			}),
 		).resolves.toEqual(order);
 
@@ -277,11 +276,23 @@ describe("adminApi", () => {
 				currency: order.currency,
 				budgetType: "Fixed",
 				status: "Published",
-				workflowStage: order.workflowStage,
 				skills: order.skills,
 				companyName: order.companyName,
 			}),
 		});
+
+		const requestBody = mockedApiRequest.mock.calls[0]?.[1]?.body as Record<
+			string,
+			unknown
+		>;
+		expect(requestBody).not.toHaveProperty("workflowStage");
+		expect(requestBody).not.toHaveProperty("aiGenerated");
+		expect(requestBody).not.toHaveProperty("readinessScore");
+		expect(requestBody).not.toHaveProperty("briefSections");
+		expect(requestBody).not.toHaveProperty("clarificationQuestions");
+		expect(requestBody).not.toHaveProperty("scopeItems");
+		expect(requestBody).not.toHaveProperty("doneCriteria");
+		expect(requestBody).not.toHaveProperty("risks");
 	});
 
 	it("deletes a user via admin endpoint", async () => {

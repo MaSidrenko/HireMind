@@ -6,9 +6,9 @@ import { PageState } from "@/widgets";
 type SortMode = "none" | "priceAsc" | "priceDesc" | "newest";
 
 const defaultCategories = [
-	"Веб-разработка",
+	"Разработка",
 	"Дизайн",
-	"Копирайтинг",
+	"Контент",
 	"Мобильная разработка",
 	"Маркетинг",
 ];

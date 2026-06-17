@@ -28,6 +28,7 @@ const categoryToBackend = {
 	"Дизайн": "Design",
 	"Маркетинг": "Marketing",
 	"Контент": "Content",
+	"Мобильная разработка": "MobileDevelopment",
 } as const;
 
 const paymentToBackend = {

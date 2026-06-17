@@ -44,7 +44,13 @@ type ProjectWorkspacePageProps = {
 	onChange: (order: ProjectOrder) => Promise<void> | void;
 };
 
-const categories = ["Разработка", "Дизайн", "Маркетинг", "Контент"];
+const categories = [
+	"Разработка",
+	"Мобильная разработка",
+	"Дизайн",
+	"Маркетинг",
+	"Контент",
+];
 const currencies: Currency[] = ["RUB", "USD", "EUR"];
 const budgetTypes: BudgetType[] = ["fixed", "hourly"];
 

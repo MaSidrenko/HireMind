@@ -1,19 +1,68 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "./Home.css";
 import { useAuth } from "@/features/Auth/AuthContext";
+import {
+	getCategoryProjectCounts,
+	getUserCount,
+	type HomeCategoryName,
+} from "@/features/main";
+
+const categories: ReadonlyArray<{
+	name: HomeCategoryName;
+	icon: string;
+	filterCategory: string;
+}> = [
+	{ name: "Веб-разработка", icon: "💻", filterCategory: "Разработка" },
+	{ name: "Дизайн", icon: "🎨", filterCategory: "Дизайн" },
+	{ name: "Копирайтинг", icon: "✍️", filterCategory: "Контент" },
+	{
+		name: "Мобильная разработка",
+		icon: "📱",
+		filterCategory: "Мобильная разработка",
+	},
+	{ name: "Маркетинг", icon: "📈", filterCategory: "Маркетинг" },
+];
 
 export default function Home() {
 	const { isAuthenticated, loading } = useAuth();
-
-	const categories = [
-		{ name: "Веб-разработка", icon: "💻", count: 1250 },
-		{ name: "Дизайн", icon: "🎨", count: 980 },
-		{ name: "Копирайтинг", icon: "✍️", count: 756 },
-		{ name: "Мобильная разработка", icon: "📱", count: 542 },
-		{ name: "Маркетинг", icon: "📈", count: 823 },
-	];
-
 	const navigate = useNavigate();
+	const [categoryCounts, setCategoryCounts] = useState<
+		Partial<Record<HomeCategoryName, number>>
+	>({});
+	const [userCount, setUserCount] = useState<number | null>(null);
+
+	useEffect(() => {
+		let isCancelled = false;
+
+		void getCategoryProjectCounts(categories.map((category) => category.name))
+			.then((counts) => {
+				if (isCancelled) {
+					return;
+				}
+
+				setCategoryCounts(counts);
+			})
+			.catch((error) => {
+				console.error("Failed to load home page category stats", error);
+			});
+
+		void getUserCount()
+			.then((users) => {
+				if (isCancelled) {
+					return;
+				}
+
+				setUserCount(users);
+			})
+			.catch((error) => {
+				console.error("Failed to load home page user count", error);
+			});
+
+		return () => {
+			isCancelled = true;
+		};
+	}, []);
 
 	if (loading) {
 		return <div>Загрузка...</div>;
@@ -68,13 +117,15 @@ export default function Home() {
 					<h3 className="cat-text">Популярные категории</h3>
 					<div className="container">
 						<div className="categories-grid">
-							{categories.map((cat, idx) => (
-								<NavLink
-									to="/projects"
-									key={idx}
-									className="category-card"
-									state={{ chosenCategory: cat.name }}
-								>
+							{categories.map((cat) => (
+									<NavLink
+										to="/projects"
+										key={cat.name}
+										className="category-card"
+										state={{
+											chosenCategory: cat.filterCategory,
+										}}
+									>
 									<span className="category-icon">
 										{cat.icon}
 									</span>
@@ -82,7 +133,8 @@ export default function Home() {
 										{cat.name}
 									</h3>
 									<span className="category-count">
-										{cat.count} проектов
+										{categoryCounts[cat.name] ?? "..."}{" "}
+										проектов
 									</span>
 								</NavLink>
 							))}
@@ -104,6 +156,10 @@ export default function Home() {
 								Присоединяйтесь к фрилансерам и заказчикам
 								нашего сайта уже сегодня
 							</p>
+								<p className="cta-count">
+									Уже {userCount ?? "..."} пользователей на
+									платформе
+								</p>
 							{isAuthenticated ? (
 								<button
 									className="btn-main-page"

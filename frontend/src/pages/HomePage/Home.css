@@ -141,6 +141,13 @@
 	gap: 20px;
 }
 
+.cta-count {
+	color: #fa972c;
+	font-size: 18px;
+	font-weight: 600;
+	margin-top: 12px;
+}
+
 .home-page-another-size {
 	font-size: 90px;
 }

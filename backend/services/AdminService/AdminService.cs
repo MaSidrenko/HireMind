@@ -9,12 +9,14 @@ public class AdminService : IAdminService
 {
 	private readonly IUserService _userService;
 	private readonly AppDbContext _db;
-	private readonly IOrderService _orderService;
-	public AdminService(IUserService userService, AppDbContext db, IOrderService orderService)
+		private readonly IEmailSender _emailSender;
+	private readonly ITelegramNotificationService _telegramNotificationService;
+	public AdminService(IUserService userService, AppDbContext db, IEmailSender emailSender, ITelegramNotificationService telegramNotificationService)
 	{
 		_userService = userService;
 		_db = db;
-		_orderService = orderService;
+		_emailSender = emailSender;
+		_telegramNotificationService = telegramNotificationService;
 	}
 	public async Task<User> BanUserAsync(int userId, AdminBanUserRequest request, CancellationToken ct)
 	{
@@ -27,6 +29,30 @@ public class AdminService : IAdminService
 		user.IsBanned = nextValue;
 
 		await _db.SaveChangesAsync(ct);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				user.Email,
+				"Уведомления от администратора HireMind!",
+				"Вы забанены за нарушения правил сервиса"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(user.IsTelegramConnected && user.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					user.TelegramChatId.Value,
+					"Уведомление от администратора HireMind!\nВы забанены за нарушение правил сервиса"
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
 
 		return user;
 	}
@@ -67,7 +93,33 @@ public class AdminService : IAdminService
 		user.Currency = request.Role == Role.Freelancer ? request.Currency : Currency.RUB;
 
 		await _db.SaveChangesAsync(ct);
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				user.Email,
+				"Уведомления от администратора HireMind!",
+				$"Данные вашего аккаунта изменены администратором: {user.FullName}|{user.Role}|{user.Contacts.Telegram}" +
+				$"|{user.Contacts.Phone}|{(request.Role == Role.Freelancer ? string.Join(",", user.Skills) : user.CompanyName)}" +
+				$"|{(request.Role == Role.Freelancer ? user.HourlyRate : null)}|{(request.Role == Role.Freelancer ? user.Currency : null)}"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
 
+		try
+		{
+			if(user.IsTelegramConnected && user.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					user.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nДанные вашего аккаунта изменены администратором: {user.FullName}|{user.Role}|{user.Contacts.Telegram}" +
+					$"|{user.Contacts.Phone}|{(request.Role == Role.Freelancer ? string.Join(",", user.Skills) : user.CompanyName)}" +
+					$"|{(request.Role == Role.Freelancer ? user.HourlyRate : null)}|{(request.Role == Role.Freelancer ? user.Currency : null)}"
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
 		return user;	
 	}
 
@@ -86,6 +138,30 @@ public class AdminService : IAdminService
 		_db.Orders.Remove(order);
 		await _db.SaveChangesAsync(ct);
 
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Customer.Email,
+				"Уведомления от администратора HireMind!",
+				$"Ваш заказ удален администратором за долгую не активность!"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Customer.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nВаш заказ удален администратором за долгую не активность!" 
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
 		return order;
 	}
 
@@ -101,6 +177,31 @@ public class AdminService : IAdminService
 
 		_db.Users.Remove(user);
 		await _db.SaveChangesAsync(ct);
+
+			try
+		{
+			await _emailSender.SendEmailAsync(
+				user.Email,
+				"Уведомления от администратора HireMind!",
+				$"Ваш аккаунт удален за долгое бездействие!"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(user.IsTelegramConnected && user.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					user.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nВаш аккаунт удален за долгое бездействие!" 
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
 
 		return user;
 	}	
@@ -151,6 +252,30 @@ public class AdminService : IAdminService
 
 		await _db.SaveChangesAsync(ct);
 
+				try
+		{
+			await _emailSender.SendEmailAsync(
+				user.Email,
+				"Уведомления от администратора HireMind!",
+				$"По вашему запросу изменен ваш email"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(user.IsTelegramConnected && user.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					user.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nПо вашему запросу изменен ваш email" 
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
 		try
 		{
 			await emailSender.SendEmailAsync(
@@ -200,6 +325,30 @@ public class AdminService : IAdminService
 		user.Role = Role.Admin;
 
 		await _db.SaveChangesAsync(ct);
+		
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				user.Email,
+				"Уведомления от администратора HireMind!",
+				$"Ваши права повышены до администраторских"
+			);
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(user.IsTelegramConnected && user.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					user.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nВаши права повышены до администраторских" 
+				);
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
 
 		return user;
 	}
@@ -229,15 +378,15 @@ public class AdminService : IAdminService
 		order.Currency = request.Currency;
 		order.Payment = request.BudgetType;
 		order.Status = request.Status;
-		order.WorkflowStage = request.WorkflowStage;
+		// order.WorkflowStage = request.WorkflowStage;
 		order.Skills = request.Skills;
-		order.AiGenerated = request.AiGenerated;
-		order.ReadinessScore = request.ReadinessScore;
-		order.BriefSections = request.BriefSections;
-		order.ClarificationQuestions = request.ClarificationQuestions;
-		order.ScopeItems = request.ScopeItems;
-		order.DoneCriteria = request.DoneCriteria;
-		order.Risks = request.Risks;
+		// order.AiGenerated = request.AiGenerated;
+		// order.ReadinessScore = request.ReadinessScore;
+		// order.BriefSections = request.BriefSections;
+		// order.ClarificationQuestions = request.ClarificationQuestions;
+		// order.ScopeItems = request.ScopeItems;
+		// order.DoneCriteria = request.DoneCriteria;
+		// order.Risks = request.Risks;
 		order.UpdatedAt = DateTime.UtcNow;
 
 		if (order.Customer is not null)
@@ -246,6 +395,62 @@ public class AdminService : IAdminService
 		}
 
 		await _db.SaveChangesAsync(ct);
+
+		
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				order.Customer.Email,
+				"Уведомления от администратора HireMind!",
+				"Ваш заказ изменен администратором! Новые данные:" +
+				$"{order.Title}|{order.Description}|{order.TechnicalSpecification}" +
+				$"|{order.Category}|{order.MinPrice}|{order.MaxPrice}|{order.Currency}" +
+				$"|{order.Payment}|{order.Status}|{string.Join(",", order.Skills)}"
+			);
+
+			if(order.Freelancer != null)
+			{
+				await _emailSender.SendEmailAsync(
+					order.Freelancer.Email,
+					"Уведомления от администратора HireMind!",
+					"Заказ над которым вы работаете изменен администратором! Новые данные:" +
+					$"{order.Title}|{order.Description}|{order.TechnicalSpecification}" +
+					$"|{order.Category}|{order.MinPrice}|{order.MaxPrice}|{order.Currency}" +
+					$"|{order.Payment}|{order.Status}|{string.Join(",", order.Skills)}"
+				);
+			}
+		} catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(order.Customer.IsTelegramConnected && order.Customer.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Customer.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nВаш заказ изменен администратором! Новые данные:" +
+				$"{order.Title}|{order.Description}|{order.TechnicalSpecification}" +
+				$"|{order.Category}|{order.MinPrice}|{order.MaxPrice}|{order.Currency}" +
+				$"|{order.Payment}|{order.Status}|{string.Join(",", order.Skills)}"
+			);
+
+			if(order.Freelancer != null)
+			{
+				if(order.Freelancer.IsTelegramConnected && order.Freelancer.TelegramChatId != null)
+				await _telegramNotificationService.SendContactNotificationAsync(
+					order.Freelancer.TelegramChatId.Value,
+					$"Уведомления от администратора HireMind!\nЗаказ над которым вы работаете изменен администратором! Новые данные:" +
+				$"{order.Title}|{order.Description}|{order.TechnicalSpecification}" +
+				$"|{order.Category}|{order.MinPrice}|{order.MaxPrice}|{order.Currency}" +
+				$"|{order.Payment}|{order.Status}|{string.Join(",", order.Skills)}"
+			);
+			}
+		}catch (Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
 
 		return order;
 	}

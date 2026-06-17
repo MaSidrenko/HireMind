@@ -51,6 +51,7 @@ type OrderEditorState = {
 
 const categoryOptions = [
 	"Разработка",
+	"Мобильная разработка",
 	"Дизайн",
 	"Маркетинг",
 	"Контент",
@@ -125,7 +126,9 @@ export default function Admin() {
 	const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 	const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 	const [userEditor, setUserEditor] = useState<UserEditorState | null>(null);
-	const [orderEditor, setOrderEditor] = useState<OrderEditorState | null>(null);
+	const [orderEditor, setOrderEditor] = useState<OrderEditorState | null>(
+		null,
+	);
 	const [pendingUserId, setPendingUserId] = useState<number | null>(null);
 	const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
 
@@ -143,7 +146,9 @@ export default function Admin() {
 			setUsers(usersItems);
 			setOrders(orderItems);
 		} catch (loadError) {
-			setError(getErrorMessage(loadError, "Не удалось загрузить админ-панель"));
+			setError(
+				getErrorMessage(loadError, "Не удалось загрузить админ-панель"),
+			);
 		} finally {
 			setLoading(false);
 		}
@@ -180,7 +185,8 @@ export default function Admin() {
 		const normalizedQuery = userQuery.trim().toLowerCase();
 
 		return users.filter((record) => {
-			const matchesRole = roleFilter === "all" || record.role === roleFilter;
+			const matchesRole =
+				roleFilter === "all" || record.role === roleFilter;
 			const matchesQuery =
 				!normalizedQuery ||
 				record.fullName.toLowerCase().includes(normalizedQuery) ||
@@ -247,7 +253,9 @@ export default function Admin() {
 	}, [selectedUser]);
 
 	useEffect(() => {
-		setOrderEditor(selectedOrder ? makeOrderEditorState(selectedOrder) : null);
+		setOrderEditor(
+			selectedOrder ? makeOrderEditorState(selectedOrder) : null,
+		);
 	}, [selectedOrder]);
 
 	const adminCount = users.filter((record) => record.role === "Admin").length;
@@ -300,7 +308,8 @@ export default function Admin() {
 		setNotice("");
 
 		const emailChanged =
-			normalizeEmail(userEditor.email) !== normalizeEmail(selectedUser.email);
+			normalizeEmail(userEditor.email) !==
+			normalizeEmail(selectedUser.email);
 
 		const payload: AdminUserUpdateInput = {
 			fullName: userEditor.fullName,
@@ -312,17 +321,23 @@ export default function Admin() {
 		};
 
 		try {
-			const nextUser = await updateAdminUserRequest(selectedUser, payload);
+			const nextUser = await updateAdminUserRequest(
+				selectedUser,
+				payload,
+			);
 			setUsers((current) =>
-				current.map((item) => (item.id === nextUser.id ? nextUser : item)),
+				current.map((item) =>
+					item.id === nextUser.id ? nextUser : item,
+				),
 			);
 
 			if (emailChanged) {
 				try {
-					const emailChangeResult = await requestAdminUserEmailChangeRequest(
-						selectedUser.id,
-						userEditor.email,
-					);
+					const emailChangeResult =
+						await requestAdminUserEmailChangeRequest(
+							selectedUser.id,
+							userEditor.email,
+						);
 					setUsers((current) =>
 						current.map((item) =>
 							item.id === emailChangeResult.user.id
@@ -366,9 +381,13 @@ export default function Admin() {
 		try {
 			const nextUser = await promoteUserToAdminRequest(selectedUser.id);
 			setUsers((current) =>
-				current.map((item) => (item.id === nextUser.id ? nextUser : item)),
+				current.map((item) =>
+					item.id === nextUser.id ? nextUser : item,
+				),
 			);
-			setNotice(`Пользователь ${nextUser.fullName} теперь администратор.`);
+			setNotice(
+				`Пользователь ${nextUser.fullName} теперь администратор.`,
+			);
 		} catch (saveError) {
 			setActionError(
 				getErrorMessage(
@@ -383,6 +402,14 @@ export default function Admin() {
 
 	const toggleBan = async () => {
 		if (!selectedUser) {
+			return;
+		}
+
+		if (selectedUser.role === "Admin") {
+			setActionError(
+				"Администраторы не могут банить другого администратора",
+			);
+			setNotice("");
 			return;
 		}
 
@@ -402,7 +429,9 @@ export default function Admin() {
 				!selectedUser.isBanned,
 			);
 			setUsers((current) =>
-				current.map((item) => (item.id === nextUser.id ? nextUser : item)),
+				current.map((item) =>
+					item.id === nextUser.id ? nextUser : item,
+				),
 			);
 			setNotice(
 				nextUser.isBanned
@@ -411,7 +440,10 @@ export default function Admin() {
 			);
 		} catch (saveError) {
 			setActionError(
-				getErrorMessage(saveError, "Не удалось изменить статус пользователя"),
+				getErrorMessage(
+					saveError,
+					"Не удалось изменить статус пользователя",
+				),
 			);
 		} finally {
 			setPendingUserId(null);
@@ -429,7 +461,9 @@ export default function Admin() {
 			return;
 		}
 
-		if (!window.confirm(`Удалить пользователя «${selectedUser.fullName}»?`)) {
+		if (
+			!window.confirm(`Удалить пользователя «${selectedUser.fullName}»?`)
+		) {
 			return;
 		}
 
@@ -457,7 +491,8 @@ export default function Admin() {
 				current.filter((order) => !relatedOrderIds.includes(order.id)),
 			);
 			setNotice(
-				response.message || `Пользователь ${selectedUser.fullName} удалён.`,
+				response.message ||
+					`Пользователь ${selectedUser.fullName} удалён.`,
 			);
 		} catch (saveError) {
 			setActionError(
@@ -515,17 +550,23 @@ export default function Admin() {
 			currency: orderEditor.currency,
 			budgetType: orderEditor.budgetType,
 			skills: parseSkills(orderEditor.skills),
-			workflowStage: selectedOrder.workflowStage,
 		};
 
 		try {
-			const nextOrder = await updateAdminOrderRequest(selectedOrder, payload);
+			const nextOrder = await updateAdminOrderRequest(
+				selectedOrder,
+				payload,
+			);
 			setOrders((current) =>
-				current.map((item) => (item.id === nextOrder.id ? nextOrder : item)),
+				current.map((item) =>
+					item.id === nextOrder.id ? nextOrder : item,
+				),
 			);
 			setNotice(`Заказ «${nextOrder.title}» обновлён.`);
 		} catch (saveError) {
-			setActionError(getErrorMessage(saveError, "Не удалось обновить заказ"));
+			setActionError(
+				getErrorMessage(saveError, "Не удалось обновить заказ"),
+			);
 		} finally {
 			setPendingOrderId(null);
 		}
@@ -549,9 +590,13 @@ export default function Admin() {
 			setOrders((current) =>
 				current.filter((item) => item.id !== selectedOrder.id),
 			);
-			setNotice(response.message || `Заказ «${selectedOrder.title}» удалён.`);
+			setNotice(
+				response.message || `Заказ «${selectedOrder.title}» удалён.`,
+			);
 		} catch (saveError) {
-			setActionError(getErrorMessage(saveError, "Не удалось удалить заказ"));
+			setActionError(
+				getErrorMessage(saveError, "Не удалось удалить заказ"),
+			);
 		} finally {
 			setPendingOrderId(null);
 		}
@@ -590,19 +635,25 @@ export default function Admin() {
 					<span className="admin-kicker">Админ-панель</span>
 					<h1>Управление платформой без лишних переходов</h1>
 					<p>
-						Переключайтесь между пользователями и заказами, редактируйте
-						нужные поля и выполняйте административные действия из одного
-						рабочего экрана.
+						Переключайтесь между пользователями и заказами,
+						редактируйте нужные поля и выполняйте административные
+						действия из одного рабочего экрана.
 					</p>
 
 					<div className="admin-hero__actions">
 						<NavLink to="/projects" className="admin-button">
 							Каталог заказов
 						</NavLink>
-						<NavLink to="/freelancers" className="admin-button admin-button--ghost">
+						<NavLink
+							to="/freelancers"
+							className="admin-button admin-button--ghost"
+						>
 							Фрилансеры
 						</NavLink>
-						<NavLink to="/profile" className="admin-button admin-button--ghost">
+						<NavLink
+							to="/profile"
+							className="admin-button admin-button--ghost"
+						>
 							Профиль
 						</NavLink>
 					</div>
@@ -627,7 +678,9 @@ export default function Admin() {
 					<article className="admin-metric">
 						<span>Активные заказы</span>
 						<strong>{activeOrdersCount}</strong>
-						<p>Проекты, которые ещё не завершены и не архивированы.</p>
+						<p>
+							Проекты, которые ещё не завершены и не архивированы.
+						</p>
 					</article>
 				</div>
 			</section>
@@ -636,7 +689,9 @@ export default function Admin() {
 				<button
 					type="button"
 					className={`admin-switcher__button ${
-						activeView === "users" ? "admin-switcher__button--active" : ""
+						activeView === "users"
+							? "admin-switcher__button--active"
+							: ""
 					}`}
 					onClick={() => setActiveView("users")}
 				>
@@ -645,7 +700,9 @@ export default function Admin() {
 				<button
 					type="button"
 					className={`admin-switcher__button ${
-						activeView === "orders" ? "admin-switcher__button--active" : ""
+						activeView === "orders"
+							? "admin-switcher__button--active"
+							: ""
 					}`}
 					onClick={() => setActiveView("orders")}
 				>
@@ -654,7 +711,9 @@ export default function Admin() {
 			</section>
 
 			{actionError ? (
-				<p className="admin-notice admin-notice--error">{actionError}</p>
+				<p className="admin-notice admin-notice--error">
+					{actionError}
+				</p>
 			) : null}
 			{notice ? <p className="admin-notice">{notice}</p> : null}
 
@@ -665,8 +724,8 @@ export default function Admin() {
 							<div>
 								<h2>Пользователи</h2>
 								<p>
-									Редактирование основных полей, бан, удаление и выдача
-									административных прав.
+									Редактирование основных полей, бан, удаление
+									и выдача административных прав.
 								</p>
 							</div>
 							<span>{filteredUsers.length} записей</span>
@@ -675,13 +734,17 @@ export default function Admin() {
 						<div className="admin-toolbar">
 							<input
 								value={userQuery}
-								onChange={(event) => setUserQuery(event.target.value)}
+								onChange={(event) =>
+									setUserQuery(event.target.value)
+								}
 								placeholder="Поиск по имени, email или компании"
 							/>
 							<select
 								value={roleFilter}
 								onChange={(event) =>
-									setRoleFilter(event.target.value as UserRoleFilter)
+									setRoleFilter(
+										event.target.value as UserRoleFilter,
+									)
 								}
 							>
 								<option value="all">Все роли</option>
@@ -708,11 +771,15 @@ export default function Admin() {
 												? "admin-list-card--active"
 												: ""
 										}`}
-										onClick={() => setSelectedUserId(record.id)}
+										onClick={() =>
+											setSelectedUserId(record.id)
+										}
 									>
 										<div className="admin-list-card__head">
 											<div>
-												<strong>{record.fullName}</strong>
+												<strong>
+													{record.fullName}
+												</strong>
 												<p>{record.email}</p>
 											</div>
 											<span
@@ -723,17 +790,29 @@ export default function Admin() {
 										</div>
 
 										<div className="admin-list-card__meta">
-											<span>{relatedOrdersMap.get(record.id) ?? 0} заказов</span>
-											<span>{record.companyName || "Без компании"}</span>
+											<span>
+												{relatedOrdersMap.get(
+													record.id,
+												) ?? 0}{" "}
+												заказов
+											</span>
+											<span>
+												{record.companyName ||
+													"Без компании"}
+											</span>
 										</div>
 
 										<div className="admin-chip-row">
 											<span
 												className={`admin-chip ${
-													record.isOnline ? "admin-chip--online" : ""
+													record.isOnline
+														? "admin-chip--online"
+														: ""
 												}`}
 											>
-												{record.isOnline ? "В сети" : "Не в сети"}
+												{record.isOnline
+													? "В сети"
+													: "Не в сети"}
 											</span>
 											{record.pendingEmail ? (
 												<span className="admin-chip">
@@ -787,23 +866,35 @@ export default function Admin() {
 								<div className="admin-panel__stats">
 									<article>
 										<span>Рейтинг</span>
-										<strong>{selectedUser.rating.toFixed(1)} / 5</strong>
+										<strong>
+											{selectedUser.rating.toFixed(1)} / 5
+										</strong>
 									</article>
 									<article>
 										<span>Связанные заказы</span>
-										<strong>{relatedOrdersMap.get(selectedUser.id) ?? 0}</strong>
+										<strong>
+											{relatedOrdersMap.get(
+												selectedUser.id,
+											) ?? 0}
+										</strong>
 									</article>
 									<article>
 										<span>Контакты</span>
-										<strong>{selectedUser.contacts.length || 0}</strong>
+										<strong>
+											{selectedUser.contacts.length || 0}
+										</strong>
 									</article>
 								</div>
 
 								{selectedUser.pendingEmail ? (
 									<p className="admin-panel__hint">
-										Текущий email пока остаётся <strong>{selectedUser.email}</strong>.
-										Новый адрес <strong>{selectedUser.pendingEmail}</strong> ждёт
-										подтверждения пользователем.
+										Текущий email пока остаётся{" "}
+										<strong>{selectedUser.email}</strong>.
+										Новый адрес{" "}
+										<strong>
+											{selectedUser.pendingEmail}
+										</strong>{" "}
+										ждёт подтверждения пользователем.
 									</p>
 								) : null}
 
@@ -815,7 +906,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setUserEditor((current) =>
 													current
-														? { ...current, fullName: event.target.value }
+														? {
+																...current,
+																fullName:
+																	event.target
+																		.value,
+															}
 														: current,
 												)
 											}
@@ -828,7 +924,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setUserEditor((current) =>
 													current
-														? { ...current, email: event.target.value }
+														? {
+																...current,
+																email: event
+																	.target
+																	.value,
+															}
 														: current,
 												)
 											}
@@ -844,31 +945,48 @@ export default function Admin() {
 													current
 														? {
 																...current,
-																role: event.target.value as UserRole,
+																role: event
+																	.target
+																	.value as UserRole,
 															}
 														: current,
 												)
 											}
 										>
-											<option value="Admin">Администратор</option>
-											<option value="Client">Заказчик</option>
-											<option value="Freelancer">Фрилансер</option>
+											<option value="Admin">
+												Администратор
+											</option>
+											<option value="Client">
+												Заказчик
+											</option>
+											<option value="Freelancer">
+												Фрилансер
+											</option>
 										</select>
 									</label>
-									<label>
-										<span>Компания</span>
-										<input
-											value={userEditor.companyName}
-											onChange={(event) =>
-												setUserEditor((current) =>
-													current
-														? { ...current, companyName: event.target.value }
-														: current,
-												)
-											}
-											placeholder="Название компании"
-										/>
-									</label>
+									{selectedUser?.role === "Client" ||
+									selectedUser?.role === "Admin" ? (
+										<label>
+											<span>Компания</span>
+											<input
+												value={userEditor.companyName}
+												onChange={(event) =>
+													setUserEditor((current) =>
+														current
+															? {
+																	...current,
+																	companyName:
+																		event
+																			.target
+																			.value,
+																}
+															: current,
+													)
+												}
+												placeholder="Название компании"
+											/>
+										</label>
+									) : null}
 									<label>
 										<span>Telegram</span>
 										<input
@@ -876,7 +994,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setUserEditor((current) =>
 													current
-														? { ...current, telegram: event.target.value }
+														? {
+																...current,
+																telegram:
+																	event.target
+																		.value,
+															}
 														: current,
 												)
 											}
@@ -890,7 +1013,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setUserEditor((current) =>
 													current
-														? { ...current, phone: event.target.value }
+														? {
+																...current,
+																phone: event
+																	.target
+																	.value,
+															}
 														: current,
 												)
 											}
@@ -899,18 +1027,20 @@ export default function Admin() {
 									</label>
 								</div>
 
-								{isSelectedSelf ? (
+								{isSelectedSelf ||
+								selectedUser.role === "Admin" ? (
 									<p className="admin-panel__hint">
-										Для текущего администратора недоступны бан, удаление и смена
-										роли.
+										Для текущего администратора недоступны
+										бан, удаление и смена роли.
 									</p>
 								) : null}
-
 								<div className="admin-form__actions">
 									<button
 										type="submit"
 										className="admin-button"
-										disabled={pendingUserId === selectedUser.id}
+										disabled={
+											pendingUserId === selectedUser.id
+										}
 									>
 										{pendingUserId === selectedUser.id
 											? "Сохраняем..."
@@ -919,8 +1049,16 @@ export default function Admin() {
 									<button
 										type="button"
 										className="admin-button admin-button--ghost"
-										onClick={() => setUserEditor(makeUserEditorState(selectedUser))}
-										disabled={pendingUserId === selectedUser.id}
+										onClick={() =>
+											setUserEditor(
+												makeUserEditorState(
+													selectedUser,
+												),
+											)
+										}
+										disabled={
+											pendingUserId === selectedUser.id
+										}
 									>
 										Сбросить
 									</button>
@@ -944,15 +1082,25 @@ export default function Admin() {
 										type="button"
 										className="admin-button admin-button--ghost"
 										onClick={() => void toggleBan()}
-										disabled={isSelectedSelf || pendingUserId === selectedUser.id}
+										disabled={
+											isSelectedSelf ||
+											pendingUserId === selectedUser.id ||
+											selectedUser.role === "Admin"
+										}
 									>
-										{selectedUser.isBanned ? "Разбанить" : "Забанить"}
+										{selectedUser.isBanned
+											? "Разбанить"
+											: "Забанить"}
 									</button>
 									<button
 										type="button"
 										className="admin-button admin-button--danger"
 										onClick={() => void deleteUser()}
-										disabled={isSelectedSelf || pendingUserId === selectedUser.id}
+										disabled={
+											isSelectedSelf ||
+											pendingUserId === selectedUser.id ||
+											selectedUser.role === "Admin"
+										}
 									>
 										Удалить
 									</button>
@@ -974,8 +1122,9 @@ export default function Admin() {
 							<div>
 								<h2>Заказы</h2>
 								<p>
-									Редактирование основных полей проекта и быстрое удаление без
-									перехода в карточку заказа.
+									Редактирование основных полей проекта и
+									быстрое удаление без перехода в карточку
+									заказа.
 								</p>
 							</div>
 							<span>{filteredOrders.length} записей</span>
@@ -984,18 +1133,24 @@ export default function Admin() {
 						<div className="admin-toolbar">
 							<input
 								value={orderQuery}
-								onChange={(event) => setOrderQuery(event.target.value)}
+								onChange={(event) =>
+									setOrderQuery(event.target.value)
+								}
 								placeholder="Поиск по названию, заказчику или компании"
 							/>
 							<select
 								value={statusFilter}
 								onChange={(event) =>
-									setStatusFilter(event.target.value as OrderStatusFilter)
+									setStatusFilter(
+										event.target.value as OrderStatusFilter,
+									)
 								}
 							>
 								<option value="all">Все статусы</option>
 								<option value="Draft">Черновики</option>
-								<option value="Published">Опубликованные</option>
+								<option value="Published">
+									Опубликованные
+								</option>
 								<option value="Paused">На паузе</option>
 								<option value="In_Progress">В работе</option>
 								<option value="Completed">Завершённые</option>
@@ -1021,7 +1176,9 @@ export default function Admin() {
 												? "admin-list-card--active"
 												: ""
 										}`}
-										onClick={() => setSelectedOrderId(order.id)}
+										onClick={() =>
+											setSelectedOrderId(order.id)
+										}
 									>
 										<div className="admin-list-card__head">
 											<div>
@@ -1034,7 +1191,10 @@ export default function Admin() {
 										</div>
 
 										<div className="admin-list-card__meta">
-											<span>{order.companyName || "Без компании"}</span>
+											<span>
+												{order.companyName ||
+													"Без компании"}
+											</span>
 											<span>{formatBudget(order)}</span>
 										</div>
 
@@ -1044,7 +1204,9 @@ export default function Admin() {
 											</span>
 											{order.selectedFreelancerName ? (
 												<span className="admin-chip admin-chip--online">
-													{order.selectedFreelancerName}
+													{
+														order.selectedFreelancerName
+													}
 												</span>
 											) : null}
 										</div>
@@ -1067,7 +1229,8 @@ export default function Admin() {
 									<div>
 										<h2>{selectedOrder.title}</h2>
 										<p>
-											Обновляйте карточку проекта и управляйте его видимостью из
+											Обновляйте карточку проекта и
+											управляйте его видимостью из
 											админки.
 										</p>
 									</div>
@@ -1079,16 +1242,21 @@ export default function Admin() {
 								<div className="admin-panel__stats">
 									<article>
 										<span>Заказчик</span>
-										<strong>{selectedOrder.hirerName}</strong>
+										<strong>
+											{selectedOrder.hirerName}
+										</strong>
 									</article>
 									<article>
 										<span>Отклики</span>
-										<strong>{selectedOrder.proposalsCount}</strong>
+										<strong>
+											{selectedOrder.proposalsCount}
+										</strong>
 									</article>
 									<article>
 										<span>Исполнитель</span>
 										<strong>
-											{selectedOrder.selectedFreelancerName || "Не назначен"}
+											{selectedOrder.selectedFreelancerName ||
+												"Не назначен"}
 										</strong>
 									</article>
 								</div>
@@ -1101,12 +1269,18 @@ export default function Admin() {
 											onChange={(event) =>
 												setOrderEditor((current) =>
 													current
-														? { ...current, title: event.target.value }
+														? {
+																...current,
+																title: event
+																	.target
+																	.value,
+															}
 														: current,
 												)
 											}
 										/>
 									</label>
+
 									<label>
 										<span>Компания</span>
 										<input
@@ -1116,7 +1290,9 @@ export default function Admin() {
 													current
 														? {
 																...current,
-																companyName: event.target.value,
+																companyName:
+																	event.target
+																		.value,
 															}
 														: current,
 												)
@@ -1130,13 +1306,21 @@ export default function Admin() {
 											onChange={(event) =>
 												setOrderEditor((current) =>
 													current
-														? { ...current, category: event.target.value }
+														? {
+																...current,
+																category:
+																	event.target
+																		.value,
+															}
 														: current,
 												)
 											}
 										>
 											{categoryOptions.map((option) => (
-												<option key={option} value={option}>
+												<option
+													key={option}
+													value={option}
+												>
 													{option}
 												</option>
 											))}
@@ -1151,19 +1335,35 @@ export default function Admin() {
 													current
 														? {
 																...current,
-																status: event.target.value as ProjectOrder["status"],
+																status: event
+																	.target
+																	.value as ProjectOrder["status"],
 															}
 														: current,
 												)
 											}
 										>
-											<option value="Draft">Черновик</option>
-											<option value="Published">Опубликован</option>
-											<option value="Paused">На паузе</option>
-											<option value="In_Progress">В работе</option>
-											<option value="Completed">Завершён</option>
-											<option value="Cancelled">Отменён</option>
-											<option value="Archived">Архив</option>
+											<option value="Draft">
+												Черновик
+											</option>
+											<option value="Published">
+												Опубликован
+											</option>
+											<option value="Paused">
+												На паузе
+											</option>
+											<option value="In_Progress">
+												В работе
+											</option>
+											<option value="Completed">
+												Завершён
+											</option>
+											<option value="Cancelled">
+												Отменён
+											</option>
+											<option value="Archived">
+												Архив
+											</option>
 										</select>
 									</label>
 									<label>
@@ -1174,7 +1374,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setOrderEditor((current) =>
 													current
-														? { ...current, budgetMin: event.target.value }
+														? {
+																...current,
+																budgetMin:
+																	event.target
+																		.value,
+															}
 														: current,
 												)
 											}
@@ -1188,7 +1393,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setOrderEditor((current) =>
 													current
-														? { ...current, budgetMax: event.target.value }
+														? {
+																...current,
+																budgetMax:
+																	event.target
+																		.value,
+															}
 														: current,
 												)
 											}
@@ -1203,7 +1413,9 @@ export default function Admin() {
 													current
 														? {
 																...current,
-																currency: event.target.value as ProjectOrder["currency"],
+																currency: event
+																	.target
+																	.value as ProjectOrder["currency"],
 															}
 														: current,
 												)
@@ -1224,14 +1436,17 @@ export default function Admin() {
 														? {
 																...current,
 																budgetType:
-																	event.target.value as ProjectOrder["budgetType"],
+																	event.target
+																		.value as ProjectOrder["budgetType"],
 															}
 														: current,
 												)
 											}
 										>
 											<option value="fixed">Fixed</option>
-											<option value="hourly">Hourly</option>
+											<option value="hourly">
+												Hourly
+											</option>
 										</select>
 									</label>
 									<label className="admin-form__field admin-form__field--wide">
@@ -1241,7 +1456,12 @@ export default function Admin() {
 											onChange={(event) =>
 												setOrderEditor((current) =>
 													current
-														? { ...current, skills: event.target.value }
+														? {
+																...current,
+																skills: event
+																	.target
+																	.value,
+															}
 														: current,
 												)
 											}
@@ -1258,7 +1478,9 @@ export default function Admin() {
 													current
 														? {
 																...current,
-																rawDescription: event.target.value,
+																rawDescription:
+																	event.target
+																		.value,
 															}
 														: current,
 												)
@@ -1271,7 +1493,9 @@ export default function Admin() {
 									<button
 										type="submit"
 										className="admin-button"
-										disabled={pendingOrderId === selectedOrder.id}
+										disabled={
+											pendingOrderId === selectedOrder.id
+										}
 									>
 										{pendingOrderId === selectedOrder.id
 											? "Сохраняем..."
@@ -1280,8 +1504,16 @@ export default function Admin() {
 									<button
 										type="button"
 										className="admin-button admin-button--ghost"
-										onClick={() => setOrderEditor(makeOrderEditorState(selectedOrder))}
-										disabled={pendingOrderId === selectedOrder.id}
+										onClick={() =>
+											setOrderEditor(
+												makeOrderEditorState(
+													selectedOrder,
+												),
+											)
+										}
+										disabled={
+											pendingOrderId === selectedOrder.id
+										}
 									>
 										Сбросить
 									</button>
@@ -1298,7 +1530,9 @@ export default function Admin() {
 										type="button"
 										className="admin-button admin-button--danger"
 										onClick={() => void deleteOrder()}
-										disabled={pendingOrderId === selectedOrder.id}
+										disabled={
+											pendingOrderId === selectedOrder.id
+										}
 									>
 										Удалить заказ
 									</button>

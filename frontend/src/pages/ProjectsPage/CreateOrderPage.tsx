@@ -16,7 +16,13 @@ type CreateOrderPageProps = {
 };
 
 const categoryPlaceholder = "Выберите категорию";
-const categories = ["Разработка", "Дизайн", "Маркетинг", "Контент"];
+const categories = [
+	"Разработка",
+	"Мобильная разработка",
+	"Дизайн",
+	"Маркетинг",
+	"Контент",
+];
 
 function getErrorMessage(error: unknown, fallback: string) {
 	if (error instanceof ApiError) return error.message;

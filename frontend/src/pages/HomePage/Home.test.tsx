@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 
 vi.mock("@/features/Auth/AuthContext", () => ({
 	useAuth: () => ({
@@ -12,10 +12,19 @@ vi.mock("@/features/Auth/AuthContext", () => ({
 	}),
 }));
 
+vi.mock("@/features/main", () => ({
+	getCategoryProjectCounts: vi.fn(),
+	getUserCount: vi.fn(),
+}));
+
 import Home from "./Home";
+import { getCategoryProjectCounts, getUserCount } from "@/features/main";
 import { Projects } from "../ProjectsPage";
 import { SignUp } from "../SignUpPage";
 import { SignIn } from "../SignInPage";
+
+const mockedGetCategoryProjectCounts = vi.mocked(getCategoryProjectCounts);
+const mockedGetUserCount = vi.mocked(getUserCount);
 
 function renderHome() {
 	return render(
@@ -31,6 +40,19 @@ function renderHome() {
 }
 
 describe("Home", () => {
+	beforeEach(() => {
+		mockedGetCategoryProjectCounts.mockReset();
+		mockedGetUserCount.mockReset();
+		mockedGetCategoryProjectCounts.mockResolvedValue({
+			"Веб-разработка": 125,
+			"Дизайн": 98,
+			"Копирайтинг": 76,
+			"Мобильная разработка": 54,
+			"Маркетинг": 82,
+		});
+		mockedGetUserCount.mockResolvedValue(321);
+	});
+
 	it("renders main content", () => {
 		renderHome();
 
@@ -49,7 +71,7 @@ describe("Home", () => {
 		).toBeInTheDocument();
 	});
 
-	it("renders category cards", () => {
+	it("renders category cards with backend counts", async () => {
 		renderHome();
 
 		expect(screen.getByText(/Популярные категории/i)).toBeInTheDocument();
@@ -71,6 +93,14 @@ describe("Home", () => {
 		).toBeInTheDocument();
 
 		expect(screen.getAllByRole("link")).toHaveLength(5);
+		expect(await screen.findByText("125 проектов")).toBeInTheDocument();
+		expect(screen.getByText("98 проектов")).toBeInTheDocument();
+		expect(screen.getByText("76 проектов")).toBeInTheDocument();
+		expect(screen.getByText("54 проектов")).toBeInTheDocument();
+		expect(screen.getByText("82 проектов")).toBeInTheDocument();
+		expect(
+			screen.getByText(/Уже 321 пользователей на платформе/i),
+		).toBeInTheDocument();
 	});
 
 	it('navigates to "/sign-in" after clicking "Заказать услугу"', async () => {
@@ -126,6 +156,10 @@ describe("Home", () => {
 		const user = userEvent.setup();
 		renderHome();
 
+		await waitFor(() => {
+			expect(mockedGetCategoryProjectCounts).toHaveBeenCalled();
+		});
+
 		await user.click(screen.getByRole("link", { name: /Веб-разработка/i }));
 
 		expect(
@@ -134,7 +168,10 @@ describe("Home", () => {
 			}),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("option", { name: "Веб-разработка", selected: true }),
+			screen.getByRole("option", {
+				name: "Разработка",
+				selected: true,
+			}),
 		).toBeInTheDocument();
 	});
 });
