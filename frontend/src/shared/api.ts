@@ -40,7 +40,39 @@ async function readResponse(response: Response) {
 function getErrorMessage(data: unknown, fallback: string) {
 	if (typeof data === "object" && data && "message" in data) {
 		const message = (data as { message?: unknown }).message;
-		if (typeof message === "string") return message;
+		if (typeof message === "string" && message.trim()) return message;
+	}
+
+	if (typeof data === "object" && data && "detail" in data) {
+		const detail = (data as { detail?: unknown }).detail;
+		if (typeof detail === "string" && detail.trim()) return detail;
+	}
+
+	if (typeof data === "object" && data && "errors" in data) {
+		const errors = (data as { errors?: unknown }).errors;
+		if (typeof errors === "object" && errors !== null) {
+			for (const value of Object.values(errors)) {
+				if (typeof value === "string" && value.trim()) {
+					return value;
+				}
+
+				if (Array.isArray(value)) {
+					const firstMessage = value.find(
+						(item): item is string =>
+							typeof item === "string" && item.trim().length > 0,
+					);
+
+					if (firstMessage) {
+						return firstMessage;
+					}
+				}
+			}
+		}
+	}
+
+	if (typeof data === "object" && data && "title" in data) {
+		const title = (data as { title?: unknown }).title;
+		if (typeof title === "string" && title.trim()) return title;
 	}
 
 	if (typeof data === "string" && data.trim()) return data;

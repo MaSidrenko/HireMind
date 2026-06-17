@@ -75,4 +75,18 @@ describe("SignIn api", () => {
 			signInRequest("test@test.com", "123456Qw!"),
 		).rejects.toThrow("Неверный логин или пароль");
 	});
+
+	it("throws banned message when backend returns it on 401", async () => {
+		vi.mocked(globalThis.fetch).mockResolvedValue({
+			ok: false,
+			status: 401,
+			text: vi
+				.fn()
+				.mockResolvedValue(JSON.stringify({ message: "Пользователь забанен!" })),
+		} as unknown as Response);
+
+		await expect(
+			signInRequest("test@test.com", "123456Qw!"),
+		).rejects.toThrow("Пользователь забанен!");
+	});
 });

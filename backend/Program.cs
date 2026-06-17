@@ -153,6 +153,8 @@ builder.Services.AddScoped<IProfileSerivce, ProfileSerivce>();
 builder.Services.AddScoped<IFreelancerService, FreelancerService>();
 builder.Services.AddScoped<ITelegramLinkService, TelegramLinkService>();
 builder.Services.AddScoped<ITelegramNotificationService, NullTelegramNotificationService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+
 if (isAiEnabled)
 {
 	builder.Services.AddScoped<IAiService, AiService>();

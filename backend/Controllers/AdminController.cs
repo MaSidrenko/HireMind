@@ -11,20 +11,24 @@ namespace MyApp.Namespace;
 [ApiController]
 public class AdminController : ControllerBase
 {
-	private readonly AppDbContext _db;
+	// private readonly AppDbContext _db;
+    private readonly IAdminService _adminService;
 
-	public AdminController(AppDbContext context)
+	public AdminController(IAdminService adminService)
 	{
-		_db = context;
+		// _db = context;
+        _adminService = adminService;
 	}
 
 	[HttpGet("users")]
 	public async Task<IActionResult> GetUsers(CancellationToken ct)
 	{
-		List<User> users = await _db.Users
-			.AsNoTracking()
-			.OrderBy(user => user.FullName)
-			.ToListAsync(ct);
+		// List<User> users = await _db.Users
+		// 	.AsNoTracking()
+		// 	.OrderBy(user => user.FullName)
+		// 	.ToListAsync(ct);
+
+        List<User> users = await _adminService.GetUserAsync(ct);
 
 		return Ok(users.Select(ToAdminUserDto));
 	}
@@ -32,20 +36,25 @@ public class AdminController : ControllerBase
 	[HttpGet("orders")]
 	public async Task<IActionResult> GetOrders(CancellationToken ct)
 	{
-		List<Order> orders = await _db.Orders
-			.AsNoTracking()
-			.Include(order => order.Customer)
-			.Include(order => order.Freelancer)
-			.Include(order => order.Proposals)
-				.ThenInclude(proposal => proposal.Freelancer)
-			.Include(order => order.ClarificationQuestions)
-			.Include(order => order.ScopeItems)
-			.Include(order => order.DoneCriteria)
-			.Include(order => order.Risks)
-			.OrderByDescending(order => order.UpdatedAt)
-			.ToListAsync(ct);
+		// List<Order> orders = await _db.Orders
+		// 	.AsNoTracking()
+		// 	.Include(order => order.Customer)
+		// 	.Include(order => order.Freelancer)
+		// 	.Include(order => order.Proposals)
+		// 		.ThenInclude(proposal => proposal.Freelancer)
+		// 	.Include(order => order.ClarificationQuestions)
+		// 	.Include(order => order.ScopeItems)
+		// 	.Include(order => order.DoneCriteria)
+		// 	.Include(order => order.Risks)
+		// 	.OrderByDescending(order => order.UpdatedAt)
+		// 	.ToListAsync(ct);
+        List<Order> orders = await _adminService.GetOrdersAsync(ct);
+		List<OrderListItemDto> orderListItemDtos = new();
 
-		return Ok(orders.Select(ToOrderDto));
+		foreach(Order order in orders)
+			orderListItemDtos.Add(ToOrderDto(order));
+
+		return Ok(orderListItemDtos);
 	}
 
 	[HttpPut("users/{userId:int}")]
@@ -54,55 +63,57 @@ public class AdminController : ControllerBase
 		[FromBody] AdminUpdateRequest request,
 		CancellationToken ct)
 	{
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+		// User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
 
-		if (user is null)
-		{
-			return NotFound(new
-			{
-				message = "Пользователь с таким ID не найден"
-			});
-		}
+		// if (user is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Пользователь с таким ID не найден"
+		// 	});
+		// }
 
-		string currentEmail = NormalizeEmail(user.Email);
-		string requestedEmail = NormalizeEmail(request.Email);
+		// string currentEmail = NormalizeEmail(user.Email);
+		// string requestedEmail = NormalizeEmail(request.Email);
 
-		if (string.IsNullOrWhiteSpace(requestedEmail))
-		{
-			return BadRequest(new
-			{
-				message = "Email не может быть пустым"
-			});
-		}
+		// if (string.IsNullOrWhiteSpace(requestedEmail))
+		// {
+		// 	return BadRequest(new
+		// 	{
+		// 		message = "Email не может быть пустым"
+		// 	});
+		// }
 
-		if (!string.Equals(currentEmail, requestedEmail, StringComparison.Ordinal))
-		{
-			return BadRequest(new
-			{
-				message = "Для смены email используйте отдельный сценарий подтверждения."
-			});
-		}
+		// if (!string.Equals(currentEmail, requestedEmail, StringComparison.Ordinal))
+		// {
+		// 	return BadRequest(new
+		// 	{
+		// 		message = "Для смены email используйте отдельный сценарий подтверждения."
+		// 	});
+		// }
 
-		user.FullName = request.FullName.Trim();
-		user.Role = request.Role;
+		// user.FullName = request.FullName.Trim();
+		// user.Role = request.Role;
 
-		if (request.Contacts is not null)
-		{
-			user.Contacts ??= new Contacts();
-			user.Contacts.Telegram = request.Contacts.Telegram?.Trim();
-			user.Contacts.Phone = request.Contacts.Phone?.Trim();
-		}
+		// if (request.Contacts is not null)
+		// {
+		// 	user.Contacts ??= new Contacts();
+		// 	user.Contacts.Telegram = request.Contacts.Telegram?.Trim();
+		// 	user.Contacts.Phone = request.Contacts.Phone?.Trim();
+		// }
 
-		user.CompanyName = request.Role == Role.Freelancer
-			? null
-			: request.CompanyName?.Trim();
-		user.Skills = request.Role == Role.Freelancer
-			? request.Skills
-			: new List<string>();
-		user.HourlyRate = request.Role == Role.Freelancer ? request.HourlyRate : 0;
-		user.Currency = request.Role == Role.Freelancer ? request.Currency : Currency.RUB;
+		// user.CompanyName = request.Role == Role.Freelancer
+		// 	? null
+		// 	: request.CompanyName?.Trim();
+		// user.Skills = request.Role == Role.Freelancer
+		// 	? request.Skills
+		// 	: new List<string>();
+		// user.HourlyRate = request.Role == Role.Freelancer ? request.HourlyRate : 0;
+		// user.Currency = request.Role == Role.Freelancer ? request.Currency : Currency.RUB;
 
-		await _db.SaveChangesAsync(ct);
+		// await _db.SaveChangesAsync(ct);
+        
+        User user = await _adminService.ChangeUserDataAsync(userId, request, ct);
 
 		return Ok(new
 		{
@@ -117,98 +128,99 @@ public class AdminController : ControllerBase
 		[FromServices] IEmailSender emailSender,
 		CancellationToken ct)
 	{
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+		// User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
 
-		if (user is null)
-		{
-			return NotFound(new
-			{
-				message = "Пользователь с таким ID не найден"
-			});
-		}
+		// if (user is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Пользователь с таким ID не найден"
+		// 	});
+		// }
 
-		string newEmail = NormalizeEmail(request.NewEmail);
+		// string newEmail = NormalizeEmail(request.NewEmail);
 
-		if (string.IsNullOrWhiteSpace(newEmail))
-		{
-			return BadRequest(new
-			{
-				message = "Email не может быть пустым"
-			});
-		}
+		// if (string.IsNullOrWhiteSpace(newEmail))
+		// {
+		// 	return BadRequest(new
+		// 	{
+		// 		message = "Email не может быть пустым"
+		// 	});
+		// }
 
-		if (!new EmailAddressAttribute().IsValid(newEmail))
-		{
-			return BadRequest(new
-			{
-				message = "Введите корректный email"
-			});
-		}
+		// if (!new EmailAddressAttribute().IsValid(newEmail))
+		// {
+		// 	return BadRequest(new
+		// 	{
+		// 		message = "Введите корректный email"
+		// 	});
+		// }
 
-		string currentEmail = NormalizeEmail(user.Email);
+		// string currentEmail = NormalizeEmail(user.Email);
 
-		if (newEmail == currentEmail)
-		{
-			return BadRequest(new
-			{
-				message = "Новый email совпадает с текущим"
-			});
-		}
+		// if (newEmail == currentEmail)
+		// {
+		// 	return BadRequest(new
+		// 	{
+		// 		message = "Новый email совпадает с текущим"
+		// 	});
+		// }
 
-		bool emailExists = await _db.Users.AnyAsync(
-			item =>
-				item.Id != userId
-				&& (
-					item.Email.ToLower() == newEmail
-					|| (item.PendingEmail != null && item.PendingEmail.ToLower() == newEmail)
-				),
-			ct);
+		// bool emailExists = await _db.Users.AnyAsync(
+		// 	item =>
+		// 		item.Id != userId
+		// 		&& (
+		// 			item.Email.ToLower() == newEmail
+		// 			|| (item.PendingEmail != null && item.PendingEmail.ToLower() == newEmail)
+		// 		),
+		// 	ct);
 
-		if (emailExists)
-		{
-			return Conflict(new
-			{
-				message = "Этот email уже используется"
-			});
-		}
+		// if (emailExists)
+		// {
+		// 	return Conflict(new
+		// 	{
+		// 		message = "Этот email уже используется"
+		// 	});
+		// }
 
-		string code = EmailCodeGenerator.GenerateCode();
-		string? previousPendingEmail = user.PendingEmail;
-		string? previousHash = user.EmailVerificationCodeHash;
-		DateTime? previousExpiresAtUtc = user.EmailVerificationCodeExpiresAtUtc;
-		int previousAttempts = user.EmailVerificationAttempts;
+		// string code = EmailCodeGenerator.GenerateCode();
+		// string? previousPendingEmail = user.PendingEmail;
+		// string? previousHash = user.EmailVerificationCodeHash;
+		// DateTime? previousExpiresAtUtc = user.EmailVerificationCodeExpiresAtUtc;
+		// int previousAttempts = user.EmailVerificationAttempts;
 
-		user.PendingEmail = newEmail;
-		user.EmailVerificationCodeHash = EmailCodeHasher.Hash(code);
-		user.EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddHours(2);
-		user.EmailVerificationAttempts = 0;
+		// user.PendingEmail = newEmail;
+		// user.EmailVerificationCodeHash = EmailCodeHasher.Hash(code);
+		// user.EmailVerificationCodeExpiresAtUtc = DateTime.UtcNow.AddHours(2);
+		// user.EmailVerificationAttempts = 0;
 
-		await _db.SaveChangesAsync(ct);
+		// await _db.SaveChangesAsync(ct);
 
-		try
-		{
-			await emailSender.SendEmailAsync(
-				newEmail,
-				"Подтверждение нового email",
-				$"Ваш код подтверждения: {code}\n\nВведите его на странице подтверждения смены email."
-			);
-		}
-		catch
-		{
-			user.PendingEmail = previousPendingEmail;
-			user.EmailVerificationCodeHash = previousHash;
-			user.EmailVerificationCodeExpiresAtUtc = previousExpiresAtUtc;
-			user.EmailVerificationAttempts = previousAttempts;
+		// try
+		// {
+		// 	await emailSender.SendEmailAsync(
+		// 		newEmail,
+		// 		"Подтверждение нового email",
+		// 		$"Ваш код подтверждения: {code}\n\nВведите его на странице подтверждения смены email."
+		// 	);
+		// }
+		// catch
+		// {
+		// 	user.PendingEmail = previousPendingEmail;
+		// 	user.EmailVerificationCodeHash = previousHash;
+		// 	user.EmailVerificationCodeExpiresAtUtc = previousExpiresAtUtc;
+		// 	user.EmailVerificationAttempts = previousAttempts;
 
-			await _db.SaveChangesAsync(ct);
+		// 	await _db.SaveChangesAsync(ct);
 
-			return StatusCode(StatusCodes.Status500InternalServerError, new
-			{
-				message = "Не удалось отправить код подтверждения. Попробуйте позже."
-			});
-		}
-
-		return Ok(new
+		// 	return StatusCode(StatusCodes.Status500InternalServerError, new
+		// 	{
+		// 		message = "Не удалось отправить код подтверждения. Попробуйте позже."
+		// 	});
+		// }
+        User user = await _adminService.EmailChangeAsync(userId, request, emailSender, ct);
+		
+        return Ok(new
 		{
 			message = "На новый email отправлен код подтверждения",
 			user = ToAdminUserDto(user)
@@ -218,18 +230,19 @@ public class AdminController : ControllerBase
 	[HttpPut("users/{userId:int}/promote")]
 	public async Task<IActionResult> PromoteToAdmin(int userId, CancellationToken ct)
 	{
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+		// User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
 
-		if (user is null)
-		{
-			return NotFound(new
-			{
-				message = "Пользователь с таким ID не найден"
-			});
-		}
+		// if (user is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Пользователь с таким ID не найден"
+		// 	});
+		// }
 
-		user.Role = Role.Admin;
-		await _db.SaveChangesAsync(ct);
+		// user.Role = Role.Admin;
+		// await _db.SaveChangesAsync(ct);
+        User user = await _adminService.PromoteToAdminAsync(userId, ct);
 
 		return Ok(new
 		{
@@ -243,20 +256,22 @@ public class AdminController : ControllerBase
 		[FromBody] AdminBanUserRequest request,
 		CancellationToken ct)
 	{
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+		// User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
 
-		if (user is null)
-		{
-			return NotFound(new
-			{
-				message = "Пользователь с таким ID не найден"
-			});
-		}
+		// if (user is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Пользователь с таким ID не найден"
+		// 	});
+		// }
 
-		bool nextValue = request.IsBanned ?? request.Banned ?? !user.IsBanned;
-		user.IsBanned = nextValue;
+		// bool nextValue = request.IsBanned ?? request.Banned ?? !user.IsBanned;
+		// user.IsBanned = nextValue;
 
-		await _db.SaveChangesAsync(ct);
+		// await _db.SaveChangesAsync(ct);
+
+        User? user = await _adminService.BanUserAsync(userId, request, ct);
 
 		return Ok(new
 		{
@@ -267,18 +282,19 @@ public class AdminController : ControllerBase
 	[HttpDelete("users/{userId:int}")]
 	public async Task<IActionResult> DeleteUser(int userId, CancellationToken ct)
 	{
-		User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
+		// User? user = await _db.Users.FirstOrDefaultAsync(item => item.Id == userId, ct);
 
-		if (user is null)
-		{
-			return NotFound(new
-			{
-				message = "Пользователь с таким ID не найден"
-			});
-		}
+		// if (user is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Пользователь с таким ID не найден"
+		// 	});
+		// }
 
-		_db.Users.Remove(user);
-		await _db.SaveChangesAsync(ct);
+		// _db.Users.Remove(user);
+		// await _db.SaveChangesAsync(ct);
+        User user = await _adminService.DeleteUserAsync(userId, ct);
 
 		return Ok(new
 		{
@@ -292,51 +308,52 @@ public class AdminController : ControllerBase
 		[FromBody] OrderUpdateRequest request,
 		CancellationToken ct)
 	{
-		Order? order = await _db.Orders
-			.Include(item => item.Customer)
-			.Include(item => item.Freelancer)
-			.Include(item => item.Proposals)
-				.ThenInclude(proposal => proposal.Freelancer)
-			.Include(item => item.ClarificationQuestions)
-			.Include(item => item.ScopeItems)
-			.Include(item => item.DoneCriteria)
-			.Include(item => item.Risks)
-			.FirstOrDefaultAsync(item => item.Id == orderId, ct);
+		// Order? order = await _db.Orders
+		// 	.Include(item => item.Customer)
+		// 	.Include(item => item.Freelancer)
+		// 	.Include(item => item.Proposals)
+		// 		.ThenInclude(proposal => proposal.Freelancer)
+		// 	.Include(item => item.ClarificationQuestions)
+		// 	.Include(item => item.ScopeItems)
+		// 	.Include(item => item.DoneCriteria)
+		// 	.Include(item => item.Risks)
+		// 	.FirstOrDefaultAsync(item => item.Id == orderId, ct);
 
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ с таким ID не найден"
-			});
-		}
+		// if (order is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Заказ с таким ID не найден"
+		// 	});
+		// }
 
-		order.Title = request.Title.Trim();
-		order.Description = request.RawDescription.Trim();
-		order.TechnicalSpecification = request.TechnicalSpecification.Trim();
-		order.Category = request.Category;
-		order.MinPrice = request.BudgetMin;
-		order.MaxPrice = request.BudgetMax;
-		order.Currency = request.Currency;
-		order.Payment = request.BudgetType;
-		order.Status = request.Status;
-		order.WorkflowStage = request.WorkflowStage;
-		order.Skills = request.Skills;
-		order.AiGenerated = request.AiGenerated;
-		order.ReadinessScore = request.ReadinessScore;
-		order.BriefSections = request.BriefSections;
-		order.ClarificationQuestions = request.ClarificationQuestions;
-		order.ScopeItems = request.ScopeItems;
-		order.DoneCriteria = request.DoneCriteria;
-		order.Risks = request.Risks;
-		order.UpdatedAt = DateTime.UtcNow;
+		// order.Title = request.Title.Trim();
+		// order.Description = request.RawDescription.Trim();
+		// order.TechnicalSpecification = request.TechnicalSpecification.Trim();
+		// order.Category = request.Category;
+		// order.MinPrice = request.BudgetMin;
+		// order.MaxPrice = request.BudgetMax;
+		// order.Currency = request.Currency;
+		// order.Payment = request.BudgetType;
+		// order.Status = request.Status;
+		// order.WorkflowStage = request.WorkflowStage;
+		// order.Skills = request.Skills;
+		// order.AiGenerated = request.AiGenerated;
+		// order.ReadinessScore = request.ReadinessScore;
+		// order.BriefSections = request.BriefSections;
+		// order.ClarificationQuestions = request.ClarificationQuestions;
+		// order.ScopeItems = request.ScopeItems;
+		// order.DoneCriteria = request.DoneCriteria;
+		// order.Risks = request.Risks;
+		// order.UpdatedAt = DateTime.UtcNow;
 
-		if (order.Customer is not null)
-		{
-			order.Customer.CompanyName = request.CompanyName?.Trim();
-		}
+		// if (order.Customer is not null)
+		// {
+		// 	order.Customer.CompanyName = request.CompanyName?.Trim();
+		// }
 
-		await _db.SaveChangesAsync(ct);
+		// await _db.SaveChangesAsync(ct);
+        Order order = await _adminService.UpdateOrderAsync(orderId, request, ct);
 
 		return Ok(new
 		{
@@ -347,28 +364,26 @@ public class AdminController : ControllerBase
 	[HttpDelete("orders/{orderId:int}")]
 	public async Task<IActionResult> DeleteOrder(int orderId, CancellationToken ct)
 	{
-		Order? order = await _db.Orders.FirstOrDefaultAsync(item => item.Id == orderId, ct);
+		// Order? order = await _db.Orders.FirstOrDefaultAsync(item => item.Id == orderId, ct);
 
-		if (order is null)
-		{
-			return NotFound(new
-			{
-				message = "Заказ с таким ID не найден"
-			});
-		}
+		// if (order is null)
+		// {
+		// 	return NotFound(new
+		// 	{
+		// 		message = "Заказ с таким ID не найден"
+		// 	});
+		// }
 
-		_db.Orders.Remove(order);
-		await _db.SaveChangesAsync(ct);
+		// _db.Orders.Remove(order);
+		// await _db.SaveChangesAsync(ct);
+
+        Order order = await _adminService.DeleteOrderAsync(orderId, ct);
 
 		return Ok(new
 		{
 			message = $"Заказ «{order.Title}» удалён"
 		});
 	}
-
-	private static string NormalizeEmail(string? email)
-		=> email?.Trim().ToLowerInvariant() ?? string.Empty;
-
 	private static AdminUserDto ToAdminUserDto(User user)
 	{
 		return new AdminUserDto

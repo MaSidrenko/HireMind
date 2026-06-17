@@ -9,7 +9,7 @@ namespace MyApp.Namespace
 {
     [Route("api/v1/freelancer")]
     [ApiController]
-    [Authorize(Roles = "Client")]
+    [Authorize(Roles = "Admin, Client")]
     public class FreelancerController : ControllerBase
     {
         private readonly IFreelancerService _freelancerService;
