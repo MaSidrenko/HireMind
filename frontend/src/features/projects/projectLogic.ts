@@ -1,4 +1,5 @@
 import { briefSections } from "./projectDictionaries";
+import { normalizeRiskItems } from "../aiAssistant/normalizeAiBriefResult";
 import type {
 	BudgetType,
 	BriefSections,
@@ -32,6 +33,13 @@ const workflowStages: WorkflowStage[] = [
 ];
 const currencies: Currency[] = ["RUB", "USD", "EUR"];
 const budgetTypes: BudgetType[] = ["fixed", "hourly"];
+const backendCategoryToUi = {
+	Development: "Разработка",
+	Design: "Дизайн",
+	Marketing: "Маркетинг",
+	Content: "Контент",
+	MobileDevelopment: "Мобильная разработка",
+} as const;
 
 function pickValue<T extends string>(
 	value: unknown,
@@ -55,6 +63,14 @@ function safeNullableNumber(value: unknown) {
 
 function safeString(value: unknown, fallback = "") {
 	return typeof value === "string" ? value : fallback;
+}
+
+function normalizeCategory(value: unknown) {
+	if (typeof value !== "string") {
+		return "Разработка";
+	}
+
+	return backendCategoryToUi[value as keyof typeof backendCategoryToUi] ?? value;
 }
 
 function safeDate(value: unknown) {
@@ -240,7 +256,7 @@ export function normalizeProjectOrder(
 	const rawOrder = order as Record<string, unknown>;
 	const title = safeString(order.title, "Без названия");
 	const rawDescription = safeString(order.rawDescription);
-	const category = safeString(order.category, "Разработка");
+	const category = normalizeCategory(order.category);
 	const proposals = Array.isArray(order.proposals) ? order.proposals : [];
 	const clientDoneApproved =
 		typeof rawOrder.clientDoneApproved === "boolean"
@@ -290,6 +306,13 @@ export function normalizeProjectOrder(
 		skills: Array.isArray(order.skills) ? order.skills : [],
 		proposalsCount: proposals.length,
 		proposals,
+		canClientDelete:
+			typeof order.canClientDelete === "boolean"
+				? order.canClientDelete
+				: !(
+						typeof order.selectedFreelancerId === "number" &&
+						Number.isFinite(order.selectedFreelancerId)
+					) && proposals.length === 0,
 		publishedAt:
 			typeof order.publishedAt === "string" ? order.publishedAt : null,
 		completedAt:
@@ -306,7 +329,7 @@ export function normalizeProjectOrder(
 		doneCriteria: Array.isArray(order.doneCriteria)
 			? order.doneCriteria
 			: [],
-		risks: Array.isArray(order.risks) ? order.risks : [],
+		risks: normalizeRiskItems(Array.isArray(order.risks) ? order.risks : []),
 		approvals: {
 			client: Boolean(order.approvals?.client),
 			freelancer: Boolean(order.approvals?.freelancer),
@@ -347,6 +370,7 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		skills: input.skills.length ? input.skills : ["Discovery"],
 		proposalsCount: 0,
 		proposals: [],
+		canClientDelete: true,
 		publishedAt: null,
 		completedAt: null,
 		updatedAt: now,

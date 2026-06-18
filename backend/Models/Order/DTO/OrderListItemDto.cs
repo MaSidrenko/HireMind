@@ -33,6 +33,7 @@ public class OrderListItemDto
 
 	public int ProposalsCount { get; set; }
 	public List<ProjectProposalDto> Proposals { get; set; } = new();
+	public bool CanClientDelete { get; set; }
 
 	public DateTime? PublishedAt { get; set; }
 	public DateTime? CompletedAt { get; set; }

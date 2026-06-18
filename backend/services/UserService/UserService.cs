@@ -18,6 +18,9 @@ public class UserService : IUserService
 	public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default)
 	=> await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
+	public async Task<User?> GetByPendingEmailAsync(string email, CancellationToken ct = default)
+	=> await _db.Users.FirstOrDefaultAsync(u => u.PendingEmail == email, ct);
+
 	public async Task<User?> GetByIdAsync(int id, CancellationToken ct = default)
 	=> await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 

@@ -28,6 +28,7 @@ const categoryToBackend = {
 	"Дизайн": "Design",
 	"Маркетинг": "Marketing",
 	"Контент": "Content",
+	"Мобильная разработка": "MobileDevelopment",
 } as const;
 
 const paymentToBackend = {
@@ -133,6 +134,12 @@ export async function updateProjectRequest(project: ProjectOrder) {
 	);
 
 	return normalizeProjectOrder(nextProject);
+}
+
+export async function deleteProjectRequest(orderId: number) {
+	await apiRequest<null>(`${ORDER_API}/order/${orderId}`, {
+		method: "DELETE",
+	});
 }
 
 export async function updateProjectClarificationQuestionsRequest(

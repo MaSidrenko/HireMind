@@ -191,6 +191,17 @@
 	background: rgba(250, 151, 44, 0.04);
 }
 
+.hm-button--danger {
+	border-color: rgba(237, 93, 74, 0.5);
+	background: rgba(237, 93, 74, 0.08);
+	color: #ffd7d1;
+}
+
+.hm-button--danger:hover {
+	color: #ffe7e2;
+	border-color: #ed5d4a;
+}
+
 .hm-link-button {
 	padding: 0;
 	border: none;
@@ -422,6 +433,18 @@
 	background: rgba(31, 29, 27, 0.78);
 }
 
+.order-actionbar__actions,
+.order-actionbar__danger {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+}
+
+.order-actionbar__danger {
+	justify-content: flex-end;
+}
+
 .save-panel {
 	position: sticky;
 	top: 12px;
@@ -437,6 +460,39 @@
 .save-panel div {
 	display: flex;
 	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.confirm-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 20px;
+	background: rgba(9, 8, 7, 0.72);
+	backdrop-filter: blur(6px);
+	z-index: 100;
+}
+
+.confirm-dialog {
+	width: min(100%, 460px);
+	display: grid;
+	gap: 16px;
+	padding: 24px;
+	border: 1px solid rgba(250, 151, 44, 0.24);
+	border-radius: 18px;
+	background: rgba(28, 24, 22, 0.98);
+	box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.confirm-dialog h2 {
+	margin: 0;
+	font-size: 28px;
+}
+
+.confirm-dialog__actions {
+	display: flex;
+	justify-content: flex-end;
 	gap: 10px;
 }
 

@@ -53,6 +53,7 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 		skills: ["React"],
 		proposalsCount: 0,
 		proposals: [],
+		canClientDelete: true,
 		publishedAt: null,
 		completedAt: null,
 		updatedAt: "2026-05-13T00:00:00.000Z",
@@ -143,6 +144,7 @@ describe("ProjectWorkspacePage", () => {
 				canEdit
 				onBack={vi.fn()}
 				onChange={onChange}
+				onDelete={vi.fn()}
 			/>,
 		);
 
@@ -168,6 +170,7 @@ describe("ProjectWorkspacePage", () => {
 				canEdit
 				onBack={vi.fn()}
 				onChange={onChange}
+				onDelete={vi.fn()}
 			/>,
 		);
 
@@ -229,6 +232,7 @@ describe("ProjectWorkspacePage", () => {
 				canEdit={false}
 				onBack={vi.fn()}
 				onChange={vi.fn()}
+				onDelete={vi.fn()}
 			/>,
 		);
 
@@ -297,6 +301,7 @@ describe("ProjectWorkspacePage", () => {
 				canEdit
 				onBack={vi.fn()}
 				onChange={vi.fn()}
+				onDelete={vi.fn()}
 			/>,
 		);
 
@@ -310,5 +315,53 @@ describe("ProjectWorkspacePage", () => {
 
 		expect(await screen.findByText("Исполнитель выбран")).toBeInTheDocument();
 		expect(screen.getAllByText("Иван Фрилансер").length).toBeGreaterThan(0);
+	});
+
+	it("calls delete handler for client-owned deletable order", async () => {
+		const user = userEvent.setup();
+		const onDelete = vi.fn().mockResolvedValue(undefined);
+
+		render(
+			<ProjectWorkspacePage
+				order={makeOrder({ canClientDelete: true })}
+				canEdit
+				onBack={vi.fn()}
+				onChange={vi.fn()}
+				onDelete={onDelete}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Удалить заказ" }));
+		expect(
+			screen.getByRole("dialog", { name: "Удалить заказ?" }),
+		).toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Подтвердить удаление" }),
+		);
+
+		await waitFor(() => {
+			expect(onDelete).toHaveBeenCalledWith(1);
+		});
+	});
+
+	it("disables delete button when order cannot be removed", () => {
+		render(
+			<ProjectWorkspacePage
+				order={makeOrder({ canClientDelete: false, proposalsCount: 1 })}
+				canEdit
+				onBack={vi.fn()}
+				onChange={vi.fn()}
+				onDelete={vi.fn()}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Удалить заказ" }),
+		).toBeDisabled();
+		expect(
+			screen.getByText(
+				"Удаление доступно только пока у заказа нет откликов, выбранного исполнителя и истории AI-диалогов.",
+			),
+		).toBeInTheDocument();
 	});
 });

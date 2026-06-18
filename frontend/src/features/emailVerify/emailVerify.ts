@@ -77,3 +77,29 @@ export async function verifyPassword(
 		throw new Error("Не удалось сохранить новый пароль. Попробуйте позже");
 	}
 }
+
+export async function confirmEmailChangeRequest(
+	email: string,
+	code: string,
+): Promise<AuthMessageResponse> {
+	try {
+		return await apiRequest<AuthMessageResponse>(
+			`${AUTH_API}/email-change/confirm`,
+			{
+				method: "POST",
+				body: {
+					email: email.trim().toLowerCase(),
+					code: code.trim(),
+				},
+			},
+		);
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw new Error(
+				error.message || "Не удалось подтвердить новый email",
+			);
+		}
+
+		throw new Error("Не удалось подтвердить новый email. Попробуйте позже");
+	}
+}

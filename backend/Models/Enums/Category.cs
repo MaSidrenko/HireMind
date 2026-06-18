@@ -5,5 +5,6 @@ public enum Category
 	Development,
 	Design,
 	Marketing,
-	Content
+	Content,
+	MobileDevelopment
 }

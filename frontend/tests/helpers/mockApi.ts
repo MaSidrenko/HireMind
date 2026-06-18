@@ -117,6 +117,15 @@ const backendCategoryToUi = {
 	Design: "Дизайн",
 	Marketing: "Маркетинг",
 	Content: "Контент",
+	MobileDevelopment: "Мобильная разработка",
+} as const;
+
+const landingCategoryToOrderCategories = {
+	Development: ["Development", "Разработка", "Веб-разработка"],
+	Design: ["Design", "Дизайн"],
+	Marketing: ["Marketing", "Маркетинг"],
+	Content: ["Content", "Контент", "Копирайтинг"],
+	MobileDevelopment: ["MobileDevelopment", "Мобильная разработка"],
 } as const;
 
 const emptyBriefSections: BriefSections = {
@@ -374,6 +383,30 @@ export async function setupMockApi(
 			search,
 			body,
 		});
+
+		if (pathname === "/api/v1/main/user-count" && method === "GET") {
+			await route.fulfill(jsonResponse(signInUsersByEmail.size));
+			return;
+		}
+
+		if (
+			pathname === "/api/v1/main/project-type-count" &&
+			method === "GET"
+		) {
+			const requestedCategory = url.searchParams.get("category") as
+				| keyof typeof landingCategoryToOrderCategories
+				| null;
+			const allowedCategories =
+				(requestedCategory &&
+					landingCategoryToOrderCategories[requestedCategory]) ??
+				[];
+			const count = orders.filter((order) =>
+				allowedCategories.includes(order.category),
+			).length;
+
+			await route.fulfill(jsonResponse(count));
+			return;
+		}
 
 		if (pathname === "/api/v1/auth/me" && method === "GET") {
 			if (!currentUser) {

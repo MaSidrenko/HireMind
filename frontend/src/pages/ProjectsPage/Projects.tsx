@@ -3,6 +3,7 @@ import "./Projects.css";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useAuth,
+	deleteProjectRequest,
 	getProjectById,
 	getProjects,
 	updateProjectRequest,
@@ -41,6 +42,7 @@ export default function Projects() {
 	const params = useParams<{ projectId?: string }>();
 	const { user } = useAuth();
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
+	const isAdmin = normalizedRole === "admin";
 	const isCreatePage = location.pathname.endsWith("/new");
 	const parsedOrderId = params.projectId ? Number(params.projectId) : null;
 	const currentOrderId =
@@ -148,6 +150,13 @@ export default function Projects() {
 		}
 	};
 
+	const deleteOrder = async (orderId: number) => {
+		await deleteProjectRequest(orderId);
+		setCurrentOrder((current) => (current?.id === orderId ? null : current));
+		setOrders((items) => items.filter((item) => item.id !== orderId));
+		navigate("/projects");
+	};
+
 	if (isCreatePage) {
 		return (
 			<CreateOrderPage
@@ -204,9 +213,13 @@ export default function Projects() {
 			<ProjectWorkspacePage
 				key={`${visibleOrder.id}-${visibleOrder.updatedAt}`}
 				order={visibleOrder}
-				canEdit={normalizedRole === "client" && visibleOrder.hirerId === user?.id}
+				canEdit={
+					isAdmin ||
+					(normalizedRole === "client" && visibleOrder.hirerId === user?.id)
+				}
 				onBack={() => navigate("/projects")}
 				onChange={updateOrder}
+				onDelete={deleteOrder}
 			/>
 		);
 	}

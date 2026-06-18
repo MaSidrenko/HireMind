@@ -7,7 +7,7 @@ namespace MyApp.Namespace
 {
     [Route("api/v1/ai")]
     [ApiController]
-    [Authorize(Roles = "Client")]
+    [Authorize(Roles = "Client, Admin")]
 	    public class AiController : ControllerBase
 	    {
 	        private readonly IAiService _aiService;

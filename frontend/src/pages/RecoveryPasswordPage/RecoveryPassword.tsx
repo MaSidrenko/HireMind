@@ -51,7 +51,6 @@ export default function RecoveryPassword() {
 	return (
 		<div className="box-recovery-password card">
 			<form onSubmit={handleSubmit} noValidate>
-				<div className="recovery-password-layout">
 					<div className="recovery-password-main">
 						<h1>Восстановление пароля</h1>
 						<p>
@@ -117,37 +116,6 @@ export default function RecoveryPassword() {
 							</span>
 						</div>
 					</div>
-
-					<div className="recovery-password-aside">
-						<span className="recovery-password-kicker">
-							Как это работает
-						</span>
-						<div className="recovery-password-steps">
-							<div className="recovery-password-step">
-								<strong>1. Укажите email</strong>
-								<p>
-									Тот же адрес, который использовали при
-									регистрации.
-								</p>
-							</div>
-							<div className="recovery-password-step">
-								<strong>2. Получите код</strong>
-								<p>
-									Мы отправим его на почту, если аккаунт
-									существует.
-								</p>
-							</div>
-							<div className="recovery-password-step">
-								<strong>3. Смените пароль</strong>
-								<p>
-									На следующем шаге вы введёте код и зададите
-									новый пароль.
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-
 				<div className="recovery-password-links">
 					<Link to="/sign-in">Вернуться ко входу</Link>
 					<Link to="/sign-up">Создать новый аккаунт</Link>

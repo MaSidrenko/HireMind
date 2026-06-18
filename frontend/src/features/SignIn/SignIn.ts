@@ -14,6 +14,10 @@ export async function signInRequest(
 		});
 	} catch (error) {
 		if (error instanceof ApiError && [400, 401].includes(error.status)) {
+			if (error.message.trim() && error.message !== "Ошибка запроса к серверу") {
+				throw new Error(error.message);
+			}
+
 			throw new Error("Неверный логин или пароль");
 		}
 

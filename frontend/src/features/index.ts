@@ -31,6 +31,7 @@ export {
 	getProjectById,
 	createProjectRequest,
 	updateProjectRequest,
+	deleteProjectRequest,
 	updateProjectClarificationQuestionsRequest,
 	acceptProposalRequest,
 	withdrawProposalRequest,
@@ -60,4 +61,25 @@ export {
 	type Freelancer,
 	type ContactRequest,
 } from "./freelancers";
-export { emailVerifyRequest, resetPasswordRequest, verifyPassword } from "./emailVerify";
+export {
+	confirmEmailChangeRequest,
+	emailVerifyRequest,
+	resetPasswordRequest,
+	verifyPassword,
+} from "./emailVerify";
+export {
+	getAdminUsers,
+	getAdminOrders,
+	requestAdminUserEmailChangeRequest,
+	updateAdminUserRequest,
+	promoteUserToAdminRequest,
+	banAdminUserRequest,
+	deleteAdminUserRequest,
+	updateAdminOrderRequest,
+	deleteAdminOrderRequest,
+	type AdminUserRecord,
+	type AdminUserUpdateInput,
+	type AdminOrderUpdateInput,
+	type AdminActionResponse,
+	type AdminEmailChangeResult,
+} from "./admin";

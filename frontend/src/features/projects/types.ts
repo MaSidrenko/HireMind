@@ -95,6 +95,7 @@ export type ProjectOrder = {
 	skills: string[];
 	proposalsCount: number;
 	proposals: ProjectProposal[];
+	canClientDelete?: boolean;
 	publishedAt: string | null;
 	completedAt: string | null;
 	updatedAt: string;

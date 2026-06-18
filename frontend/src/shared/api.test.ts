@@ -79,4 +79,42 @@ describe("apiRequest", () => {
 			data: { message: "Неверные данные" },
 		} satisfies Partial<ApiError>);
 	});
+
+	it("uses problem details detail as error message", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					title: "User deletion unavailable",
+					detail: "Нельзя удалить пользователя с активными заказами",
+					status: 409,
+				}),
+				{ status: 409 },
+			),
+		);
+
+		await expect(apiRequest("/api/fail")).rejects.toMatchObject({
+			name: "ApiError",
+			message: "Нельзя удалить пользователя с активными заказами",
+			status: 409,
+		} satisfies Partial<ApiError>);
+	});
+
+	it("uses first validation error when backend returns errors object", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response(
+				JSON.stringify({
+					errors: {
+						email: ["Введите корректный email"],
+					},
+				}),
+				{ status: 400 },
+			),
+		);
+
+		await expect(apiRequest("/api/fail")).rejects.toMatchObject({
+			name: "ApiError",
+			message: "Введите корректный email",
+			status: 400,
+		} satisfies Partial<ApiError>);
+	});
 });

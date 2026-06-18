@@ -3,14 +3,19 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getProjectById, getProjects } from "../../features/projects/projectsApi";
-import { updateProjectRequest } from "../../features/projects/projectsApi";
+import {
+	deleteProjectRequest,
+	getProjectById,
+	getProjects,
+	updateProjectRequest,
+} from "../../features/projects/projectsApi";
 import { useAuth } from "../../features/Auth/AuthContext";
 import { ApiError } from "@/shared";
 import type { ProjectOrder } from "../../features/projects/types";
 import Projects from "./Projects";
 
 vi.mock("../../features/projects/projectsApi", () => ({
+	deleteProjectRequest: vi.fn(),
 	getProjectById: vi.fn(),
 	getProjects: vi.fn(),
 	updateProjectRequest: vi.fn(),
@@ -24,6 +29,7 @@ vi.mock("../../features/Auth/AuthContext", () => ({
 const mockedGetProjects = vi.mocked(getProjects);
 const mockedGetProjectById = vi.mocked(getProjectById);
 const mockedUpdateProjectRequest = vi.mocked(updateProjectRequest);
+const mockedDeleteProjectRequest = vi.mocked(deleteProjectRequest);
 const mockedUseAuth = vi.mocked(useAuth);
 
 function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
@@ -33,13 +39,14 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 		hirerName: "Анна Заказчик",
 		selectedFreelancerId: null,
 		selectedFreelancerName: null,
+		selectedFreelancerRating: null,
 		title: "React-заказ",
 		shortDescription: "Короткое описание",
 		rawDescription: "Нужно сделать понятный интерфейс для дипломного проекта.",
 		technicalSpecification: "",
-		status: "published",
+		status: "Published",
 		workflowStage: "brief",
-		category: "Веб-разработка",
+		category: "Разработка",
 		budgetMin: 10000,
 		budgetMax: 25000,
 		currency: "RUB",
@@ -47,7 +54,9 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 		skills: ["React"],
 		proposalsCount: 0,
 		proposals: [],
+		canClientDelete: true,
 		publishedAt: "2026-05-13T00:00:00.000Z",
+		completedAt: null,
 		updatedAt: "2026-05-13T00:00:00.000Z",
 		companyName: "HireMind",
 		aiGenerated: true,
@@ -66,7 +75,14 @@ function makeOrder(partial: Partial<ProjectOrder> = {}): ProjectOrder {
 		scopeItems: [],
 		doneCriteria: [],
 		risks: [],
-		approvals: { client: false, freelancer: false },
+		approvals: {
+			client: false,
+			freelancer: false,
+			clientDone: false,
+			freelancerDone: false,
+		},
+		clientRatingByFreelancer: null,
+		freelancerRatingByClient: null,
 		...partial,
 	};
 }
@@ -88,6 +104,7 @@ describe("Projects", () => {
 		mockedGetProjects.mockReset();
 		mockedGetProjectById.mockReset();
 		mockedUpdateProjectRequest.mockReset();
+		mockedDeleteProjectRequest.mockReset();
 		mockedUseAuth.mockReturnValue({
 			user: {
 				id: 7,
@@ -137,5 +154,23 @@ describe("Projects", () => {
 		renderProjects("/projects/404");
 
 		expect(await screen.findByText("Заказ не найден")).toBeInTheDocument();
+	});
+
+	it("deletes project from workspace and returns to list", async () => {
+		const user = userEvent.setup();
+
+		mockedGetProjectById.mockResolvedValueOnce(makeOrder());
+		mockedGetProjects.mockResolvedValueOnce([]);
+		mockedDeleteProjectRequest.mockResolvedValueOnce(undefined);
+
+		renderProjects("/projects/1");
+
+		await user.click(await screen.findByRole("button", { name: "Удалить заказ" }));
+		await user.click(
+			await screen.findByRole("button", { name: "Подтвердить удаление" }),
+		);
+
+		expect(mockedDeleteProjectRequest).toHaveBeenCalledWith(1);
+		expect(await screen.findByText("Пока нет заказов")).toBeInTheDocument();
 	});
 });

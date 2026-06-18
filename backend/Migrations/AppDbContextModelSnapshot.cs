@@ -499,6 +499,9 @@ namespace backend.Migrations
                     b.Property<decimal>("HourlyRate")
                         .HasColumnType("numeric");
 
+                    b.Property<bool>("IsBanned")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsOnline")
                         .HasColumnType("boolean");
 
@@ -518,6 +521,9 @@ namespace backend.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordResetCodeHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PendingEmail")
                         .HasColumnType("text");
 
                     b.Property<double>("Rating")

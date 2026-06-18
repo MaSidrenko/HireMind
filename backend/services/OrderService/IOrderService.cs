@@ -18,4 +18,5 @@ public interface IOrderService
 	public Task<Order> UpdateFreelancerApprovalAsync(int orderId, int userId, UpdateApprovalRequest request, CancellationToken ct);
 	public Task<Order> RateOrderAsync(int orderId, int userId, UpdateOrderRatingRequest request, CancellationToken ct);
 	public Task<Order?> LoadOrderGraphAsync(int orderId, CancellationToken ct, bool asNoTracking = false);
+	public Task<Order> DeleteOrderAsync(int orderId, int userId, CancellationToken ct);
 }

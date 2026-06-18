@@ -9,6 +9,8 @@ import {
 	type ProjectOrder,
 } from "@/features";
 import { ApiError } from "@/shared";
+import { projectSkillOptions } from "@/shared/skillOptions";
+import SkillsAutocomplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
 
 type CreateOrderPageProps = {
 	onBack: () => void;
@@ -16,7 +18,13 @@ type CreateOrderPageProps = {
 };
 
 const categoryPlaceholder = "Выберите категорию";
-const categories = ["Разработка", "Дизайн", "Маркетинг", "Контент"];
+const categories = [
+	"Разработка",
+	"Мобильная разработка",
+	"Дизайн",
+	"Маркетинг",
+	"Контент",
+];
 
 function getErrorMessage(error: unknown, fallback: string) {
 	if (error instanceof ApiError) return error.message;
@@ -26,13 +34,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 function parsePositiveNumber(value: string) {
 	const normalized = Number(value);
 	return Number.isFinite(normalized) ? normalized : 0;
-}
-
-function parseSkills(value: string) {
-	return value
-		.split(",")
-		.map((skill) => skill.trim())
-		.filter(Boolean);
 }
 
 export default function CreateOrderPage({
@@ -47,7 +48,7 @@ export default function CreateOrderPage({
 	const [budgetMax, setBudgetMax] = useState("");
 	const [currency, setCurrency] = useState<Currency>("RUB");
 	const [budgetType, setBudgetType] = useState<BudgetType>("fixed");
-	const [skills, setSkills] = useState("");
+	const [skills, setSkills] = useState<string[]>([]);
 	const [aiSummary, setAiSummary] = useState(
 		"AI поможет найти недостающие вопросы до публикации",
 	);
@@ -56,7 +57,7 @@ export default function CreateOrderPage({
 	const [error, setError] = useState("");
 	const [loadingAi, setLoadingAi] = useState(false);
 	const companyName =
-		user?.role === "Client" ? user.companyName?.trim() ?? "" : "";
+		user && "companyName" in user ? user.companyName?.trim() ?? "" : "";
 
 	const validateDraft = () => {
 		if (title.trim().length < 5 || rawDescription.trim().length < 30) {
@@ -78,7 +79,7 @@ export default function CreateOrderPage({
 			return "Цена до не может быть меньше цены от";
 		}
 
-		if (!parseSkills(skills).length) {
+		if (!skills.length) {
 			return "Добавьте хотя бы один навык";
 		}
 
@@ -155,7 +156,7 @@ export default function CreateOrderPage({
 				maxPrice: max,
 				currency,
 				payment: budgetType,
-				skills: parseSkills(skills),
+				skills,
 				aiSummary: appliedAi?.summary,
 				briefSections: appliedAi?.briefSections,
 				clarificationQuestions: appliedAi?.questions,
@@ -253,11 +254,18 @@ export default function CreateOrderPage({
 							<option value="hourly">Почасово</option>
 						</select>
 					</div>
-					<input
-						value={skills}
-						onChange={(event) => setSkills(event.target.value)}
-						placeholder="Навыки через запятую"
-					/>
+					<div className="detail-field">
+						<span>Навыки проекта</span>
+						<SkillsAutocomplete
+							options={[...projectSkillOptions]}
+							maxSelected={8}
+							value={skills}
+							onChange={setSkills}
+							hideHeader
+							placeholder="Добавьте стек или специализацию"
+							emptyText="Подходящий навык не найден"
+						/>
+					</div>
 					{error ? <p className="form-error">{error}</p> : null}
 					<button type="submit" className="hm-button">
 						Сформировать заказ

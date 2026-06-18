@@ -65,9 +65,9 @@ public class AiControllerAuthorizationTest
 			Times.Never
 		);
 	}
-	[Theory]
-	[MemberData(nameof(RolesExceptClient))]
-	public async Task GenerateAiBrief_WhenUserIsNotClient_ReturnForbidden(Role role)
+		[Theory]
+		[MemberData(nameof(RolesExceptClientOrAdmin))]
+		public async Task GenerateAiBrief_WhenUserIsNotAllowed_ReturnForbidden(Role role)
 	{
 		HttpClient client = CreateAuthorizedClient(role);
 
@@ -94,12 +94,13 @@ public class AiControllerAuthorizationTest
 			Times.Never
 		);
 	}
-	[Fact]
-	public async Task GenerateAiBrief_WhenUserRoleIsClient_ReturnsOk()
-	{
-		const int userId = 1;
+		[Theory]
+		[MemberData(nameof(AllowedRoles))]
+		public async Task GenerateAiBrief_WhenUserRoleIsAllowed_ReturnsOk(Role role)
+		{
+			const int userId = 1;
 
-		HttpClient client = CreateAuthorizedClient(Role.Client, userId);
+			HttpClient client = CreateAuthorizedClient(role, userId);
 
 		var request = new GenerateAiBriefRequest
 		{
@@ -195,9 +196,9 @@ public class AiControllerAuthorizationTest
 			Times.Never
 		);
 	}
-	[Theory]
-	[MemberData(nameof(RolesExceptClient))]
-	public async Task ProjectAssistant_WhenUserIsNotClient_RetrunForbidden(Role role)
+		[Theory]
+		[MemberData(nameof(RolesExceptClientOrAdmin))]
+		public async Task ProjectAssistant_WhenUserIsNotAllowed_ReturnForbidden(Role role)
 	{
 		HttpClient client = CreateAuthorizedClient(role, 1);
 
@@ -224,12 +225,13 @@ public class AiControllerAuthorizationTest
 			Times.Never
 		);
 	}
-	[Fact]
-	public async Task ProjectAssistan_WhenUserRoleIsClient_ReturnsOk()
-	{
-		const int userId = 1;
+		[Theory]
+		[MemberData(nameof(AllowedRoles))]
+		public async Task ProjectAssistant_WhenUserRoleIsAllowed_ReturnsOk(Role role)
+		{
+			const int userId = 1;
 
-		HttpClient client = CreateAuthorizedClient(Role.Client, userId);
+			HttpClient client = CreateAuthorizedClient(role, userId);
 
 		var request = new ProjectAssistantRequest
 		{
@@ -267,13 +269,18 @@ public class AiControllerAuthorizationTest
 			Times.Once
 		);
 	}
-	public static IEnumerable<object[]> RolesExceptClient()
-	{
-		return Enum
-			.GetValues<Role>()
-			.Where(role => role != Role.Client)
-			.Select(role => new object[] { role });
-	}
+		public static IEnumerable<object[]> AllowedRoles()
+		{
+			return [new object[] { Role.Client }, new object[] { Role.Admin }];
+		}
+
+		public static IEnumerable<object[]> RolesExceptClientOrAdmin()
+		{
+			return Enum
+				.GetValues<Role>()
+				.Where(role => role != Role.Client && role != Role.Admin)
+				.Select(role => new object[] { role });
+		}
 
 	private AiBriefResult CreateAiBriefResult(string summary)
 	{

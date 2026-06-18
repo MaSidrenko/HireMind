@@ -36,6 +36,9 @@ public class AuthService : IAuthService
 		{
 			return AuthResult.Fail(invalidCredentialsMessage);
 		}
+		
+		if(user.IsBanned)
+			return AuthResult.Fail("Пользователь забанен!");
 
 		if(string.IsNullOrWhiteSpace(user.PasswordHash) || string.IsNullOrWhiteSpace(user.Salt))
 		{
@@ -169,6 +172,8 @@ public class AuthService : IAuthService
 			return UserResult.Fail("User not found");
 		}
 
+		if(user.IsBanned)
+			return UserResult.Fail("Пользователь забаннен!");
 
 		UserDto userDto = new(
 			user.Id,
@@ -193,7 +198,9 @@ public class AuthService : IAuthService
 
 	public async Task<EmailVerifyResult> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default)
 	{
-		User? user = await _userService.GetByEmailAsync(request.Email, ct);
+		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+		string normalizedCode = request.Code.Trim();
+		User? user = await _userService.GetByEmailAsync(normalizedEmail, ct);
 
 		if(user is null)
 		{
@@ -215,7 +222,7 @@ public class AuthService : IAuthService
 			return EmailVerifyResult.Fail("Слишком много попыток.Запросите новый код");
 		}
 
-		bool isCodeValid = EmailCodeHasher.Verify(request.Code, user.EmailVerificationCodeHash!);
+		bool isCodeValid = EmailCodeHasher.Verify(normalizedCode, user.EmailVerificationCodeHash!);
 
 		if(!isCodeValid)
 		{
@@ -232,6 +239,67 @@ public class AuthService : IAuthService
 
 		await _userService.SaveChangesAsync();
 		
+		return EmailVerifyResult.Success(user);
+	}
+
+	public async Task<EmailVerifyResult> ConfirmPendingEmailAsync(VerifyEmailRequest request, CancellationToken ct = default)
+	{
+		string normalizedEmail = request.Email.Trim().ToLowerInvariant();
+		string normalizedCode = request.Code.Trim();
+
+		User? user = await _userService.GetByPendingEmailAsync(normalizedEmail, ct);
+
+		if (user is null)
+		{
+			return EmailVerifyResult.Fail("Неверный email или код");
+		}
+
+		if (string.IsNullOrWhiteSpace(user.PendingEmail))
+		{
+			return EmailVerifyResult.Fail("Для пользователя не запрошена смена email");
+		}
+
+		if (string.IsNullOrWhiteSpace(user.EmailVerificationCodeHash))
+		{
+			return EmailVerifyResult.Fail("Неверный email или код");
+		}
+
+		if (user.EmailVerificationCodeExpiresAtUtc is null || user.EmailVerificationCodeExpiresAtUtc < DateTime.UtcNow)
+		{
+			return EmailVerifyResult.Fail("Код истек");
+		}
+
+		if (user.EmailVerificationAttempts > 5)
+		{
+			return EmailVerifyResult.Fail("Слишком много попыток. Запросите новый код");
+		}
+
+		bool isCodeValid = EmailCodeHasher.Verify(normalizedCode, user.EmailVerificationCodeHash);
+
+		if (!isCodeValid)
+		{
+			user.EmailVerificationAttempts++;
+			await _userService.SaveChangesAsync(ct);
+
+			return EmailVerifyResult.Fail("Неверный email или код");
+		}
+
+		bool emailAlreadyTaken = await _userService.CheckExistsUserByEmailAsync(normalizedEmail, ct);
+
+		if (emailAlreadyTaken && !string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+		{
+			return EmailVerifyResult.Fail("Этот email уже занят");
+		}
+
+		user.Email = normalizedEmail;
+		user.PendingEmail = null;
+		user.isEmailConfirmed = true;
+		user.EmailVerificationCodeHash = null;
+		user.EmailVerificationCodeExpiresAtUtc = null;
+		user.EmailVerificationAttempts = 0;
+
+		await _userService.SaveChangesAsync(ct);
+
 		return EmailVerifyResult.Success(user);
 	}
 

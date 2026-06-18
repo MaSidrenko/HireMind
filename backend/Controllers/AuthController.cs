@@ -87,6 +87,25 @@ namespace MyApp.Namespace
                 message = "Email успешно подтвержден"
             });
         }
+
+        [HttpPost("email-change/confirm")]
+        public async Task<IActionResult> ConfirmEmailChange(VerifyEmailRequest request, CancellationToken ct)
+        {
+            EmailVerifyResult result = await _authService.ConfirmPendingEmailAsync(request, ct);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(new
+                {
+                    message = result.ErrorMessage
+                });
+            }
+
+            return Ok(new
+            {
+                message = "Новый email успешно подтвержден"
+            });
+        }
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> SignOut(CancellationToken ct)
