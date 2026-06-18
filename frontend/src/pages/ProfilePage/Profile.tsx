@@ -820,7 +820,6 @@ export default function Profile() {
 									>
 										<option value="Freelancer">Исполнитель</option>
 										<option value="Client">Заказчик</option>
-										<option value="Admin">Администратор</option>
 									</select>
 								</label>
 								<label>

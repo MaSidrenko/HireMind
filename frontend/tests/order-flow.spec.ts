@@ -39,7 +39,17 @@ test("order goes through full client and freelancer lifecycle", async ({
 		);
 	await page.getByPlaceholder("Цена от").fill("50000");
 	await page.getByPlaceholder("Цена до").fill("80000");
-	await page.getByPlaceholder("Навыки через запятую").fill("React, TypeScript");
+	await page
+		.getByPlaceholder("Добавьте стек или специализацию")
+		.fill("React");
+	await page.locator('li[role="option"]').filter({ hasText: /^React$/ }).click();
+	await page
+		.getByPlaceholder("Добавьте стек или специализацию")
+		.fill("TypeScript");
+	await page
+		.locator('li[role="option"]')
+		.filter({ hasText: /^TypeScript$/ })
+		.click();
 	await page.getByRole("button", { name: "Сформировать заказ" }).click();
 
 	await expect(page).toHaveURL(/\/projects\/\d+$/);

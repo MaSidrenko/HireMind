@@ -41,8 +41,8 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 	}
 
 	[Theory]
-	[MemberData(nameof(RolesExceptClient))]
-	public async Task GetAllFreelancers_WhenUserIsNotClient_ReturnsForbidden(Role role)
+	[MemberData(nameof(RolesExceptClientOrAdmin))]
+	public async Task GetAllFreelancers_WhenUserIsNotAllowed_ReturnsForbidden(Role role)
 	{
 		HttpClient client = CreateAuthorizedClient(role);
 
@@ -56,11 +56,12 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 		);
 	}
 
-	[Fact]
-	public async Task GetAllFreelancers_WhenUserRoleIsClient_ReturnsOk()
+	[Theory]
+	[MemberData(nameof(AllowedRoles))]
+	public async Task GetAllFreelancers_WhenUserRoleIsAllowed_ReturnsOk(Role role)
 	{
 		const int userId = 1;
-		HttpClient client = CreateAuthorizedClient(Role.Client, userId);
+		HttpClient client = CreateAuthorizedClient(role, userId);
 		User freelancer = ProfileTestData.CreateFreelancerUser(2);
 
 		_factory.FreelancerServiceMock
@@ -108,8 +109,8 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 	}
 
 	[Theory]
-	[MemberData(nameof(RolesExceptClient))]
-	public async Task GetAllContact_WhenUserIsNotClient_ReturnsForbidden(Role role)
+	[MemberData(nameof(RolesExceptClientOrAdmin))]
+	public async Task GetAllContact_WhenUserIsNotAllowed_ReturnsForbidden(Role role)
 	{
 		HttpClient client = CreateAuthorizedClient(role);
 
@@ -123,11 +124,12 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 		);
 	}
 
-	[Fact]
-	public async Task GetAllContact_WhenUserRoleIsClient_ReturnsOk()
+	[Theory]
+	[MemberData(nameof(AllowedRoles))]
+	public async Task GetAllContact_WhenUserRoleIsAllowed_ReturnsOk(Role role)
 	{
 		const int userId = 1;
-		HttpClient client = CreateAuthorizedClient(Role.Client, userId);
+		HttpClient client = CreateAuthorizedClient(role, userId);
 		ContactRequestDto contact = ProfileTestData.CreateContactRequestDto(2);
 		List<ContactRequestDto> contacts = [contact];
 
@@ -190,8 +192,8 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 	}
 
 	[Theory]
-	[MemberData(nameof(RolesExceptClient))]
-	public async Task CreateContactRequest_WhenUserIsNotClient_ReturnsForbidden(Role role)
+	[MemberData(nameof(RolesExceptClientOrAdmin))]
+	public async Task CreateContactRequest_WhenUserIsNotAllowed_ReturnsForbidden(Role role)
 	{
 		HttpClient client = CreateAuthorizedClient(role);
 
@@ -212,11 +214,12 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 		);
 	}
 
-	[Fact]
-	public async Task CreateContactRequest_WhenUserRoleIsClient_ReturnsOk()
+	[Theory]
+	[MemberData(nameof(AllowedRoles))]
+	public async Task CreateContactRequest_WhenUserRoleIsAllowed_ReturnsOk(Role role)
 	{
 		const int userId = 1;
-		HttpClient client = CreateAuthorizedClient(Role.Client, userId);
+		HttpClient client = CreateAuthorizedClient(role, userId);
 
 		_factory.FreelancerServiceMock
 			.Setup(x => x.CreateContactRequestAsync(
@@ -250,11 +253,16 @@ public class FreelancerControllerAuthorizationTest : IDisposable
 		);
 	}
 
-	public static IEnumerable<object[]> RolesExceptClient()
+	public static IEnumerable<object[]> AllowedRoles()
+	{
+		return [new object[] { Role.Client }, new object[] { Role.Admin }];
+	}
+
+	public static IEnumerable<object[]> RolesExceptClientOrAdmin()
 	{
 		return Enum
 			.GetValues<Role>()
-			.Where(role => role != Role.Client)
+			.Where(role => role != Role.Client && role != Role.Admin)
 			.Select(role => new object[] { role });
 	}
 

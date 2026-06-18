@@ -106,7 +106,6 @@ export default function ResetPassword() {
 	return (
 		<div className="box-reset-password card">
 			<form onSubmit={handleSubmit} noValidate>
-				<div className="reset-password-layout">
 					<div className="reset-password-main">
 						<h1>Новый пароль</h1>
 						<p>
@@ -209,33 +208,6 @@ export default function ResetPassword() {
 							</span>
 						</div>
 					</div>
-
-					<div className="reset-password-aside">
-						<span className="reset-password-kicker">Что проверяем</span>
-						<div className="reset-password-steps">
-							<div className="reset-password-step">
-								<strong>1. Email</strong>
-								<p>
-									Нужен тот же адрес, на который пришёл recovery-код.
-								</p>
-							</div>
-							<div className="reset-password-step">
-								<strong>2. Код из письма</strong>
-								<p>
-									На backend ты будешь сверять его с hash и сроком
-									действия.
-								</p>
-							</div>
-							<div className="reset-password-step">
-								<strong>3. Новый пароль</strong>
-								<p>
-									После успешной проверки кода обновляешь
-									`PasswordHash` и `Salt`.
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
 
 				<div className="reset-password-links">
 					<Link to="/recovery-password">Запросить код ещё раз</Link>

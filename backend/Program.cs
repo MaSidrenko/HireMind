@@ -199,10 +199,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
-using var scope = app.Services.CreateScope();
 
-var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-db.Database.Migrate();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+	using var scope = app.Services.CreateScope();
+	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+	if (db.Database.IsRelational())
+	{
+		db.Database.Migrate();
+	}
+}
 
 if (app.Environment.IsDevelopment())
 {

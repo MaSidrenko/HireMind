@@ -281,9 +281,15 @@ public class AdminServiceTests
 	private static AdminService CreateAdminService(AppDbContext db)
 	{
 		IUserService userService = new UserService(db);
-		IOrderService orderService = Mock.Of<IOrderService>();
+		IEmailSender emailSender = Mock.Of<IEmailSender>();
+		ITelegramNotificationService telegramNotificationService =
+			Mock.Of<ITelegramNotificationService>();
 
-		return new AdminService(userService, db, orderService);
+		return new AdminService(
+			userService,
+			db,
+			emailSender,
+			telegramNotificationService);
 	}
 
 	private static AppDbContext CreateDbContext()
