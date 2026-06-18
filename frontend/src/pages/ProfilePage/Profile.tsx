@@ -8,6 +8,7 @@ import {
 	type ProjectOrder,
 } from "@/features";
 import { apiRequest, isEmailValid, isPhoneValid } from "@/shared";
+import { projectSkillOptions } from "@/shared/skillOptions";
 import "./Profile.css";
 import { useEffect, useState } from "react";
 import SkillsAutocomplete from "@/widgets/SkillsAutoComplete/SkillsAutoComplete";
@@ -39,29 +40,6 @@ type ProfileFormState = {
 };
 
 const profileCurrencies: Currency[] = ["RUB", "USD", "EUR"];
-
-const freelancerSkillsOptions = [
-	"Frontend Development",
-	"Backend Development",
-	"Fullstack Development",
-	"React",
-	"TypeScript",
-	"JavaScript",
-	"Node.js",
-	"UI/UX Design",
-	"Figma",
-	"Brand Design",
-	"Motion Design",
-	"Copywriting",
-	"Content Marketing",
-	"SEO",
-	"SMM",
-	"Project Management",
-	"QA Testing",
-	"Mobile Development",
-	"Product Analytics",
-	"AI Prompting",
-];
 
 function makeFormState(
 	user: NonNullable<ReturnType<typeof useAuth>["user"]>,
@@ -962,7 +940,7 @@ export default function Profile() {
 						<div className="profile-skills">
 							<div className="profile-skills__editor">
 								<SkillsAutocomplete
-									options={freelancerSkillsOptions}
+									options={[...projectSkillOptions]}
 									maxSelected={8}
 									value={selectedSkills}
 									onChange={handleSkillsChange}

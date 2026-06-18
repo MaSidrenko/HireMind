@@ -1,0 +1,74 @@
+name: HireMind
+
+services:
+  backend_hire_mind:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    container_name: HireMindBackend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: 
+      POSTGRES_HOST: db
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT__ISSUER: ${JWT__ISSUER}
+      JWT__AUDIENCE: ${JWT__AUDIENCE}
+      JWT__SECRET:  ${JWT__SECRET}
+      JWT__ACCESS_TOKEN_EXPIRATION_MINUTES: ${JWT__ACCESS_TOKEN_EXPIRATION_MINUTES}
+      JWT__COOKIE_NAME: ${JWT__COOKIE_NAME}
+      JWT__COOKIE_SECURE: ${JWT__COOKIE_SECURE}
+      JWT__COOKIE_SAME_SITE: ${JWT__COOKIE_SAME_SITE}
+      Email__Username: ${Email__Username}
+      Email__Password: ${Email__Password}
+      Email__FromName: ${Email__FromName}
+      Email__SmtpHost: ${Email__SmtpHost}
+      Email__SmtpPort: ${Email__SmtpPort}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_BASE_URL: ${GROQ_BASE_URL}
+      GROQ_MODEL: ${GROQ_MODEL}
+      ASPNETCORE_URLS: https://+:8443;http://+:8080
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/hiremind.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTP_CERT_PASSWORD} 
+    volumes:
+      - /mnt/c/dev-certs/hiremind.pfx:/https/hiremind.pfx:ro
+  db: 
+    image: postgres:18
+    # ports:
+    #   - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    
+    volumes:
+      - db_data:/var/lib/postgresql
+    container_name: db_postgresql_container
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      backend_hire_mind:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /mnt/c/dev-certs/frontend.crt:/etc/nginx/certs/frontend.crt:ro
+      - /mnt/c/dev-certs/frontend.key:/etc/nginx/certs/frontend.key:ro
+
+volumes: 
+  db_data: 
+

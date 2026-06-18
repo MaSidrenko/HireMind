@@ -24,6 +24,7 @@ import {
 } from "@/features";
 import { ApiError } from "@/shared";
 import { AiAssistantPanel } from "./components/AiAssistantPanel";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { StageBadge, StatusBadge } from "./components/StatusBadge";
 import {
 	acceptProposalRequest,
@@ -42,6 +43,7 @@ type ProjectWorkspacePageProps = {
 	canEdit: boolean;
 	onBack: () => void;
 	onChange: (order: ProjectOrder) => Promise<void> | void;
+	onDelete: (orderId: number) => Promise<void> | void;
 };
 
 const categories = [
@@ -86,6 +88,7 @@ export default function ProjectWorkspacePage({
 	canEdit,
 	onBack,
 	onChange,
+	onDelete,
 }: ProjectWorkspacePageProps) {
 	const { user } = useAuth();
 	const [draft, setDraft] = useState(order);
@@ -93,6 +96,7 @@ export default function ProjectWorkspacePage({
 	const [saving, setSaving] = useState(false);
 	const [saveMessage, setSaveMessage] = useState("");
 	const [formError, setFormError] = useState("");
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [proposalMessage, setProposalMessage] = useState(
 		"Здравствуйте! Готов обсудить задачу и взять проект в работу.",
 	);
@@ -109,6 +113,7 @@ export default function ProjectWorkspacePage({
 	const normalizedRole = String(user?.role ?? "").toLowerCase();
 	const isAdmin = normalizedRole === "admin";
 	const isOwner = canEdit;
+	const isClientOwner = normalizedRole === "client" && draft.hirerId === user?.id;
 	const isFreelancer = normalizedRole === "freelancer";
 	const isClientParticipant = draft.hirerId === user?.id || isAdmin;
 	const ownProposal = useMemo(
@@ -156,6 +161,7 @@ export default function ProjectWorkspacePage({
 		draft.selectedFreelancerId &&
 		(isClientParticipant || isOrderParticipantFreelancer),
 	);
+	const canDeleteOrder = isClientOwner && Boolean(draft.canClientDelete);
 	const existingOwnRating = isClientParticipant
 		? draft.freelancerRatingByClient
 		: isOrderParticipantFreelancer
@@ -665,6 +671,33 @@ export default function ProjectWorkspacePage({
 		}
 	};
 
+	const requestDeleteOrder = () => {
+		if (!isClientOwner || !canDeleteOrder || saving) {
+			return;
+		}
+
+		setDeleteDialogOpen(true);
+	};
+
+	const confirmDeleteOrder = async () => {
+		if (!isClientOwner || !canDeleteOrder) {
+			return;
+		}
+
+		setSaving(true);
+		setDeleteDialogOpen(false);
+		setFormError("");
+		setSaveMessage("");
+
+		try {
+			await onDelete(draft.id);
+			setSaving(false);
+		} catch (error) {
+			setFormError(getErrorMessage(error, "Не удалось удалить заказ"));
+			setSaving(false);
+		}
+	};
+
 	return (
 		<main className="orders-page order-details-page">
 			<button type="button" className="hm-link-button" onClick={onBack}>
@@ -717,50 +750,69 @@ export default function ProjectWorkspacePage({
 
 			{isOwner ? (
 				<section className="order-actionbar">
-					{draft.status === "Draft" ? (
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void setStatus("Published")}
-						>
-							Опубликовать
-						</button>
-					) : null}
-					{draft.status === "Published" ? (
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void setStatus("Paused")}
-						>
-							Поставить на паузу
-						</button>
-					) : null}
-					{draft.status === "Paused" ? (
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void setStatus("Published")}
-						>
-							Вернуть в публикацию
-						</button>
-					) : null}
-					{draft.status !== "Archived" ? (
-						<button
-							type="button"
-							className="hm-button hm-button--ghost"
-							onClick={() => void setStatus("Archived")}
-						>
-							В архив
-						</button>
-					) : null}
-					{draft.status === "Archived" ? (
-						<button
-							type="button"
-							className="hm-button"
-							onClick={() => void setStatus("Published")}
-						>
-							Восстановить
-						</button>
+					<div className="order-actionbar__actions">
+						{draft.status === "Draft" ? (
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void setStatus("Published")}
+							>
+								Опубликовать
+							</button>
+						) : null}
+						{draft.status === "Published" ? (
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void setStatus("Paused")}
+							>
+								Поставить на паузу
+							</button>
+						) : null}
+						{draft.status === "Paused" ? (
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void setStatus("Published")}
+							>
+								Вернуть в публикацию
+							</button>
+						) : null}
+						{draft.status !== "Archived" ? (
+							<button
+								type="button"
+								className="hm-button hm-button--ghost"
+								onClick={() => void setStatus("Archived")}
+							>
+								В архив
+							</button>
+						) : null}
+						{draft.status === "Archived" ? (
+							<button
+								type="button"
+								className="hm-button"
+								onClick={() => void setStatus("Published")}
+							>
+								Восстановить
+							</button>
+						) : null}
+					</div>
+					{isClientOwner ? (
+						<div className="order-actionbar__danger">
+							<button
+								type="button"
+								className="hm-button hm-button--danger"
+								onClick={requestDeleteOrder}
+								disabled={saving || !canDeleteOrder}
+							>
+								Удалить заказ
+							</button>
+							{!canDeleteOrder ? (
+								<span className="detail-note">
+									Удаление доступно только пока у заказа нет откликов, выбранного исполнителя и истории AI-диалогов.
+								</span>
+							) : null}
+						</div>
 					) : null}
 				</section>
 			) : null}
@@ -1647,6 +1699,15 @@ export default function ProjectWorkspacePage({
 			{isOwner ? (
 				<AiAssistantPanel order={draft} onApply={applyAiResult} />
 			) : null}
+			<ConfirmDialog
+				open={deleteDialogOpen}
+				title="Удалить заказ?"
+				description="Заказ будет удалён без возможности восстановления."
+				confirmLabel={saving ? "Удаляем..." : "Подтвердить удаление"}
+				busy={saving}
+				onConfirm={() => void confirmDeleteOrder()}
+				onCancel={() => setDeleteDialogOpen(false)}
+			/>
 		</main>
 	);
 }

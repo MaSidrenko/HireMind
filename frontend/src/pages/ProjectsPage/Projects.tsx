@@ -3,6 +3,7 @@ import "./Projects.css";
 import { useEffect, useMemo, useState } from "react";
 import {
 	useAuth,
+	deleteProjectRequest,
 	getProjectById,
 	getProjects,
 	updateProjectRequest,
@@ -149,6 +150,13 @@ export default function Projects() {
 		}
 	};
 
+	const deleteOrder = async (orderId: number) => {
+		await deleteProjectRequest(orderId);
+		setCurrentOrder((current) => (current?.id === orderId ? null : current));
+		setOrders((items) => items.filter((item) => item.id !== orderId));
+		navigate("/projects");
+	};
+
 	if (isCreatePage) {
 		return (
 			<CreateOrderPage
@@ -211,6 +219,7 @@ export default function Projects() {
 				}
 				onBack={() => navigate("/projects")}
 				onChange={updateOrder}
+				onDelete={deleteOrder}
 			/>
 		);
 	}

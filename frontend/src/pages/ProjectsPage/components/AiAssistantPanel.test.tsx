@@ -35,6 +35,8 @@ const briefResult: AiBriefResult = {
 		openQuestions: "Вопросы",
 	},
 	questions: [],
+	scopeItems: [],
+	doneCriteria: [],
 	risks: [],
 };
 

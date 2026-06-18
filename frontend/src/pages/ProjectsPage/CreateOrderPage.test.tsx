@@ -62,6 +62,8 @@ describe("CreateOrderPage", () => {
 				openQuestions: "",
 			},
 			questions: [],
+			scopeItems: [],
+			doneCriteria: [],
 			risks: [],
 		});
 	});
@@ -111,7 +113,14 @@ describe("CreateOrderPage", () => {
 		);
 		await user.type(screen.getByPlaceholderText("Цена от"), "10000");
 		await user.type(screen.getByPlaceholderText("Цена до"), "25000");
-		await user.type(screen.getByPlaceholderText("Навыки через запятую"), "React, CSS");
+		await user.click(
+			screen.getByPlaceholderText("Добавьте стек или специализацию"),
+		);
+		await user.click(screen.getByRole("option", { name: "React" }));
+		await user.click(
+			screen.getByPlaceholderText("Добавьте стек или специализацию"),
+		);
+		await user.click(screen.getByRole("option", { name: "CSS" }));
 		await user.click(screen.getByRole("button", { name: "Сформировать заказ" }));
 
 		await waitFor(() => {
@@ -143,7 +152,14 @@ describe("CreateOrderPage", () => {
 		);
 		await user.type(screen.getByPlaceholderText("Цена от"), "10000");
 		await user.type(screen.getByPlaceholderText("Цена до"), "25000");
-		await user.type(screen.getByPlaceholderText("Навыки через запятую"), "React, CSS");
+		await user.click(
+			screen.getByPlaceholderText("Добавьте стек или специализацию"),
+		);
+		await user.click(screen.getByRole("option", { name: "React" }));
+		await user.click(
+			screen.getByPlaceholderText("Добавьте стек или специализацию"),
+		);
+		await user.click(screen.getByRole("option", { name: "CSS" }));
 		await user.click(screen.getByRole("button", { name: "Сформировать заказ" }));
 
 		expect(

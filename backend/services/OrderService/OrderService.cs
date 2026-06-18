@@ -319,6 +319,9 @@ public class OrderService : IOrderService
 							CreatedAt = Proposal.CreatedAt
 						})
 						.ToList(),
+					CanClientDelete = !order.FreelancerId.HasValue
+						&& !order.Proposals.Any()
+						&& !order.AiConversations.Any(),
 					PublishedAt = order.PublishedAt,
 					CompletedAt = order.CompletedAt,
 					UpdatedAt = order.UpdatedAt,
@@ -384,6 +387,9 @@ public class OrderService : IOrderService
 							CreatedAt = Proposal.CreatedAt
 						})
 						.ToList(),
+					CanClientDelete = !order.FreelancerId.HasValue
+						&& !order.Proposals.Any()
+						&& !order.AiConversations.Any(),
 					PublishedAt = order.PublishedAt,
 					CompletedAt = order.CompletedAt,
 					UpdatedAt = order.UpdatedAt,
@@ -408,6 +414,7 @@ public class OrderService : IOrderService
 			.Include(order => order.ScopeItems)
 			.Include(order => order.DoneCriteria)
 			.Include(order => order.Risks)
+			.Include(order => order.AiConversations)
 			.Include(order => order.Proposals)
 				.ThenInclude(proposal => proposal.Freelancer);
 
@@ -1440,7 +1447,79 @@ public class OrderService : IOrderService
 
 		order.UpdatedAt = DateTime.UtcNow;
 	}
+	public async Task<Order> DeleteOrderAsync(int orderId, int userId, CancellationToken ct)
+	{
+		Order? order = await LoadOrderGraphAsync(orderId, ct);
+		
+		if(order is null)
+			throw new OrderNotFoundException(orderId);
 
+		if(order.CustomerId != userId)
+		{
+			throw new ForbiddenProposalOperationException(
+				"У вас нет прав для удаления этого заказа.",
+				"forbidden_order_delete"
+			);
+		}
+
+		EnsureOrderCanBeDeleted(order);
+		User customer = order.Customer ?? throw new UserNotFoundException(order.CustomerId);
+
+		_db.Orders.Remove(order);
+		await _db.SaveChangesAsync(ct);
+
+		try
+		{
+			await _emailSender.SendEmailAsync(
+				customer.Email,
+				"Ваш заказ удален!",
+				$"Ваш заказ {order.Title} был удален!"
+			);
+		}catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		try
+		{
+			if(customer.IsTelegramConnected && customer.TelegramChatId != null)
+			{
+				await _telegramNotificationService.SendContactNotificationAsync(
+					customer.TelegramChatId.Value,
+					"Ваш заказ удален!\n"+
+					$"Ваш заказ {order.Title} был удален!"
+				);
+			}
+		}catch(Exception ex)
+		{
+			System.Console.WriteLine(ex.Message);
+		}
+
+		return order;
+	}
+	private static void EnsureOrderCanBeDeleted(Order order)
+	{
+		if (order.FreelancerId.HasValue)
+		{
+			throw new OrderDeletionUnavailableException(
+				"Нельзя удалить заказ, пока у него выбран исполнитель."
+			);
+		}
+
+		if (order.Proposals.Count > 0)
+		{
+			throw new OrderDeletionUnavailableException(
+				"Нельзя удалить заказ, пока у него есть отклики."
+			);
+		}
+
+		if (order.AiConversations.Count > 0)
+		{
+			throw new OrderDeletionUnavailableException(
+				"Нельзя удалить заказ, пока у него есть история AI-диалогов."
+			);
+		}
+	}
 	private static bool HasCompletedState(Order order)
 	{
 		return order.Status == OrderStatus.Completed || order.CompletedAt is not null;

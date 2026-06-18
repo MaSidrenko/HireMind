@@ -238,7 +238,19 @@ public class OrderController : ControllerBase
 
 		return Ok(ToDto(order));
 	}
+	[HttpDelete("order/{orderId:int}")]
+	[Authorize(Roles = "Client")]
+	public async Task<IActionResult> DeleteOrder(int orderId, CancellationToken ct)
+	{
+		if (!TryGetUserId(out int userId))
+		{
+			return Unauthorized();
+		}
 
+		await _orderService.DeleteOrderAsync(orderId, userId, ct);
+
+		return NoContent();
+	}
 	private bool TryGetUserId(out int userId)
 	{
 		string? userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -250,6 +262,7 @@ public class OrderController : ControllerBase
 
 		string description = order.Description ?? string.Empty;
 		List<Proposal> proposals = order.Proposals ?? new();
+		List<AiConversation> aiConversations = order.AiConversations ?? new();
 		List<ClarificationQuestion> clarificationQuestions = order.ClarificationQuestions ?? new();
 		List<ScopeItem> scopeItems = order.ScopeItems ?? new();
 		List<DoneCriterion> doneCriteria = order.DoneCriteria ?? new();
@@ -296,6 +309,9 @@ public class OrderController : ControllerBase
 					CreatedAt = proposal.CreatedAt
 				})
 				.ToList(),
+			CanClientDelete = !order.FreelancerId.HasValue
+				&& proposals.Count == 0
+				&& aiConversations.Count == 0,
 			PublishedAt = order.PublishedAt,
 			CompletedAt = order.CompletedAt,
 			UpdatedAt = order.UpdatedAt,

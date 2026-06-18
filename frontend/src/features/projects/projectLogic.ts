@@ -1,4 +1,5 @@
 import { briefSections } from "./projectDictionaries";
+import { normalizeRiskItems } from "../aiAssistant/normalizeAiBriefResult";
 import type {
 	BudgetType,
 	BriefSections,
@@ -305,6 +306,13 @@ export function normalizeProjectOrder(
 		skills: Array.isArray(order.skills) ? order.skills : [],
 		proposalsCount: proposals.length,
 		proposals,
+		canClientDelete:
+			typeof order.canClientDelete === "boolean"
+				? order.canClientDelete
+				: !(
+						typeof order.selectedFreelancerId === "number" &&
+						Number.isFinite(order.selectedFreelancerId)
+					) && proposals.length === 0,
 		publishedAt:
 			typeof order.publishedAt === "string" ? order.publishedAt : null,
 		completedAt:
@@ -321,7 +329,7 @@ export function normalizeProjectOrder(
 		doneCriteria: Array.isArray(order.doneCriteria)
 			? order.doneCriteria
 			: [],
-		risks: Array.isArray(order.risks) ? order.risks : [],
+		risks: normalizeRiskItems(Array.isArray(order.risks) ? order.risks : []),
 		approvals: {
 			client: Boolean(order.approvals?.client),
 			freelancer: Boolean(order.approvals?.freelancer),
@@ -362,6 +370,7 @@ export function createProject(input: CreateProjectInput): ProjectOrder {
 		skills: input.skills.length ? input.skills : ["Discovery"],
 		proposalsCount: 0,
 		proposals: [],
+		canClientDelete: true,
 		publishedAt: null,
 		completedAt: null,
 		updatedAt: now,

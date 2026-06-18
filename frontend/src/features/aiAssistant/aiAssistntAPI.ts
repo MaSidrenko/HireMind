@@ -1,5 +1,6 @@
 import { AI_API, apiRequest } from "@/shared";
 import type { ProjectOrder } from "../projects/types";
+import { normalizeAiBriefResult } from "./normalizeAiBriefResult";
 import type { AiBriefResult } from "./types";
 
 export async function generateAiBrief(input: {
@@ -7,10 +8,12 @@ export async function generateAiBrief(input: {
 	category: string;
 	rawDescription: string;
 }): Promise<AiBriefResult> {
-	return apiRequest<AiBriefResult>(`${AI_API}/briefs/generate`, {
+	const response = await apiRequest<AiBriefResult>(`${AI_API}/briefs/generate`, {
 		method: "POST",
 		body: input,
 	});
+
+	return normalizeAiBriefResult(response);
 }
 
 export async function askProjectAi(order: ProjectOrder, prompt: string) {

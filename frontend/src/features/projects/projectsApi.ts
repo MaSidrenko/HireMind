@@ -136,6 +136,12 @@ export async function updateProjectRequest(project: ProjectOrder) {
 	return normalizeProjectOrder(nextProject);
 }
 
+export async function deleteProjectRequest(orderId: number) {
+	await apiRequest<null>(`${ORDER_API}/order/${orderId}`, {
+		method: "DELETE",
+	});
+}
+
 export async function updateProjectClarificationQuestionsRequest(
 	orderId: number,
 	clarificationQuestions: ProjectOrder["clarificationQuestions"],

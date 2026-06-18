@@ -3,6 +3,7 @@ import { apiRequest } from "../../shared";
 import type { CreateProjectInput, ProjectOrder } from "./types";
 import {
 	createProjectRequest,
+	deleteProjectRequest,
 	getProjectById,
 	getProjects,
 	updateProjectRequest,
@@ -78,6 +79,7 @@ const project = {
 		clientDone: false,
 		freelancerDone: false,
 	},
+	canClientDelete: true,
 } satisfies ProjectOrder;
 
 describe("projectsApi", () => {
@@ -160,5 +162,15 @@ describe("projectsApi", () => {
 				}),
 			}),
 		);
+	});
+
+	it("deletes project by id", async () => {
+		mockedApiRequest.mockResolvedValueOnce(null);
+
+		await expect(deleteProjectRequest(99)).resolves.toBeUndefined();
+
+		expect(mockedApiRequest).toHaveBeenCalledWith("/order/order/99", {
+			method: "DELETE",
+		});
 	});
 });

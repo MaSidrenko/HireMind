@@ -198,8 +198,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-
 var app = builder.Build();
+using var scope = app.Services.CreateScope();
+
+var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+db.Database.Migrate();
 
 if (app.Environment.IsDevelopment())
 {
@@ -218,32 +221,32 @@ app.MapControllers();
 
 app.Run();
 
-static void LoadDotEnv()
-{
-    var envPath = FindFileUpwards(".env");
+// static void LoadDotEnv()
+// {
+//     var envPath = FindFileUpwards(".env");
 
-    if (envPath is null)
-        return;
+//     if (envPath is null)
+//         return;
 
-    Env.NoClobber().Load(envPath);
-}
+//     Env.NoClobber().Load(envPath);
+// }
 
-static string? FindFileUpwards(string fileName)
-{
-    var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+// static string? FindFileUpwards(string fileName)
+// {
+//     var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
 
-    while (directory is not null)
-    {
-        var filePath = Path.Combine(directory.FullName, fileName);
+//     while (directory is not null)
+//     {
+//         var filePath = Path.Combine(directory.FullName, fileName);
 
-        if (File.Exists(filePath))
-            return filePath;
+//         if (File.Exists(filePath))
+//             return filePath;
 
-        directory = directory.Parent;
-    }
+//         directory = directory.Parent;
+//     }
 
-    return null;
-}
+//     return null;
+// }
 
 
 static void ValidateJwtOptions(JwtOptions options)
